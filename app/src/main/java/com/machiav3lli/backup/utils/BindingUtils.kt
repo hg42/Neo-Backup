@@ -52,7 +52,8 @@ fun View.setExists(rightMode: Boolean) {
     visibility = if (rightMode) {
         View.VISIBLE
     } else {
-        View.GONE
+        //View.GONE
+        View.INVISIBLE
     }
 }
 
