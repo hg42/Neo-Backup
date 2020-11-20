@@ -8,7 +8,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Process
 import android.util.Log
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.Constants
 import com.machiav3lli.backup.Constants.classTag
 import com.machiav3lli.backup.dbs.Schedule
@@ -31,9 +30,8 @@ object BackendController {
     /*
     List of packages ignored for any reason
      */
-    val ignoredPackages = listOf(
-            "android",  // virtual package. Data directory is /data -> not a good idea to backup
-            BuildConfig.APPLICATION_ID // ignore own package, it would send a SIGTERM to itself on backup/restore
+    private val ignoredPackages = listOf(
+            "android"   // virtual package. Data directory is /data -> not a good idea to backup
     )
 
     fun getPackageInfoList(context: Context, mode: Schedule.Mode?): List<PackageInfo> {

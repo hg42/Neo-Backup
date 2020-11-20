@@ -21,6 +21,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.Constants.classTag
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
@@ -96,7 +97,8 @@ abstract class BaseAppAction protected constructor(protected val context: Contex
         const val BACKUP_DIR_OBB_FILES = "obb_files"
         val DATA_EXCLUDED_DIRS = listOf("cache", "code_cache", "lib")
         private val doNotStop = listOf(
-                "com.android.shell",  // don't remove this
+                BuildConfig.APPLICATION_ID, // ignore own package, it must run
+                "com.android.shell",        // don't remove this
                 "com.android.systemui",
                 "com.android.externalstorage",
                 "com.android.providers.media",
