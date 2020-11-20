@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.provider.OpenableColumns
 import android.text.TextUtils
 import com.machiav3lli.backup.Constants.classTag
 import com.machiav3lli.backup.utils.LogUtils
@@ -18,7 +19,7 @@ object DocumentContractApi {
                 context.contentResolver.query(uri, null, null, null, null)?.let { cursor ->
                     cursor.run {
                         if (moveToFirst()) getString(getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-                        else null
+                        else uri.lastPathSegment
                     }.also { cursor.close() }
                 }
             } catch (e: Throwable) {

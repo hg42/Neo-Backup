@@ -11,6 +11,7 @@ import java.io.FileNotFoundException
 import java.util.*
 
 open class StorageFile protected constructor(val parentFile: StorageFile?, private val context: Context, var uri: Uri) {
+
     var name: String? = null
         get() {
             if (field == null) field = DocumentContractApi.getName(context, uri)
