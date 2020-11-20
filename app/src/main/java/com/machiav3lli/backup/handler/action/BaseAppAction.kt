@@ -26,6 +26,7 @@ import com.machiav3lli.backup.Constants.classTag
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
+import com.machiav3lli.backup.utils.LogUtils
 import com.topjohnwu.superuser.Shell
 
 abstract class BaseAppAction protected constructor(protected val context: Context, protected val shell: ShellHandler) {
@@ -64,9 +65,9 @@ abstract class BaseAppAction protected constructor(protected val context: Contex
         } catch (e: PackageManager.NameNotFoundException) {
             Log.w(TAG, "$packageName does not exist. Cannot preprocess!")
         } catch (e: ShellCommandFailedException) {
-            e.printStackTrace()
+            Log.w(TAG, "Could not stop package " + packageName + ": " + java.lang.String.join(" ", e.shellResult.err))
         } catch (e: Throwable) {
-            e.printStackTrace()
+            LogUtils.unhandledException(e)
         }
     }
 
@@ -81,7 +82,9 @@ abstract class BaseAppAction protected constructor(protected val context: Contex
         } catch (e: PackageManager.NameNotFoundException) {
             Log.w(TAG, "$packageName does not exist. Cannot preprocess!")
         } catch (e: ShellCommandFailedException) {
-            Log.w(TAG, "Could not kill package $packageName: ${e.shellResult.err.joinToString(separator = " ")}")
+            Log.w(TAG, "Could not continue package $packageName: ${e.shellResult.err.joinToString(separator = " ")}")
+        } catch (e: Throwable) {
+            LogUtils.unhandledException(e)
         }
     }
 
