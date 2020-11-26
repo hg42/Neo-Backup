@@ -348,9 +348,7 @@ class AppSheet(val item: MainItemX, val position: Int) : BottomSheetDialogFragme
         }
     }
 
-    private fun requireMainActivity(): MainActivityX {
-        return requireActivity() as MainActivityX
-    }
+    private fun requireMainActivity(): MainActivityX = MainActivityX.act!! // requireActivity() as MainActivityX
 
     companion object {
         val TAG = classTag(".AppSheet")

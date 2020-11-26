@@ -17,6 +17,8 @@
  */
 package com.machiav3lli.backup.activities
 
+import android.annotation.SuppressLint
+import android.app.Application
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
@@ -60,11 +62,16 @@ import com.mikepenz.fastadapter.adapters.ItemAdapter
 import com.mikepenz.fastadapter.diff.FastAdapterDiffUtil
 import com.mikepenz.fastadapter.listeners.ClickEventHook
 import com.topjohnwu.superuser.Shell
+import java.io.File
+import java.lang.Process as Process1
 
 class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
 
     companion object {
         private val TAG = classTag(".MainActivityX")
+        private var theAct : MainActivityX? = null
+        private var theApp : Application? = null
+
         var shellHandlerInstance: ShellHandler? = null
             private set
 
@@ -83,6 +90,13 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
             Shell.setDefaultBuilder(Shell.Builder.create()
                     .setTimeout(20))
         }
+
+        val act get() = theAct
+        val app get() = theApp
+        val context get() = theApp?.applicationContext
+        var logPath : String? = null
+        var logcat : java.lang.Process? = null
+        var pid : Int? = null
     }
 
     private var updatedBadge: BadgeDrawable? = null
@@ -106,6 +120,8 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        theAct = this
+        theApp = this.application
         binding = ActivityMainXBinding.inflate(layoutInflater)
         binding.lifecycleOwner = this
         setContentView(binding.root)

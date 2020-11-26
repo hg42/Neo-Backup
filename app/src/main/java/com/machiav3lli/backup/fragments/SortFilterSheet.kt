@@ -96,5 +96,5 @@ class SortFilterSheet(private var sortFilterModel: SortFilterModel = SortFilterM
         }
     }
 
-    private fun requireMainActivity(): MainActivityX = super.requireActivity() as MainActivityX
+    private fun requireMainActivity(): MainActivityX = MainActivityX.act!! //super.requireActivity() as MainActivityX
 }

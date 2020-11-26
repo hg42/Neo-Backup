@@ -21,6 +21,8 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.machiav3lli.backup.Constants.classTag
+import com.machiav3lli.backup.activities.MainActivityX
+import com.machiav3lli.backup.items.StorageFile
 import java.io.*
 import java.nio.charset.StandardCharsets
 import java.nio.file.attribute.PosixFilePermission
@@ -78,6 +80,8 @@ object FileUtils {
      */
     fun invalidateBackupLocation() {
         backupLocation = null
+        StorageFile.invalidateCache()
+        MainActivityX.act?.refreshView()
     }
 
     fun getName(fullPath: String): String {

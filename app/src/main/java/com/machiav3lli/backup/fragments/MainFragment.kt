@@ -75,5 +75,5 @@ class MainFragment : Fragment(), SearchViewController {
         requireMainActivity().onResumeFragment()
     }
 
-    fun requireMainActivity(): MainActivityX = super.requireActivity() as MainActivityX
+    fun requireMainActivity(): MainActivityX = MainActivityX.act!! // super.requireActivity() as MainActivityX
 }
