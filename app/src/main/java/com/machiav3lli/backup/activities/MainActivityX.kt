@@ -122,6 +122,19 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
         super.onCreate(savedInstanceState)
         theAct = this
         theApp = this.application
+        try {
+            logPath = "${MainActivityX.context?.externalCacheDir?:MainActivityX.context?.cacheDir!!}/${FileUtils.LOG_FILE_NAME}"
+            pid = android.os.Process.myPid()
+            try {
+                logcat = Runtime.getRuntime().exec("logcat --pid=$pid -f $logPath")
+            } catch (e: Throwable) {
+                LogUtils.unhandledException(e)
+            }
+            Log.i(TAG, "".padEnd(60, '-') + " create")
+
+        } catch (e: Throwable) {
+            LogUtils.unhandledException(e)
+        }
         binding = ActivityMainXBinding.inflate(layoutInflater)
         binding.lifecycleOwner = this
         setContentView(binding.root)
@@ -144,6 +157,11 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
         runOnUiThread { showEncryptionDialog() }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        logcat?.destroy()
+    }
+
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         setupViews()
@@ -156,6 +174,7 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
     }
 
     override fun onBackPressed() {
+        Log.i(TAG, "".padEnd(60, '-') + " finish")
         finishAffinity()
     }
 
@@ -425,12 +444,12 @@ class MainActivityX : BaseActivity(), BatchDialogFragment.ConfirmListener {
     }
 
     fun refreshView() {
+        Log.i(TAG, "refreshView")
         refresh(mainBoolean, (!mainBoolean && backupBoolean) || (mainBoolean && sheetApp != null))
     }
 
     // Most functionality could be added to the view model
     fun refresh(mainBoolean: Boolean, backupOrAppSheetBoolean: Boolean) {
-        Log.d(TAG, "refreshing")
         badgeCounter = 0
         if (mainBoolean) {
             viewModel.apkCheckedList.clear()
