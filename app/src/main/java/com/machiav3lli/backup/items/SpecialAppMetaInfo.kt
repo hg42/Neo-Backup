@@ -76,6 +76,20 @@ open class SpecialAppMetaInfo : AppMetaInfo, Parcelable {
 
                 specialPackages
                         .add(AppInfo(context, SpecialAppMetaInfo(
+                                "special.users",
+                                specPrefix + context.getString(R.string.spec_users),
+                                Build.VERSION.RELEASE,
+                                Build.VERSION.SDK_INT, arrayOf(
+                                "/data/system/users/",
+                                "/data/misc_ce/",
+                                "/data/misc_de/",
+                                "/data/system_ce/",
+                                "/data/system_de/",
+                                "/data/vendor_ce/",
+                                "/data/vendor_de/"
+                        ))))
+                specialPackages
+                        .add(AppInfo(context, SpecialAppMetaInfo(
                                 "special.accounts",
                                 specPrefix + context.getString(R.string.spec_accounts),
                                 Build.VERSION.RELEASE,
