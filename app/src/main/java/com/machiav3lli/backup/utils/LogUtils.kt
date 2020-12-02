@@ -87,7 +87,7 @@ class LogUtils(var context: Context) {
                     else                   -> " ($whatStr)"
                 }
             }
-            var message = "unhandledException: " + e.toString() + whatStr + "\n" + e.stackTrace.toString()
+            var message = "unexpected: " + e.toString() + whatStr + "\n" + e.stackTrace.joinToString("\n", "\n", "\n")
             Log.e(TAG, message)
         }
     }
