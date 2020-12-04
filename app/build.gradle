@@ -22,12 +22,24 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs'
 
 android {
+
+    signingConfigs {
+        hg42test {
+            storeFile file('/z/src/android/sign-zip/hg42.keystore')
+            storePassword 'hg42pwd'
+            keyAlias 'cert'
+            keyPassword 'hg42pwd'
+        }
+    }
+
     compileSdkVersion 30
+
+    //publishNonDefault true
 
     defaultConfig {
         applicationId 'com.machiav3lli.backup'
-        versionCode = 4000
-        versionName = "4.0.0"
+        versionCode = "500${versionAge}".toInteger()
+        versionName = "5.0.0.${versionString}"
         minSdkVersion 26
         targetSdkVersion 30
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -37,22 +49,52 @@ android {
                              "room.incremental":"true"]
             }
         }
+        println("\n---------- version code: ${android.defaultConfig.versionCode} name: ${android.defaultConfig.versionName}\n\n")
     }
     buildTypes {
         release {
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.hg42test
         }
+        debug {
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.hg42test
+        }
+        applicationVariants.all { variant ->
+            //def buildType = variant.buildType.name
+            //println "buildType: $buildType"
+            //if (buildType == "debug") {
+            //    // do stuff
+            //}
+            variant.outputs.all { output ->
+                //outputFileName = "oabx-${variant.versionName}-${gitVersion.branchName}${variant.buildType.name=="debug"?"-debug":""}.apk"
+                outputFileName = "oabx-${versionString}${variant.buildType.name=="debug"?"-debug":""}.apk"
+                if(variant.buildType.name=="release")
+                    println("--> $outputFileName")
+            }
+        }
+    }
+
+    flavorDimensions 'version'
+    productFlavors {
+        hg42 {
+            dimension 'version'
+            applicationIdSuffix '.hg42'
+            versionNameSuffix '-hg42'
+            signingConfig signingConfigs.hg42test
+        }
+        /*
         neo {
             applicationIdSuffix '.neo'
             versionNameSuffix '-neo'
-            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            applicationIdSuffix '.debug'
-        }
+        */
     }
+
     buildFeatures {
         dataBinding true
     }
@@ -101,6 +143,9 @@ ext {
 }
 
 dependencies {
+    //releaseCompile project(path: ':app', configuration: 'release')
+    //debugCompile project(path: ':app', configuration: 'debug')
+
     // Libs
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}"
     implementation "androidx.room:room-runtime:${versions.room}"
@@ -134,4 +179,3 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:${versions.junitx}"
     androidTestImplementation "androidx.test.espresso:espresso-core:${versions.espresso}"
 }
-

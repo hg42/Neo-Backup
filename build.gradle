@@ -15,16 +15,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 buildscript {
     repositories {
         google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.20"
+        classpath 'com.android.tools.build:gradle:7.0.0-alpha02'
         classpath "android.arch.navigation:navigation-safe-args-gradle-plugin:1.0.0"
     }
+}
+
+plugins {
+    id 'com.palantir.git-version' version '0.12.3'
 }
 
 allprojects {
@@ -39,4 +43,78 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+
+
+ext.gitVersioner = [
+        defaultBranch           : "machiav3lli",     // default "master"
+        stableBranches          : [], // default [], the feature branch postfix (-dm4(6)) will not be appended on stable branches, all commits are included into the version number calculation
+        yearFactor              : 1000, 	  // default "1000", increasing every 8.57h
+        snapshotEnabled         : false,      // default false, the "-SNAPSHOT" postfix
+        localChangesCountEnabled: false,      // default false, the (<commitCount>) before -SNAPSHOT
+        shortName: { gitVersion ->            // optional closure to build a short name
+            // allows you to add your own short name logic
+            // All properties from gitVersion are available
+            // can be used for CI `System.getenv("BUILD_NUMBER")`
+
+            // i.e. use short sha1
+            return "" + gitVersion.branchVersion + "-" + gitVersion.localChanges + "-" + gitVersion.commit.subSequence(0, 7)
+            //return "" + gitVersion.branchVersion + (gitVersion.localChanges>0 ? "." + gitVersion.localChanges : "") + "-" + gitVersion.commit.subSequence(0, 7)
+            //return gitVersion.branchName + "-" //.replaceFirst("[-.0-9].*", "")
+        }
+]
+
+// import the script which runs the version generation
+//apply from: 'https://raw.githubusercontent.com/passsy/gradle-GitVersioner/master/git-versioner.gradle'
+
+// variable `gitVersionName` can be used everywhere to get the revision name
+
+
+ext {
+    def details = versionDetails()
+
+    def refTime      = new Date(120,0,1)
+    def startTime    = new Date()
+    //def startTime    = System.currentTimeMillis()
+    //def startTime    = Date.now()
+    def seconds      = ((startTime.getTime() - refTime.getTime())/1000).asType(long)
+    println("seconds:   $seconds")
+    def hours        = (seconds/60/60).asType(long)
+    println("hours:     $hours")
+    //def timestr      = startTime.format('yyMMddHHmmssSSS')
+    def timestr      = startTime.format('yyMMddHHmm')
+    versionTime      = timestr.asType(long)
+    versionAge       = (seconds/60/10).asType(long) //(hours*10 + details.commitDistance).asType(long)
+    versionLabel     = details.branchName.replace("feature-", "").replace("PR-", "")
+    versionString    = versionAge + "-" + versionLabel + "-" + details.commitDistance + "-" + details.gitHash
+                            // + (details.isCleanTag ? "" : "-DIRTY")
+/*
+    println("""\
+version passsy:
+    name:           ${gitVersion.name}
+    version:        ${gitVersion.version}
+    branchName:     ${gitVersion.branchName}
+    shortBranch:    ${gitVersion.shortBranch}
+    branchVersion:  ${gitVersion.branchVersion}
+    localChanges:   ${gitVersion.localChanges}
+    commit:         ${gitVersion.commit}
+""")
+*/
+    println("""\
+version palantir:
+    commitDistance: ${details.commitDistance}
+    lastTag:        ${details.lastTag}
+    gitHash:        ${details.gitHash}
+    gitHashFull:    ${details.gitHashFull}
+    branchName:     ${details.branchName}
+    isCleanTag:     ${details.isCleanTag}
+""")
+    println("""\
+version build:
+    startTime:      $startTime - $refTime = ${startTime - refTime}
+    versionTime:    $versionTime
+    versionAge:     $versionAge
+    versionString:  $versionString
+""")
 }
