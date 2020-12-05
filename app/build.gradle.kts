@@ -15,6 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+val buildNumber = rootProject.ext.get("buildNumber")
+val buildVersion = rootProject.ext.get("buildVersion")
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -23,20 +27,31 @@ plugins {
 }
 
 android {
+
+    signingConfigs {
+        create("hg42test") {
+            storeFile = file("/z/src/android/sign-zip/hg42.keystore")
+            storePassword = "hg42pwd"
+            keyAlias = "cert"
+            keyPassword = "hg42pwd"
+        }
+    }
     compileSdkVersion(30)
 
     defaultConfig {
+
         applicationId = "com.machiav3lli.backup"
         minSdkVersion(26)
         targetSdkVersion(29)
-        versionCode = 4000
-        versionName = "4.0.0"
+        versionCode = "50$buildNumber".toInt()
+        versionName = "5.0.0.$buildVersion"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments(mapOf("room.schemaLocation" to "$projectDir/schemas", "room.incremental" to "true"))
             }
         }
+        println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
     buildTypes {
         named("release") {
@@ -47,16 +62,21 @@ android {
             )
         }
         named("debug") {
-            applicationIdSuffix = ".debug"
-        }
-        create("neo") {
-            applicationIdSuffix = ".neo"
-            versionNameSuffix = "-neo"
-            // minifyEnabled = true
+            //applicationIdSuffix = ".debug"
+            minifyEnabled(false)
             proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
             )
+        }
+        applicationVariants.all {
+            val variant = this
+            variant.outputs.all {
+                val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                //println("--< ${output.outputFileName}")
+                output.outputFileName = "oabx-${output.name.replace("-release", "")}-${buildVersion}.apk"
+                //println("--> ${output.outputFileName}")
+            }
         }
     }
     buildFeatures {
@@ -76,9 +96,26 @@ android {
     lintOptions {
         isAbortOnError = false
     }
+    flavorDimensions("dev")
+    productFlavors {
+        create("hg42") {
+            dimension = "dev"
+            applicationIdSuffix = ".hg42"
+            versionNameSuffix = "-hg42"
+            signingConfig = signingConfigs.getByName("hg42test")
+        }
+        /*
+        create("neo") {
+            dimension = "dev"
+            applicationIdSuffix = ".neo"
+            versionNameSuffix = "-neo"
+        }
+        */
+    }
 }
 
 val versions: java.util.Properties = System.getProperties()
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions["kotlin"]}")
     // Libs
