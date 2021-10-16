@@ -15,7 +15,8 @@
  ~ You should have received a copy of the GNU Affero General Public License
  ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  -->
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.preference.CheckBoxPreference
         android:defaultValue="false"
@@ -51,4 +52,25 @@
         android:key="killBeforeAction"
         android:summary="@string/prefs_stopcont_summary"
         android:title="@string/prefs_stopcont" />
+
+
+    <androidx.preference.SeekBarPreference
+        android:defaultValue="250"
+        android:icon="@drawable/ic_compression_level"
+        android:key="retrieveAppMetaSleepMs"
+        android:max="30000"
+        android:summary=""
+        android:title="retrieveAppMetaSleepMs"
+        app:min="1"
+        app:showSeekBarValue="true" />
+
+    <androidx.preference.SeekBarPreference
+        android:defaultValue="5"
+        android:icon="@drawable/ic_compression_level"
+        android:key="retrieveAppMetaAttempts"
+        android:max="100"
+        android:summary=""
+        android:title="retrieveAppMetaAttempts"
+        app:min="1"
+        app:showSeekBarValue="true" />
 </androidx.preference.PreferenceScreen>
