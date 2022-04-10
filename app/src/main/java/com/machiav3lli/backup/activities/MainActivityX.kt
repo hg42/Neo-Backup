@@ -95,14 +95,14 @@ class MainActivityX : BaseActivity() {
                     )
                     object : Thread() {
                         override fun run() {
+                            val showTime = Toast.LENGTH_LONG * 5
                             Looper.prepare()
-                            repeat(5) {
-                                Toast.makeText(
-                                    context,
-                                    "Uncaught Exception\n${e.message}\n${e.cause}\nrestarting application...",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
+                            Toast.makeText(
+                                context,
+                               "Uncaught Exception\n${e.message}\n${e.cause}\nrestarting application...",
+                                showTime
+                            ).show()
+                            Thread.sleep(showTime.toLong())
                             Looper.loop()
                         }
                     }.start()
