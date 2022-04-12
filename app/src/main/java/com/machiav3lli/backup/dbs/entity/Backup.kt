@@ -17,6 +17,7 @@
  */
 package com.machiav3lli.backup.dbs.entity
 
+import android.Manifest
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
