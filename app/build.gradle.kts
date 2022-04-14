@@ -194,7 +194,7 @@ android {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.10")
+    //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.20")
     //implementation("androidx.core:core-ktx:1.7.0")
 
     // Libs
