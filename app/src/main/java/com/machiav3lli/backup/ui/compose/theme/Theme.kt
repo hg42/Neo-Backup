@@ -23,17 +23,25 @@ fun AppTheme(
     CompositionLocalProvider(LocalShapes provides ShapeSize()) {
         MaterialTheme(
             colorScheme = when {
-                darkTheme -> DarkColors
-                else -> LightColors
-            }.copy(
-                primary = getPrimaryColor(LocalContext.current.accentStyle),
-                primaryContainer = getPrimaryColor(LocalContext.current.accentStyle)
-                    .brighter(0.2f),
-                inverseOnSurface = getPrimaryColor(LocalContext.current.accentStyle),
-                secondary = getSecondaryColor(LocalContext.current.secondaryStyle),
-                secondaryContainer = getSecondaryColor(LocalContext.current.secondaryStyle)
-                    .brighter(0.2f),
-            ),
+                darkTheme -> DarkColors.copy(
+                    primary = getPrimaryColor(LocalContext.current.accentStyle),
+                    primaryContainer = getPrimaryColor(LocalContext.current.accentStyle)
+                        .darker(0.2f),
+                    inverseOnSurface = getPrimaryColor(LocalContext.current.accentStyle),
+                    secondary = getSecondaryColor(LocalContext.current.secondaryStyle),
+                    secondaryContainer = getSecondaryColor(LocalContext.current.secondaryStyle)
+                        .darker(0.2f),
+                )
+                else -> LightColors.copy(
+                    primary = getPrimaryColor(LocalContext.current.accentStyle),
+                    primaryContainer = getPrimaryColor(LocalContext.current.accentStyle)
+                        .brighter(0.2f),
+                    inverseOnSurface = getPrimaryColor(LocalContext.current.accentStyle),
+                    secondary = getSecondaryColor(LocalContext.current.secondaryStyle),
+                    secondaryContainer = getSecondaryColor(LocalContext.current.secondaryStyle)
+                        .brighter(0.2f),
+                )
+            },
             content = content
         )
     }
