@@ -250,9 +250,11 @@ fun List<AppInfo>.toPackageList(
                     }
                 }
                 .toList()
-        packageList = packagesWithBackup.plus(packageList.filterNot {
-            it.packageName in packagesWithBackup.map(Package::packageName)
-        }).toMutableList()
+        packageList = packagesWithBackup.plus(
+            packageList.filterNot {
+                it.packageName in packagesWithBackup.map(Package::packageName)
+            }
+        ).toMutableList()
     }
 
     val afterAllTime = System.currentTimeMillis()

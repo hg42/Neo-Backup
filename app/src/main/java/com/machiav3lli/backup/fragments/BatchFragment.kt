@@ -170,7 +170,7 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
     fun BatchPage() {
 
         // TODO include tags in search
-        val list by viewModel.filteredList.observeAsState(null) //TODO hg42 null or not???
+        val list by viewModel.filteredList.observeAsState()
         val query by viewModel.searchQuery.observeAsState("")
 
         val filterPredicate = { item: Package ->

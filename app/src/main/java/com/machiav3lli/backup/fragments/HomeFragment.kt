@@ -194,9 +194,9 @@ class HomeFragment : NavigationFragment(),
     @Composable
     fun HomePage() {
         // TODO include tags in search
-        val list by viewModel.filteredList.observeAsState(null)
+        val list by viewModel.filteredList.observeAsState()
         val query by viewModel.searchQuery.observeAsState("")
-        val updatedApps by viewModel.updatedApps.observeAsState(null)
+        val updatedApps by viewModel.updatedApps.observeAsState()
         var updatedVisible by remember(viewModel.filteredList.value) { mutableStateOf(false) }
 
         val filterPredicate = { item: Package ->
