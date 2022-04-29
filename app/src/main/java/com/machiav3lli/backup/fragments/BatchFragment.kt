@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -49,17 +50,22 @@ import com.machiav3lli.backup.ALT_MODE_APK
 import com.machiav3lli.backup.ALT_MODE_BOTH
 import com.machiav3lli.backup.ALT_MODE_DATA
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.dialogs.BatchDialogFragment
 import com.machiav3lli.backup.dialogs.PackagesListDialogFragment
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.ui.compose.item.ActionButton
 import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.ExpandableSearchAction
 import com.machiav3lli.backup.ui.compose.item.StateChip
 import com.machiav3lli.backup.ui.compose.item.TopBar
+import com.machiav3lli.backup.ui.compose.item.TopBarButton
 import com.machiav3lli.backup.ui.compose.recycler.BatchPackageRecycler
+import com.machiav3lli.backup.ui.compose.recycler.ProgressPackageRecycler
 import com.machiav3lli.backup.ui.compose.theme.APK
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.compose.theme.Data
@@ -77,6 +83,7 @@ import timber.log.Timber
 open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragment(),
     BatchDialogFragment.ConfirmListener, RefreshViewController {
     lateinit var viewModel: BatchViewModel
+    private var appSheet: AppSheet? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,7 +94,7 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
         val viewModelFactory = BatchViewModel.Factory(requireActivity().application)
         viewModel = ViewModelProvider(this, viewModelFactory)[BatchViewModel::class.java]
         return ComposeView(requireContext()).apply {
-            setContent { BatchPage() }
+            setContent { BatchOrProgressPage() }
         }
     }
 
@@ -163,7 +170,7 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
     fun BatchPage() {
 
         // TODO include tags in search
-        val list by viewModel.filteredList.observeAsState(null)
+        val list by viewModel.filteredList.observeAsState(null) //TODO hg42 null or not???
         val query by viewModel.searchQuery.observeAsState("")
 
         val filterPredicate = { item: Package ->
@@ -179,6 +186,8 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
         var allDataChecked by remember {
             mutableStateOf(viewModel.dataCheckedList.size == list?.size)
         }
+        val packagesState = WorkHandler.packagesState
+        val batchesRunning = WorkHandler.batchesStarted > 0
 
         AppTheme(
             darkTheme = isSystemInDarkTheme()
@@ -336,6 +345,73 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
                 }
             }
         }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun ProgressPage() {
+
+        val list by viewModel.filteredList.observeAsState()     //TODO hg42 not filteredList
+
+        val packagesState = WorkHandler.packagesState
+
+        AppTheme(
+            darkTheme = isSystemInDarkTheme()
+        ) {
+            Scaffold(
+                topBar = {
+                    TopBar(
+                        title = "Progress"
+                    ) {
+                        TopBarButton(
+                            icon = painterResource(id = R.drawable.ic_close),
+                            description = stringResource(id = R.string.dialogCancelAll),
+                            onClick = { OABX.work.cancel() }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .fillMaxSize()
+                ) {
+                    val packagesAll = list ?: listOf()
+                    val packagesRunning = packagesAll.filter { packagesState.get(it.packageName)?.first()?.isLowerCase() ?: false }
+                    val packagesQueued = packagesAll.filter { packagesState.get(it.packageName) == "..." }
+                    val packages = packagesRunning + packagesQueued
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        progress = 1f - (packages.size.toFloat() / packagesState.size)
+                    )
+                    ProgressPackageRecycler(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        productsList = packages,
+                        onClick = { item ->
+                            if (appSheet != null) appSheet?.dismissAllowingStateLoss()
+                            appSheet = AppSheet(item, AppExtras(item.packageName))
+                            appSheet?.showNow(
+                                parentFragmentManager,
+                                "Package ${item.packageName}"
+                            )
+                        }
+
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun BatchOrProgressPage() {
+        val batchesRunning = WorkHandler.batchesStarted > 0
+        if (batchesRunning)
+            ProgressPage()
+        else
+            BatchPage()
     }
 
     class BackupFragment : BatchFragment(true)

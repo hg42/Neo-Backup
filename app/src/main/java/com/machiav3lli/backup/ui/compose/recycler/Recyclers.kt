@@ -16,6 +16,7 @@ import com.machiav3lli.backup.ui.compose.item.BatchPackageItem
 import com.machiav3lli.backup.ui.compose.item.ExportedScheduleItem
 import com.machiav3lli.backup.ui.compose.item.LogItem
 import com.machiav3lli.backup.ui.compose.item.MainPackageItem
+import com.machiav3lli.backup.ui.compose.item.ProgressPackageItem
 import com.machiav3lli.backup.ui.compose.item.ScheduleItem
 import com.machiav3lli.backup.ui.compose.item.UpdatedPackageItem
 
@@ -78,6 +79,18 @@ fun BatchPackageRecycler(
         )
     }
 }
+
+@Composable
+fun ProgressPackageRecycler(
+    modifier: Modifier = Modifier.fillMaxSize(),
+    productsList: List<Package>?,
+    onClick: (Package) -> Unit = {}
+) {
+    VerticalItemList(modifier = modifier, list = productsList) {
+        ProgressPackageItem(it, onClick)
+    }
+}
+
 
 @Composable
 fun ScheduleRecycler(
