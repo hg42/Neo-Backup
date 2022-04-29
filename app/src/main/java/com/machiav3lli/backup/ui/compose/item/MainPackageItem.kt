@@ -27,6 +27,7 @@ import coil.annotation.ExperimentalCoilApi
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.ui.compose.theme.LocalShapes
 import com.machiav3lli.backup.utils.getFormattedDate
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoilApi::class)
 @Composable
@@ -41,7 +42,8 @@ fun MainPackageItem(
             else "android.resource://${packageItem.packageName}/${packageItem.packageInfo.icon}"
         )
     }
-    packageItem.ensureBackupList()
+    //packageItem.ensureBackupList()
+    Timber.i("recompose MainPackageItem ${packageItem.packageName}")
 
     OutlinedCard(
         modifier = Modifier,
