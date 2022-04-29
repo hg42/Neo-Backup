@@ -29,10 +29,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
+import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.legendList
 import com.machiav3lli.backup.linksList
@@ -91,12 +94,19 @@ class HelpSheet : BaseSheet() {
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = stringResource(id = R.string.app_name),
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1
-                        )
+                        Column(modifier = Modifier.wrapContentSize()) {
+                            Text(
+                                text = stringResource(id = R.string.app_name),
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                            )
+                            Text(
+                                text = BuildConfig.VERSION_NAME,
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 1
+                            )
+                        }
                         RoundButton(icon = painterResource(id = R.drawable.ic_arrow_down)) {
                             dismissAllowingStateLoss()
                         }
