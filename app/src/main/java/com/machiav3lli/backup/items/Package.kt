@@ -261,15 +261,15 @@ class Package {
     }
 
     val backupsNewestFirst: List<Backup>
-        get() = backupList.sortedByDescending { item -> item.backupDate }
+        get() = ensureBackupList().sortedByDescending { item -> item.backupDate }
 
     val latestBackup: Backup?
-        get() = backupList.maxByOrNull { it.backupDate }
+        get() = ensureBackupList().maxByOrNull { it.backupDate }
 
     val oldestBackup: Backup?
-        get() = backupList.minByOrNull { it.backupDate }
+        get() = ensureBackupList().minByOrNull { it.backupDate }
 
-    val numberOfBackups: Int get() = backupList.size
+    val numberOfBackups: Int get() = ensureBackupList().size
 
     private val isApp: Boolean
         get() = packageInfo is AppInfo && !packageInfo.isSpecial

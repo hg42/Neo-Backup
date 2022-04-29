@@ -45,7 +45,7 @@ fun ProgressPackageItem(
     }
     */
     val state = WorkHandler.packagesState.get(packageItem.packageName) ?: "   "
-    packageItem.ensureBackupList()
+    //packageItem.ensureBackupList()
 
     OutlinedCard(
         modifier = Modifier,
