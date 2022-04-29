@@ -61,6 +61,11 @@ class MainViewModel(
         }
 
     init {
+        val startTime = System.currentTimeMillis()
+        val showToasts = OABX.prefFlag(PREFS_LOADINGTOASTS, true)
+
+        OABX.activity?.showToast("MainViewModel...", showToasts)
+
         blocklist.addSource(db.blocklistDao.liveAll, blocklist::setValue)
         backupsMap.addSource(db.backupDao.allLive) {
             viewModelScope.launch {
@@ -95,6 +100,11 @@ class MainViewModel(
                 }
             }
         }
+        val after = System.currentTimeMillis()
+        OABX.activity?.showToast(
+            "MainViewModel: ${((after - startTime) / 1000 + 0.5).toInt()} sec",
+            showToasts
+        )
     }
 
     // TODO add to interface
@@ -114,8 +124,16 @@ class MainViewModel(
 
     private suspend fun recreateAppInfoList() =
         withContext(Dispatchers.IO) {
+            val showToasts = OABX.prefFlag(PREFS_LOADINGTOASTS, true)
+            val startTime = System.currentTimeMillis()
+            OABX.activity?.showToast("recreateAppInfoList ...", showToasts)
             appContext.updateAppInfoTable(db.appInfoDao)
             appContext.updateBackupTable(db.backupDao)
+            val after = System.currentTimeMillis()
+            OABX.activity?.showToast(
+                "recreateAppInfoList: ${((after - startTime) / 1000 + 0.5).toInt()} sec",
+                showToasts
+            )
         }
 
     fun updatePackage(packageName: String) {
