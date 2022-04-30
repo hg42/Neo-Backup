@@ -47,6 +47,10 @@
         android:summary="@string/prefs_allowdowngrade_summary"
         android:title="@string/prefs_allowdowngrade" />
 
+
+
+
+
     <!-- developer settings -->
 
     <androidx.preference.PreferenceCategory
@@ -55,6 +59,12 @@
         android:summary="don't change unless a developer tells you"
         android:title="developer settings"
         app:initialExpandedChildrenCount="0">
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="usePackageCache"
+            android:summary="cache Packages (test if this makes a difference, especially about correctness)"
+            android:title="usePackageCache" />
 
         <androidx.preference.CheckBoxPreference
             android:defaultValue="false"

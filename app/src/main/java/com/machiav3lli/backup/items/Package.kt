@@ -434,7 +434,9 @@ class Package {
 
     companion object {
         fun get(packageName: String, creator: () -> Package): Package {
-            return OABX.app.packageCache.get(packageName) ?: creator()
+            if (OABX.prefFlag("usePackageCache", true))
+                return OABX.app.packageCache.get(packageName) ?: creator()
+            return creator()
         }
 
         fun invalidateCacheForPackage(packageName: String) {
