@@ -111,7 +111,10 @@ class HomeFragment : NavigationFragment(),
             }
         }
 
-        packageList.observe(requireActivity()) { refreshView(it) }
+        packageList.observe(requireActivity()) {
+            Timber.d("trace: packageList observe -> refreshView")
+            refreshView(it)
+        }
     }
 
     override fun onResume() {
@@ -153,7 +156,7 @@ class HomeFragment : NavigationFragment(),
     }
 
     override fun refreshView(list: MutableList<Package>?) {
-        Timber.d("refreshing")
+        Timber.d("trace: refreshView")
         sheetSortFilter = SortFilterSheet(
             requireActivity().sortFilterModel, getStats(list ?: mutableListOf())
         )
@@ -192,6 +195,7 @@ class HomeFragment : NavigationFragment(),
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun HomePage() {
+        Timber.d("trace: HomePage")
         // TODO include tags in search
         val list by viewModel.filteredList.observeAsState(null)
         val query by viewModel.searchQuery.observeAsState("")
