@@ -35,11 +35,17 @@ fun <T> VerticalItemList(
     modifier: Modifier = Modifier.fillMaxSize(),
     list: List<T>?,
     itemKey: ((T) -> Any)? = null,
+    isRefreshing: Boolean = false,
     itemContent: @Composable LazyItemScope.(T) -> Unit
 ) {
+    val background =
+        if (isRefreshing)
+            MaterialTheme.colorScheme.tertiaryContainer
+        else
+            MaterialTheme.colorScheme.surface
     Box(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background),
+            .background(background),
         contentAlignment = if (list.isNullOrEmpty()) Alignment.Center else Alignment.TopStart
     ) {
         when {
