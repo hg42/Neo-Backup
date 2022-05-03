@@ -277,6 +277,7 @@ class HomeFragment : NavigationFragment(),
                             .weight(1f)
                             .fillMaxWidth(),
                         productsList = queriedList,
+                        isRefreshing = ! requireMainActivity().viewModel.refreshing.value.equals(0),
                         onClick = { item ->
                             if (appSheet != null) appSheet?.dismissAllowingStateLoss()
                             appSheet = AppSheet(item, AppExtras(item.packageName))
