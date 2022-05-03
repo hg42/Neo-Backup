@@ -18,6 +18,7 @@
 package com.machiav3lli.backup.viewmodels
 
 import android.app.Application
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
@@ -58,6 +59,7 @@ class MainViewModel(
 
     // TODO fix force refresh on changing backup directory or change method
     val isNeedRefresh = MutableLiveData(false)
+    var refreshing = mutableStateOf(0)
     var appExtrasList: MutableList<AppExtras>
         get() = db.appExtrasDao.all
         set(value) {
@@ -120,8 +122,10 @@ class MainViewModel(
 
     private suspend fun recreateAppInfoList() =
         withContext(Dispatchers.IO) {
+            refreshing.value++;
             appContext.updateAppInfoTable(db.appInfoDao)
             appContext.updateBackupTable(db.backupDao)
+            refreshing.value--;
         }
 
     fun updatePackage(packageName: String) {
@@ -134,6 +138,7 @@ class MainViewModel(
 
     private suspend fun updateDataOf(packageName: String) =
         withContext(Dispatchers.IO) {
+            refreshing.value++;
             invalidateCacheForPackage(packageName)
             val appPackage = packageList.value?.find { it.packageName == packageName }
             try {
@@ -158,6 +163,7 @@ class MainViewModel(
             } catch (e: AssertionError) {
                 Timber.w(e.message ?: "")
             }
+            refreshing.value--;
         }
 
     fun updateExtras(appExtras: AppExtras) {

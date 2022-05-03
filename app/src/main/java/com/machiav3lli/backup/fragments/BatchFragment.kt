@@ -276,9 +276,10 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
                             .weight(1f)
                             .fillMaxWidth(),
                         productsList = list?.filter(filterPredicate),
-                        !backupBoolean,
-                        viewModel.apkCheckedList,
-                        viewModel.dataCheckedList,
+                        isRefreshing = ! requireMainActivity().viewModel.refreshing.value.equals(0),
+                        restore = !backupBoolean,
+                        apkCheckedList = viewModel.apkCheckedList,
+                        dataCheckedList = viewModel.dataCheckedList,
                         onApkClick = { item: Package, b: Boolean ->
                             if (b) viewModel.apkCheckedList.add(item.packageName)
                             else viewModel.apkCheckedList.remove(item.packageName)

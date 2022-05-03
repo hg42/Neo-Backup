@@ -222,6 +222,7 @@ fun Context.updateAppInfoTable(appInfoDao: AppInfoDao) {
     val startTime = System.currentTimeMillis()
     val showToasts = OABX.prefFlag(PREFS_LOADINGTOASTS, true)
 
+    OABX.main?.viewModel?.refreshing?.value?.inc()
     OABX.activity?.showToast("updateAppInfoTable...", showToasts)
 
     val pm = packageManager
@@ -281,12 +282,14 @@ fun Context.updateAppInfoTable(appInfoDao: AppInfoDao) {
         "updateAppInfoTable: ${((afterTime - startTime) / 1000 + 0.5).toInt()} sec",
         showToasts
     )
+    OABX.main?.viewModel?.refreshing?.value?.dec()
 }
 
 fun Context.updateBackupTable(backupDao: BackupDao) {
     val startTime = System.currentTimeMillis()
     val showToasts = OABX.prefFlag(PREFS_LOADINGTOASTS, true)
 
+    OABX.main?.viewModel?.refreshing?.value?.inc()
     OABX.activity?.showToast("updateBackupTable...", showToasts)
 
     val directoriesInBackupRoot = getBackupPackageDirectories()
@@ -321,6 +324,7 @@ fun Context.updateBackupTable(backupDao: BackupDao) {
         "updateBackupTable: ${((afterTime - startTime) / 1000 + 0.5).toInt()} sec",
         showToasts
     )
+    OABX.main?.viewModel?.refreshing?.value?.dec()
 }
 
 @Throws(
