@@ -368,6 +368,8 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
         val list by viewModel.filteredList.observeAsState()     //TODO hg42 not filteredList
 
         val packagesState = WorkHandler.packagesState
+        val refreshing by viewModel.refreshing.observeAsState()
+        val progress by viewModel.progress.observeAsState(Pair(false, 0f))
 
         AppTheme(
             darkTheme = isSystemInDarkTheme()
@@ -393,17 +395,27 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
                     val packagesAll = list ?: listOf()
                     val packagesRunning = packagesAll.filter { packagesState.get(it.packageName)?.first()?.isLowerCase() ?: false }
                     val packagesQueued = packagesAll.filter { packagesState.get(it.packageName) == "..." }
-                    val packages = packagesRunning + packagesQueued
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        progress = 1f - (packages.size.toFloat() / packagesState.size)
-                    )
+                    val packagesRemain = packagesRunning + packagesQueued
+                    AnimatedVisibility(visible = refreshing ?: false) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    AnimatedVisibility(visible = progress?.first == true) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            progress = 1f - (packagesRemain.size.toFloat() / packagesState.size)
+                        )
+                    }
+                    AnimatedVisibility(visible = progress?.first == true) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            progress = progress.second
+                        )
+                    }
                     ProgressPackageRecycler(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
-                        productsList = packages,
+                        productsList = packagesRemain,
                         onClick = { item ->
                             if (appSheet != null) appSheet?.dismissAllowingStateLoss()
                             appSheet = AppSheet(item, AppExtras(item.packageName))
