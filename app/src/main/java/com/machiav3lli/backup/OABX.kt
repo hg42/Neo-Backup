@@ -43,6 +43,8 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
+typealias BuildConf = com.machiav3lli.backup.BuildConfig
+
 class OABX : Application() {
 
     // packages are an external resource, so handle them as a singleton
@@ -225,3 +227,4 @@ class OABX : Application() {
         }
     }
 }
+
