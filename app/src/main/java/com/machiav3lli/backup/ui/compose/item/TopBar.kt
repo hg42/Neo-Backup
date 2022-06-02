@@ -127,7 +127,7 @@ fun ExpandedSearchView(
 
     Row(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.7F)
             .background(
                 color = Color.Transparent,
                 shape = MaterialTheme.shapes.medium
