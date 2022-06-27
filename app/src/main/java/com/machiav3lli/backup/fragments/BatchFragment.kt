@@ -290,6 +290,7 @@ open class BatchFragment(private val backupBoolean: Boolean) : NavigationFragmen
                             .weight(1f)
                             .fillMaxWidth(),
                         productsList = filteredList,
+                        isRefreshing = ! requireMainActivity().viewModel.refreshing.value.equals(0),
                         restore = !backupBoolean,
                         apkCheckedList = viewModel.apkCheckedList,
                         dataCheckedList = viewModel.dataCheckedList,

@@ -24,9 +24,10 @@ import com.machiav3lli.backup.ui.compose.item.UpdatedPackageItem
 fun HomePackageRecycler(
     modifier: Modifier = Modifier,
     productsList: List<Package>?,
+    isRefreshing: Boolean = false,
     onClick: (Package) -> Unit = {}
 ) {
-    VerticalItemList(modifier = modifier, list = productsList) {
+    VerticalItemList(modifier = modifier, list = productsList, isRefreshing = isRefreshing) {
         MainPackageItem(it, onClick)
     }
 }
@@ -61,13 +62,14 @@ fun BatchPackageRecycler(
     modifier: Modifier = Modifier.fillMaxSize(),
     productsList: List<Package>?,
     restore: Boolean = false,
+    isRefreshing: Boolean = false,
     apkCheckedList: MutableSet<String> = mutableSetOf(),
     dataCheckedList: MutableSet<String> = mutableSetOf(),
     onApkClick: (Package, Boolean) -> Unit = { _: Package, _: Boolean -> },
     onDataClick: (Package, Boolean) -> Unit = { _: Package, _: Boolean -> },
     onClick: (Package, Boolean, Boolean) -> Unit = { _: Package, _: Boolean, _: Boolean -> }
 ) {
-    VerticalItemList(modifier = modifier, list = productsList) {
+    VerticalItemList(modifier = modifier, list = productsList, isRefreshing = isRefreshing) {
         BatchPackageItem(
             it,
             restore,
@@ -84,9 +86,10 @@ fun BatchPackageRecycler(
 fun ProgressPackageRecycler(
     modifier: Modifier = Modifier.fillMaxSize(),
     productsList: List<Package>?,
+    isRefreshing: Boolean = false,
     onClick: (Package) -> Unit = {}
 ) {
-    VerticalItemList(modifier = modifier, list = productsList) {
+    VerticalItemList(modifier = modifier, list = productsList, isRefreshing = isRefreshing) {
         ProgressPackageItem(it, onClick)
     }
 }
