@@ -297,7 +297,8 @@ class HomeFragment : NavigationFragment(),
                             .weight(1f)
                             .fillMaxWidth(),
                         productsList = queriedList,
-                        onClick = ::onClickOpenAppSheet
+                        onClick = ::onClickOpenAppSheet,
+                        isRefreshing = ! requireMainActivity().viewModel.refreshing.value.equals(0),
                     )
                     AnimatedVisibility(visible = !updatedApps.isNullOrEmpty()) {
                         Column(
