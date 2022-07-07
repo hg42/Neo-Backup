@@ -43,7 +43,9 @@ import com.machiav3lli.backup.fragments.RefreshViewController
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.items.SortFilterModel
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
+import com.machiav3lli.backup.utils.getBackupDir
 import com.machiav3lli.backup.utils.getPrivateSharedPrefs
 import com.machiav3lli.backup.utils.isEncryptionEnabled
 import com.machiav3lli.backup.utils.isRememberFiltering
@@ -54,6 +56,8 @@ import com.machiav3lli.backup.utils.setCustomTheme
 import com.machiav3lli.backup.utils.sortFilterModel
 import com.machiav3lli.backup.viewmodels.MainViewModel
 import com.topjohnwu.superuser.Shell
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import kotlin.system.exitProcess
 
@@ -139,7 +143,14 @@ class MainActivityX : BaseActivity() {
             needRefresh = true
         }
         viewModel.packageList.observe(this) { }
-        viewModel.backupsMap.observe(this) { }
+        viewModel.backupsMap.observe(this) { backupsMap ->
+            //TODO hg42 it could be so nice :-)
+            // val backupDir = context.getBackupDir()
+            // if(backupDir.isDirectory) {
+            //     val json = Json.encodeToString(backupsMap)
+            //     StorageFile(backupDir, ".cache").outputStream()?.write(json.toByteArray())
+            // }
+        }
         viewModel.isNeedRefresh.observe(this) {
             if (it) {
                 if (viewModel.refreshing.value == 0) {
