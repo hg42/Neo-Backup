@@ -132,6 +132,8 @@ fun Context.getInstalledPackageList(blockList: List<String> = listOf()): Mutable
         directoriesInBackupRoot
             .map {
                 it.listFiles()
+                    //TODO hg42 handle bad property files (delete it)
+                    //TODO hg42 handle directories without properties file (delete it)
                     .filter(StorageFile::isPropertyFile)
                     .forEach { propFile ->
                         try {

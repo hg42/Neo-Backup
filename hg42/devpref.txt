@@ -1,0 +1,193 @@
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="showInfoLogBar"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_showInfoLogBar" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="cachePackages"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_usePackageCache" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="usePackageCacheOnUpdate"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_usePackageCacheOnUpdate" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="useColumnNameSAF"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useColumnNameSAF" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="cancelOnStart"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_cancelOnStart" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="useAlarmClock"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useAlarmClock" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="useExactAlarm"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useExactAlarm" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="pauseApps"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_pauseApps" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pmSuspend"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_pmSuspend" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="backupTarCmd"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_backupTarCmd" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="restoreTarCmd"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_restoreTarCmd" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="strictHardLinks"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_strictHardLinks" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="restoreAvoidTemporaryCopy"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_restoreAvoidTemporaryCopy" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="shadowRootFileForSAF"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_shadowRootFileForSAF" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="allowShadowingDefault"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_allowShadowingDefault" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="useFindLs"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useFindLs" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="useAssembleFileListOneStep"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useAssembleFileListOneStep" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="catchUncaughtException"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_catchUncaughtException" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="50"
+            android:inputType="number"
+            android:key="maxCrashLines"
+            android:max="1000"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_maxCrashLines"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="invalidateSelective"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_invalidateSelective" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="cacheUris"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_cacheUris" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="cacheFileLists"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_cacheFileLists" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="1"
+            android:inputType="number"
+            android:key="maxRetriesPerPackage"
+            android:max="10"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_maxRetriesPerPackage"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="0"
+            android:inputType="number"
+            android:key="delayBeforeRefreshAppInfo"
+            android:max="10"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_delayBeforeRefreshAppInfo"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="30"
+            android:inputType="number"
+            android:key="refreshAppInfoTimeout"
+            android:max="120"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_refreshAppInfoTimeout"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="true"
+            android:key="useForeground"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useForeground" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="useWorkManagerForSingleBackup"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useWorkManagerForSingleBackup" />
+
+        <androidx.preference.CheckBoxPreference
+            android:defaultValue="false"
+            android:key="useWorkManagerForSingleRestore"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_useWorkManagerForSingleRestore" />
+
+        <androidx.preference.SeekBarPreference
+            android:defaultValue="0"
+            android:inputType="number"
+            android:key="fakeBackupSeconds"
+            android:max="1200"
+            android:summary="@string/prefs__summary"
+            android:title="@string/prefs_fakeBackupSeconds"
+            app:min="0"
+            app:showSeekBarValue="true" />
