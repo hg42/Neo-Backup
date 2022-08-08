@@ -1,5 +1,24 @@
 # Neo Backup  <img title="" src="./fastlane/metadata/android/en-US/images/icon.png" align="left" width="64">
 
+This is my personal fork for testing purposes.
+
+I'm not creating any official releases.
+
+This repository mainly exists to create pull requests.
+It is also meant for communicating incomplete ideas and similar that are in my development queue.
+
+So don't expect any stable code here. No guaranties for anything.
+
+Feel free to contribute and participate in the discussion.
+Please restrict Issue tracking in this repository to my local branches and changes and keep in mind it's all a snapshot from the middle of my work. Usually it's not worth to create an issue. However if I create a feature branch ("feature-...") then issues might be useful, because this will usually run in parallel to the official branch.
+
+The default branch is "work".
+Usually, the "main" branch represents the state of the upstream "main" that is the current base for my PRs.
+It usually differs from upstream when machiav3lli has pushed new commits while I am working on something.
+But I try to integrate his changes before publishing PRs. 
+
+
+
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](COC.md)
 [![GitHub repo stars](https://img.shields.io/github/stars/NeoApplications/Neo-Backup?style=flat)](https://github.com/NeoApplications/Neo-Backup/stargazers)
 [![GitHub License](https://img.shields.io/github/license/NeoApplications/Neo-Backup)](https://github.com/NeoApplications/Neo-Backup/blob/master/COPYING)

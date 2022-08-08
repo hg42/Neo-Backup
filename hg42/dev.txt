@@ -1,0 +1,29 @@
+showInfoLogBar show the info log in top bar
+usePackageCache cache Packages
+usePackageCacheOnUpdate use cached Package in updateDataOf
+useColumnNameSAF eventually disable this, if you have problems with SAF storage
+cancelOnStart cancel all remaining jobs on OAndBackupX start [needs reboot]
+useAlarmClock use the alarm clock to schedule backups, this shows an alarm icon in the notification bar [needs reboot]
+useExactAlarm if not using useAlarmClock, then use exact alarms, otherwise use inexact alarms which may be better for battery [needs reboot]
+pauseApps pause apps during backups and restores to avoid inconsistent backups caused by ongoing file changes or other conflicts
+pmSuspend additionally use pm suspend command to pause apps
+backupTarCmd use tar shell command for backup
+restoreTarCmd use tar shell command for restore
+strictHardLinks for API tar only: unpack hard links as hard links (otherwise they become symlinks)
+restoreAvoidTemporaryCopy for API tar only: avoid using a temporary directory to extract files
+shadowRootFileForSAF use superuser file system access instead of SAF if the real file system can be found
+allowShadowingDefault the default for StorageFile creation (enable for now, if you want to use root shadow at all)
+useFindLs use 'find ... | xargs ... ls ...' for recursive FileInfo collection
+useAssembleFileListOneStep (tarapi) collect whole tree in one step
+catchUncaughtException unexpected exceptions are caught and output to logcat and app is restarted [needs reboot]
+maxCrashLines maximum number of lines to be saved from the logcat on an uncaughtException
+invalidateSelective
+cacheUris
+cacheFileLists
+maxRetriesPerPackage maximum number of retires per Package per Batch
+delayBeforeRefreshAppInfo [seconds] delay between pm install and refreshing AppInfo
+refreshAppInfoTimeout [seconds] maximum time to retry on refreshing AppInfo after pm install
+useForeground use foreground notifications to ensure app keeps running (if wakelock isn't enough)
+useWorkManagerForSingleBackup use work manager for single backup from app sheet
+useWorkManagerForSingleRestore use work manager for single restore from app sheet (note this is for test only, for now it doesn't restore the selected backup but the newest)
+fakeBackupSeconds [seconds] time for faked backups, 0 = do not fake
