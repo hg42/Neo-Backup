@@ -828,6 +828,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 "path '$extractTo' does not contain ${app.packageName}"
             )
 
+        val uidgidcon = shell.suGetOwnerGroupContext(extractTo)
         genericRestoreFromArchive(
             dataType,
             backupArchive,
@@ -837,6 +838,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
             backup.iv,
             context.externalCacheDir?.let { RootFile(it) },
             isOldVersion(backup)
+        )
+        genericRestorePermissions(
+            dataType,
+            extractTo,
+            uidgidcon
         )
     }
 
@@ -877,6 +883,8 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                         backupFilename
                     )
                 )
+
+            val uidgidcon = shell.suGetOwnerGroupContext(extractTo)
             genericRestoreFromArchive(
                 dataType,
                 backupArchive,
@@ -886,7 +894,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 backup.iv,
                 context.externalCacheDir?.let { RootFile(it) },
             )
-
+            genericRestorePermissions(
+                dataType,
+                extractTo,
+                uidgidcon
+            )
         }
     }
 
@@ -927,6 +939,8 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                         backupFilename
                     )
                 )
+
+            val uidgidcon = shell.suGetOwnerGroupContext(extractTo)
             genericRestoreFromArchive(
                 dataType,
                 backupArchive,
@@ -936,7 +950,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 backup.iv,
                 context.externalCacheDir?.let { RootFile(it) }
             )
-
+            genericRestorePermissions(
+                dataType,
+                extractTo,
+                uidgidcon
+            )
         }
     }
 
