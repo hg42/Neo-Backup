@@ -93,7 +93,7 @@ val pref_logToSystemLogcat = BooleanPref(
 val pref_trace = BooleanPref(
     key = "dev-trace.trace",
     summary = "global switch for all traceXXX options",
-    defaultValue = BuildConfig.DEBUG
+    defaultValue = BuildConfig.DEBUG || BuildConfig.APPLICATION_ID.contains("hg42")
 )
 
 val traceSection = TraceUtils.TracePref(
@@ -209,9 +209,10 @@ class OABX : Application() {
         val lastLogMessages = mutableListOf<String>()
         var lastErrorPackage = ""
         var lastErrorCommand = ""
-        var logSections = mutableMapOf<String, Int>().withDefault { 0 }     //TODO hg42 use AtomicInteger? but map is synchronized anyways
+        var logSections =
+            mutableMapOf<String, Int>().withDefault { 0 }     //TODO hg42 use AtomicInteger? but map is synchronized anyways
 
-        init  {
+        init {
 
             initializedPrefs = false
 
@@ -247,12 +248,14 @@ class OABX : Application() {
                         // ignore
                         OABX.lastLogMessages.clear()
                         OABX.lastLogMessages.add("$date E LOG : while adding or limiting log lines")
-                        OABX.lastLogMessages.add("$date E LOG : ${
-                            LogsHandler.message(
-                                e,
-                                backTrace = true
-                            )
-                        }")
+                        OABX.lastLogMessages.add(
+                            "$date E LOG : ${
+                                LogsHandler.message(
+                                    e,
+                                    backTrace = true
+                                )
+                            }"
+                        )
                     }
                 }
 
@@ -287,7 +290,7 @@ class OABX : Application() {
                 count = logSections.getValue(section)
                 logSections[section] = count - 1
             }
-            traceSection { "*** ${"|---".repeat(count-1)}/ $section" }
+            traceSection { "*** ${"|---".repeat(count - 1)}/ $section" }
             //if (count == 0 && xxx)  ->Log                             //TODO hg42
         }
 

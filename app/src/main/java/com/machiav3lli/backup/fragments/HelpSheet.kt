@@ -120,7 +120,7 @@ class HelpSheet : BaseSheet() {
                         )
                         Text(
                             text = BuildConfig.VERSION_NAME,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
                                 .padding(start = 8.dp)
