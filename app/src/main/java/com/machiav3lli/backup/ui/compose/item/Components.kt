@@ -330,13 +330,13 @@ fun CardButton(
     description: String,
     onClick: () -> Unit
 ) {
-    val openPopup = remember { mutableStateOf(false) }
+    val showTooltip = remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = { openPopup.value = true }
+                onLongClick = { showTooltip.value = true }
             ),
         color = tint.let {
             if (isSystemInDarkTheme()) it.brighter(0.2f)
@@ -360,8 +360,8 @@ fun CardButton(
             )*/
         }
 
-        if (openPopup.value) {
-            Tooltip(description, openPopup)
+        if (showTooltip.value) {
+            Tooltip(description, showTooltip)
         }
     }
 
