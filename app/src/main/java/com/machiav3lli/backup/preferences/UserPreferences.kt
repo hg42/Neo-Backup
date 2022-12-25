@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BACKUP_DIRECTORY_INTENT
+import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PREFS_LANGUAGES_DEFAULT
 import com.machiav3lli.backup.R
@@ -29,11 +30,14 @@ import com.machiav3lli.backup.secondaryColorItems
 import com.machiav3lli.backup.themeItems
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsOutlineVertical
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Bug
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Clock
 import com.machiav3lli.backup.ui.compose.icons.phosphor.EyedropperSample
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FingerprintSimple
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Flask
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FolderNotch
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FunnelSimple
+import com.machiav3lli.backup.ui.compose.icons.phosphor.House
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Lock
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Swatches
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TextAa
@@ -114,7 +118,7 @@ fun UserPrefsPage() {
                 launcher.launch(BACKUP_DIRECTORY_INTENT)
             } else BaseDialog(openDialogCustom = openDialog) {
                 when (dialogsPref) {
-                    pref_languages -> ListDialogUI(
+                    pref_languages         -> ListDialogUI(
                         pref = dialogsPref as ListPref,
                         openDialogCustom = openDialog,
                         onChanged = { context.restartApp() }
@@ -159,7 +163,14 @@ val pref_appAccentColor = EnumPref(
     icon = Phosphor.EyedropperSample,
     //iconTint = MaterialTheme.colorScheme.primary,
     entries = accentColorItems,
-    defaultValue = 0
+    defaultValue = with(BuildConfig.APPLICATION_ID) {
+        when {
+            contains("hg42") -> 8
+            contains(".neo")  -> 4
+            contains("debug") -> 4
+            else             -> 0
+        }
+    }
 )
 
 val pref_appSecondaryColor = EnumPref(
@@ -168,7 +179,14 @@ val pref_appSecondaryColor = EnumPref(
     icon = Phosphor.EyedropperSample,
     //iconTint = MaterialTheme.colorScheme.secondary,
     entries = secondaryColorItems,
-    defaultValue = 0
+    defaultValue = with(BuildConfig.APPLICATION_ID) {
+        when {
+            contains(".rel")  -> 0
+            contains(".neo")  -> 1
+            contains("debug") -> 2
+            else              -> 4
+        }
+    }
 )
 
 val pref_pathBackupFolder = StringPref(
