@@ -128,9 +128,9 @@ class HelpSheet : BaseSheet() {
                         ) {
                             Text(
                                 text = BuildConfig.VERSION_NAME,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
+                                maxLines = 3,
                                 overflow = TextOverflow.Ellipsis
                             )
                             LocalContext.current.getApplicationIssuer()?.let {

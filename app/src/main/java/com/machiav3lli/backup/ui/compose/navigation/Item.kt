@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.pages.BatchPage
 import com.machiav3lli.backup.pages.HomePage
@@ -13,6 +14,7 @@ import com.machiav3lli.backup.preferences.ServicePrefsPage
 import com.machiav3lli.backup.preferences.ToolsPrefsPage
 import com.machiav3lli.backup.preferences.UserPrefsPage
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArchiveTray
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Bug
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarX
@@ -42,7 +44,14 @@ sealed class NavItem(var title: Int, var icon: ImageVector, var destination: Str
         NavItem(R.string.permission_not_granted, Phosphor.Warning, "intro_permissions")
 
     object Home :
-        NavItem(R.string.home, Phosphor.House, "home")
+        NavItem(R.string.home,
+            if(BuildConfig.APPLICATION_ID.contains("debug"))
+                Phosphor.Bug
+            else if(BuildConfig.APPLICATION_ID.contains("hg42"))
+                Phosphor.Flask
+            else
+                Phosphor.House,
+            "home")
 
     object Backup :
         NavItem(R.string.backup, Phosphor.ArchiveTray, "batch_backup")
