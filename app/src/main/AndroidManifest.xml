@@ -63,6 +63,8 @@
         android:theme="@style/AppTheme"
         tools:targetApi="32">
 
+        <profileable android:shell="true"/>
+
         <receiver
             android:name=".services.MmsReceiver"
             android:enabled="true"
