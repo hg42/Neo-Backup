@@ -56,6 +56,8 @@ import com.machiav3lli.backup.preferences.pref_iconCrossFade
 import com.machiav3lli.backup.preferences.pref_quickerList
 import com.machiav3lli.backup.preferences.pref_useBackupRestoreWithSelection
 import com.machiav3lli.backup.ui.compose.theme.LocalShapes
+import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
+import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.getBackupDir
 import com.machiav3lli.backup.utils.getFormattedDate
 import kotlinx.coroutines.delay
@@ -85,7 +87,7 @@ fun Confirmation(
 
 @Composable
 fun Selections(
-    onAction: (StorageFile) -> Unit = {}
+    onAction: (StorageFile) -> Unit = {},
 ) {
     val backupDir = OABX.context.getBackupDir()
     val selectionsDir = backupDir.findFile(SELECTIONS_FOLDER_NAME)
@@ -110,7 +112,7 @@ fun Selections(
 
 @Composable
 fun SelectionLoadMenu(
-    onAction: (List<String>) -> Unit = {}
+    onAction: (List<String>) -> Unit = {},
 ) {
     Selections {
         onAction(it.readText().lines())
@@ -121,7 +123,7 @@ fun SelectionLoadMenu(
 @Composable
 fun SelectionSaveMenu(
     selection: List<String>,
-    onAction: () -> Unit = {}
+    onAction: () -> Unit = {},
 ) {
     val name = remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -454,13 +456,40 @@ fun MainPackageContextMenu(
 }
 
 @Composable
-fun PackageIconB(pkg: Package, modifier: Modifier) {
+fun PackageIconA(pkg: Package, modifier: Modifier) {
 
     val imageData =
         if (pkg.isSpecial) pkg.packageInfo.icon
         else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
 
     PackageIcon(item = pkg, imageData = imageData, modifier = modifier)
+}
+
+@Composable
+fun PackageIconB(pkg: Package, modifier: Modifier = Modifier) {
+
+    val imageData =
+        if (pkg.isSpecial) pkg.packageInfo.icon
+        else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
+
+    val model =
+        ImageRequest.Builder(OABX.context)
+            .memoryCacheKey(pkg.packageName)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .crossfade(pref_iconCrossFade.value)
+            .data(imageData)
+            .build()
+
+    PackageIcon(item = pkg, model = model, modifier = modifier)
+}
+
+@Composable
+fun PackageIcon(pkg: Package, modifier: Modifier) {
+
+    if (pref_altPackageIcon.value)
+        PackageIconB(pkg = pkg, modifier = modifier)
+    else
+        PackageIconA(pkg = pkg, modifier = modifier)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -495,7 +524,8 @@ fun MainPackageItemA(
             containerColor = Color.Transparent
         ),
     ) {
-        if (menuExpanded.value)
+        if (menuExpanded.value) {
+            beginNanoTimer("item.menu")
             MainPackageContextMenu(
                 expanded = menuExpanded,
                 packageItem = pkg,
@@ -503,6 +533,10 @@ fun MainPackageItemA(
                 selection = selection,
                 onAction = onAction
             )
+            endNanoTimer("item.menu")
+        }
+
+        beginNanoTimer("item.selector")
 
         val iconSelector =      //TODO hg42 ideally make this global (but we have closures)
             Modifier
@@ -542,6 +576,8 @@ fun MainPackageItemA(
                     }
                 )
 
+        endNanoTimer("item.selector")
+
         Row(
             modifier = rowSelector
                 .background(
@@ -555,23 +591,27 @@ fun MainPackageItemA(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (useIcons) PackageIconA(
+            beginNanoTimer("item.icon")
+
+            if (useIcons) PackageIcon(
                 item = pkg,
                 model = iconRequest,
-                imageLoader = imageLoader,
+                imageLoader = imageLoader
             )
             else
                 Text(
                     text = when {
-                        pkg.isSpecial -> "💲"
+                        pkg.isSpecial    -> "💲"
                         !pkg.isInstalled -> "☠"
-                        pkg.isDisabled -> "😷"
-                        pkg.isSystem  -> "🤖"
-                        else          -> "🙂"
+                        pkg.isDisabled   -> "😷"
+                        pkg.isSystem     -> "🤖"
+                        else             -> "🙂"
                     },
                     modifier = iconSelector,
                     style = MaterialTheme.typography.headlineMedium
                 )
+
+            endNanoTimer("item.icon")
 
             Column(
                 modifier = Modifier.wrapContentHeight()
@@ -587,8 +627,11 @@ fun MainPackageItemA(
                         maxLines = 1,
                         style = MaterialTheme.typography.titleMedium
                     )
-                    if (useIcons)
+                    if (useIcons) {
+                        beginNanoTimer("item.labels")
                         PackageLabels(item = pkg)
+                        endNanoTimer("item.labels")
+                    }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -609,6 +652,7 @@ fun MainPackageItemA(
                     //    }"
                     //}
 
+                    beginNanoTimer("item.package")
                     Text(
                         text = pkg.packageName,
                         modifier = Modifier
@@ -620,7 +664,9 @@ fun MainPackageItemA(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    endNanoTimer("item.package")
 
+                    beginNanoTimer("item.backup")
                     AnimatedVisibility(visible = hasBackups) {
                         Text(
                             text = (latestBackup?.backupDate?.getFormattedDate(
@@ -632,6 +678,7 @@ fun MainPackageItemA(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+                    endNanoTimer("item.backup")
 
                 }
             }
@@ -722,7 +769,7 @@ fun MainPackageItemB(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (useIcons)
-                PackageIconB(pkg = pkg, modifier = iconSelector)
+                PackageIcon(pkg = pkg, modifier = iconSelector)
 
             Column(
                 modifier = Modifier.wrapContentHeight()
@@ -803,7 +850,8 @@ fun MainPackageItem(
             pkg = pkg,
             productsList = productsList,
             selection = selection,
-            onAction = onAction
+            onAction = onAction,
+            imageLoader = imageLoader
         )
     else
         MainPackageItemA(
@@ -811,6 +859,6 @@ fun MainPackageItem(
             productsList = productsList,
             selection = selection,
             onAction = onAction,
-            imageLoader = imageLoader,
+            imageLoader = imageLoader
         )
 }
