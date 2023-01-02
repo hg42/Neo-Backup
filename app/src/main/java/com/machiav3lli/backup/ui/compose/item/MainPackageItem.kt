@@ -55,13 +55,18 @@ import com.machiav3lli.backup.preferences.pref_altListItem
 import com.machiav3lli.backup.preferences.pref_iconCrossFade
 import com.machiav3lli.backup.preferences.pref_quickerList
 import com.machiav3lli.backup.preferences.pref_useBackupRestoreWithSelection
+import com.machiav3lli.backup.traceTiming
 import com.machiav3lli.backup.ui.compose.theme.LocalShapes
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
+import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
+import com.machiav3lli.backup.utils.TraceUtils.nanoTiming
 import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getFormattedDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+val logEachN = 1000L
 
 val yesNo = listOf(
     "yes" to "no",
@@ -191,7 +196,7 @@ fun MainPackageContextMenu(
     packageItem: Package,
     productsList: List<Package>,
     selection: SnapshotStateMap<String, Boolean>,
-    onAction: (Package) -> Unit = {}
+    onAction: (Package) -> Unit = {},
 ) {
     val visible = productsList
     val selectedAndVisible = visible.filter { selection[it.packageName] == true }
@@ -454,43 +459,6 @@ fun MainPackageContextMenu(
     }
 }
 
-@Composable
-fun PackageIconA(pkg: Package, modifier: Modifier) {
-
-    val imageData =
-        if (pkg.isSpecial) pkg.packageInfo.icon
-        else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
-
-    PackageIcon(item = pkg, imageData = imageData, modifier = modifier)
-}
-
-@Composable
-fun PackageIconB(pkg: Package, modifier: Modifier = Modifier) {
-
-    val imageData =
-        if (pkg.isSpecial) pkg.packageInfo.icon
-        else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
-
-    val model =
-        ImageRequest.Builder(OABX.context)
-            .memoryCacheKey(pkg.packageName)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .crossfade(pref_iconCrossFade.value)
-            .data(imageData)
-            .build()
-
-    PackageIcon(item = pkg, model = model, modifier = modifier)
-}
-
-@Composable
-fun PackageIcon(pkg: Package, modifier: Modifier) {
-
-    if (pref_altPackageIcon.value)
-        PackageIconB(pkg = pkg, modifier = modifier)
-    else
-        PackageIconA(pkg = pkg, modifier = modifier)
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainPackageItemA(
@@ -498,8 +466,10 @@ fun MainPackageItemA(
     productsList: List<Package>,
     selection: SnapshotStateMap<String, Boolean>,
     imageLoader: ImageLoader,
-    onAction: (Package) -> Unit = {}
+    onAction: (Package) -> Unit = {},
 ) {
+    beginNanoTimer("A.item")
+
     val useIcons by remember(pref_quickerList.value) { mutableStateOf(!pref_quickerList.value) }
     val iconRequest = ImageRequest.Builder(OABX.context)
         .memoryCacheKey(pkg.packageName)
@@ -524,7 +494,7 @@ fun MainPackageItemA(
         ),
     ) {
         if (menuExpanded.value) {
-            beginNanoTimer("item.menu")
+            beginNanoTimer("A.item.menu")
             MainPackageContextMenu(
                 expanded = menuExpanded,
                 packageItem = pkg,
@@ -532,10 +502,10 @@ fun MainPackageItemA(
                 selection = selection,
                 onAction = onAction
             )
-            endNanoTimer("item.menu")
+            endNanoTimer("A.item.menu")
         }
 
-        beginNanoTimer("item.selector")
+        beginNanoTimer("A.item.selector")
 
         val iconSelector =      //TODO hg42 ideally make this global (but we have closures)
             Modifier
@@ -575,7 +545,7 @@ fun MainPackageItemA(
                     }
                 )
 
-        endNanoTimer("item.selector")
+        endNanoTimer("A.item.selector")
 
         Row(
             modifier = rowSelector
@@ -590,27 +560,27 @@ fun MainPackageItemA(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            beginNanoTimer("item.icon")
-
-            if (useIcons) PackageIcon(
-                item = pkg,
-                model = iconRequest,
-                imageLoader = imageLoader
-            )
-            else
-                Text(
-                    text = when {
-                        pkg.isSpecial    -> "💲"
-                        !pkg.isInstalled -> "☠"
-                        pkg.isDisabled   -> "😷"
-                        pkg.isSystem     -> "🤖"
-                        else             -> "🙂"
-                    },
-                    modifier = iconSelector,
-                    style = MaterialTheme.typography.headlineMedium
+            if (useIcons)
+                PackageIcon(
+                    item = pkg,
+                    model = iconRequest,
+                    imageLoader = imageLoader
                 )
-
-            endNanoTimer("item.icon")
+            //else {
+            //    beginNanoTimer("pkgIcon.text")
+            //    Text(
+            //        text = when {
+            //            pkg.isSpecial    -> "💲"
+            //            !pkg.isInstalled -> "☠"
+            //            pkg.isDisabled   -> "😷"
+            //            pkg.isSystem     -> "🤖"
+            //            else             -> "🙂"
+            //        },
+            //        modifier = iconSelector,
+            //        style = MaterialTheme.typography.headlineMedium
+            //    )
+            //    endNanoTimer("pkgIcon.text")
+            //}
 
             Column(
                 modifier = Modifier.wrapContentHeight()
@@ -626,11 +596,7 @@ fun MainPackageItemA(
                         maxLines = 1,
                         style = MaterialTheme.typography.titleMedium
                     )
-                    if (useIcons) {
-                        beginNanoTimer("item.labels")
-                        PackageLabels(item = pkg)
-                        endNanoTimer("item.labels")
-                    }
+                    PackageLabels(item = pkg)
                 }
 
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -651,7 +617,7 @@ fun MainPackageItemA(
                     //    }"
                     //}
 
-                    beginNanoTimer("item.package")
+                    beginNanoTimer("A.item.package")
                     Text(
                         text = pkg.packageName,
                         modifier = Modifier
@@ -663,9 +629,9 @@ fun MainPackageItemA(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    endNanoTimer("item.package")
+                    endNanoTimer("A.item.package")
 
-                    beginNanoTimer("item.backup")
+                    beginNanoTimer("A.item.backups")
                     AnimatedVisibility(visible = hasBackups) {
                         Text(
                             text = (latestBackup?.backupDate?.getFormattedDate(
@@ -677,12 +643,21 @@ fun MainPackageItemA(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
-                    endNanoTimer("item.backup")
-
+                    endNanoTimer("A.item.backups")
                 }
             }
         }
     }
+
+    endNanoTimer("A.item")
+
+    if (traceTiming.pref.value)
+        nanoTiming["A.item.package"]?.let {
+            if (it.second > 0 && it.second % logEachN == 0L) {
+                logNanoTiming()
+                //clearNanoTiming("A.item")
+            }
+        }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -691,9 +666,21 @@ fun MainPackageItemB(
     pkg: Package,
     productsList: List<Package>,
     selection: SnapshotStateMap<String, Boolean>,
-    onAction: (Package) -> Unit = {}
+    imageLoader: ImageLoader,
+    onAction: (Package) -> Unit = {},
 ) {
-    val useIcons by remember(pref_quickerList.value) { mutableStateOf(!pref_quickerList.value) }
+    beginNanoTimer("B.item")
+
+    val useIcons = !pref_quickerList.value
+    val iconRequest = ImageRequest.Builder(OABX.context)
+        .memoryCacheKey(pkg.packageName)
+        .memoryCachePolicy(CachePolicy.ENABLED)
+        .crossfade(pref_iconCrossFade.value)
+        .size(48)
+        .allowConversionToBitmap(true)
+        .data(pkg.iconData)
+        .build()
+    imageLoader.enqueue(iconRequest)
 
     val menuExpanded = remember { mutableStateOf(false) }
 
@@ -707,7 +694,8 @@ fun MainPackageItemB(
             containerColor = Color.Transparent
         ),
     ) {
-        if (menuExpanded.value)
+        if (menuExpanded.value) {
+            beginNanoTimer("B.item.menu")
             MainPackageContextMenu(
                 expanded = menuExpanded,
                 packageItem = pkg,
@@ -715,6 +703,10 @@ fun MainPackageItemB(
                 selection = selection,
                 onAction = onAction
             )
+            endNanoTimer("B.item.menu")
+        }
+
+        beginNanoTimer("B.item.selector")
 
         val iconSelector =      //TODO hg42 ideally make this global (but we have closures)
             Modifier
@@ -754,6 +746,8 @@ fun MainPackageItemB(
                     }
                 )
 
+        endNanoTimer("B.item.selector")
+
         Row(
             modifier = rowSelector
                 .background(
@@ -767,8 +761,12 @@ fun MainPackageItemB(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (useIcons)
-                PackageIcon(pkg = pkg, modifier = iconSelector)
+            if (useIcons) {
+                PackageIcon(item = pkg,
+                    imageData = pkg.iconData,
+                    modifier = iconSelector,
+                    imageLoader = imageLoader)
+            }
 
             Column(
                 modifier = Modifier.wrapContentHeight()
@@ -784,8 +782,9 @@ fun MainPackageItemB(
                         maxLines = 1,
                         style = MaterialTheme.typography.titleMedium
                     )
-                    if (useIcons)
-                        PackageLabels(item = pkg)
+                    beginNanoTimer("B.item.labels")
+                    PackageLabels(item = pkg)
+                    endNanoTimer("B.item.labels")
                 }
 
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -806,6 +805,7 @@ fun MainPackageItemB(
                     //    }"
                     //}
 
+                    beginNanoTimer("B.item.package")
                     Text(
                         text = pkg.packageName,
                         modifier = Modifier
@@ -817,7 +817,9 @@ fun MainPackageItemB(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    endNanoTimer("B.item.package")
 
+                    beginNanoTimer("B.item.backups")
                     AnimatedVisibility(visible = hasBackups) {
                         Text(
                             text = (latestBackup?.backupDate?.getFormattedDate(
@@ -829,11 +831,21 @@ fun MainPackageItemB(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
-
+                    endNanoTimer("B.item.backups")
                 }
             }
         }
     }
+
+    endNanoTimer("B.item")
+
+    if (traceTiming.pref.value)
+        nanoTiming["B.item.package"]?.let {
+            if (it.second > 0 && it.second % logEachN == 0L) {
+                logNanoTiming()
+                //clearNanoTiming("B.item")
+            }
+        }
 }
 
 @Composable
@@ -842,7 +854,7 @@ fun MainPackageItem(
     productsList: List<Package>,
     selection: SnapshotStateMap<String, Boolean>,
     imageLoader: ImageLoader,
-    onAction: (Package) -> Unit = {}
+    onAction: (Package) -> Unit = {},
 ) {
     if (pref_altListItem.value)
         MainPackageItemB(
