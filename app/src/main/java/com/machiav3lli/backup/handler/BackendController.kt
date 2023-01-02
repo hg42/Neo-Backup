@@ -27,6 +27,7 @@ import android.os.Process
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.BACKUP_PACKAGE_FOLDER_REGEX_PATTERN
+import com.machiav3lli.backup.BACKUP_SPECIAL_FILE_REGEX_PATTERN
 import com.machiav3lli.backup.BACKUP_SPECIAL_FOLDER_REGEX_PATTERN
 import com.machiav3lli.backup.IGNORED_PERMISSIONS
 import com.machiav3lli.backup.MAIN_FILTER_SYSTEM
@@ -60,6 +61,7 @@ import kotlin.system.measureTimeMillis
 val regexBackupInstance = Regex(BACKUP_INSTANCE_REGEX_PATTERN)
 val regexPackageFolder = Regex(BACKUP_PACKAGE_FOLDER_REGEX_PATTERN)
 val regexSpecialFolder = Regex(BACKUP_SPECIAL_FOLDER_REGEX_PATTERN)
+val regexSpecialFile = Regex(BACKUP_SPECIAL_FILE_REGEX_PATTERN)
 
 fun scanBackups(
     directory: StorageFile,
@@ -92,7 +94,9 @@ fun scanBackups(
                                     formatBackupFile(file)
                                 } backupInstance"
                             }
-                            if (file.isPropertyFile) {
+                            if (file.isPropertyFile &&
+                                !name.contains(regexSpecialFile)
+                            ) {
                                 traceBackupsScanPackage {
                                     ":::${"|:::".repeat(level)}>     ${
                                         formatBackupFile(file)
@@ -101,7 +105,8 @@ fun scanBackups(
                                 try {
                                     onPropsFile(file)
                                 } catch (_: Throwable) {
-                                    file.renameTo(".ERROR.${file.name}")
+                                    if (!name.contains(regexSpecialFile))
+                                        file.renameTo(".ERROR.${file.name}")
                                 }
                             } else {
                                 if (name.contains(regexPackageFolder) &&
@@ -111,14 +116,26 @@ fun scanBackups(
                                     if ("${file.name}.${PROP_NAME}" !in names)
                                         try {
                                             file.findFile(BACKUP_INSTANCE_PROPERTIES_INDIR)
-                                                ?.let { onPropsFile(it) }
+                                                ?.let {
+                                                    try {
+                                                        onPropsFile(it)
+                                                    } catch (_: Throwable) {
+                                                        // rename the folder, becasue the whole backup is damaged
+                                                        file.name?.let { name ->
+                                                            if (!name.contains(regexSpecialFolder))
+                                                                file.renameTo(".ERROR.${file.name}")
+                                                        }
+                                                    }
+                                                }
                                         } catch (_: Throwable) {
                                             file.renameTo(".ERROR.${file.name}")
                                         }
                                 }
                             }
                         } else {
-                            if (file.isPropertyFile) {
+                            if (file.isPropertyFile &&
+                                !name.contains(regexSpecialFile)
+                            ) {
                                 traceBackupsScanPackage {
                                     ":::${"|:::".repeat(level)}> ${
                                         formatBackupFile(file)

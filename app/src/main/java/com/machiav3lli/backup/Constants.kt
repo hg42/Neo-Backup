@@ -53,6 +53,7 @@ fun backupInstanceProps(packageInfo: PackageInfo, dateTimeStr: String) = "${back
 fun backupInstancePropsFlat(packageInfo: PackageInfo, dateTimeStr: String) = "${backupInstanceDirFlat(packageInfo, dateTimeStr)}.$PROP_NAME"
 const val BACKUP_INSTANCE_PROPERTIES_INDIR = "backup.$PROP_NAME"
 const val BACKUP_PACKAGE_FOLDER_REGEX_PATTERN = """\w+(\.\w+)+"""
+val BACKUP_SPECIAL_FILE_REGEX_PATTERN = """(^\.|^$ADMIN_PREFIX)"""
 val BACKUP_SPECIAL_FOLDER_REGEX_PATTERN = """(^\.|^$ADMIN_PREFIX|$EXPORTS_FOLDER_NAME_BASE|$LOGS_FOLDER_NAME_BASE|$SELECTIONS_FOLDER_NAME_BASE)"""
 const val EXPORTS_INSTANCE = "%s.scheds"
 
