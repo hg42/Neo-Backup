@@ -277,7 +277,7 @@ class MainViewModel(
     }
 
     private suspend fun recreateAppInfoList() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             OABX.beginBusy("recreateAppInfoList")
             val time = measureTimeMillis {
                 appContext.updateAppTables(db.appInfoDao, db.backupDao)
