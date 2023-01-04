@@ -29,6 +29,7 @@ import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Blocklist
+import com.machiav3lli.backup.handler.getBackups
 import com.machiav3lli.backup.handler.toPackageList
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.Package
@@ -45,7 +46,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -59,6 +62,12 @@ class MainViewModel(
     private val db: ODatabase,
     private val appContext: Application
 ) : AndroidViewModel(appContext) {
+
+    var backupsMap = mutableMapOf<String, List<Backup>>()
+
+    init {
+        appContext.getBackups()
+    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS
 
@@ -76,8 +85,8 @@ class MainViewModel(
     val backupsMapDb =
         //------------------------------------------------------------------------------------------ backupsMap
         db.backupDao.allFlow
-            //.conflate()
-            .mapLatest { it.groupBy(Backup::packageName) }
+            .conflate()
+            .map { it.groupBy(Backup::packageName) }
             .trace { "*** backupsMapFlow <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
             //.trace { "*** backupsMap <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
             .stateIn(
@@ -85,8 +94,6 @@ class MainViewModel(
                 SharingStarted.Eagerly,
                 emptyMap()
             )
-
-    var backupsMap = mutableMapOf<String, List<Backup>>()
 
     val backupsUpdateFlow = MutableSharedFlow<Pair<String, List<Backup>>?>()
     val backupsUpdate = backupsUpdateFlow
@@ -150,7 +157,8 @@ class MainViewModel(
     val packageMap =
         //------------------------------------------------------------------------------------------ packageMap
         packageList
-            .mapLatest { it.associateBy(Package::packageName) }
+            .map { it.associateBy(Package::packageName) }
+            .conflate()
             .trace { "*** packageMap <<- ${it.size}" }
             .stateIn(
                 viewModelScope,
@@ -174,6 +182,7 @@ class MainViewModel(
             traceFlows { "***** blocked ->> ${list.size}" }
             list
         }
+            .conflate()
             .trace { "*** notBlockedList <<- ${it.size}" }
             .stateIn(
                 viewModelScope,
@@ -215,6 +224,7 @@ class MainViewModel(
             traceFlows { "***** filtered ->> ${list.size}" }
             list
         }
+            .conflate()
             .trace { "*** filteredList <<- ${it.size}" }
             .stateIn(
                 viewModelScope,

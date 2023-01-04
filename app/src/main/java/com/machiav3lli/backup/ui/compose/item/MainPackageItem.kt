@@ -569,6 +569,7 @@ fun MainPackageItemA(
                         pkg.isSystem  -> "🤖"
                         else          -> "🙂"
                     },
+                    modifier = iconSelector,
                     style = MaterialTheme.typography.headlineMedium
                 )
 
