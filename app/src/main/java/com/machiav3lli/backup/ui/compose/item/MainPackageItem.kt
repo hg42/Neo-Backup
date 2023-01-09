@@ -118,6 +118,7 @@ fun TextInput(
         text = {
             OutlinedTextField(
                 modifier = Modifier
+                    .testTag("input")
                     .focusRequester(textFieldFocusRequester),
                 value = input.value,
                 placeholder = { Text(text = placeholder, color = Color.Gray) },
@@ -132,7 +133,10 @@ fun TextInput(
                     autoCorrect = false
                 ),
                 onValueChange = {
-                    input.value = it
+                    if (it.contains("\n")) {
+                        input.value = it.replace("\n", "")
+                    } else
+                        input.value = it
                 }
             )
         },
@@ -189,34 +193,45 @@ fun SelectionSaveMenu(
         textFieldFocusRequester.requestFocus()
     }
 
-    DropdownMenuItem(
-        text = {
-            OutlinedTextField(
-                modifier = Modifier
-                    .testTag("input")
-                    .focusRequester(textFieldFocusRequester),
-                value = name.value,
-                placeholder = { Text(text = "selection name", color = Color.Gray) },
-                singleLine = false,
-                keyboardOptions = KeyboardOptions(
-                    autoCorrect = false
-                ),
-                onValueChange = {
-                    if (it.endsWith("\n")) {
-                        name.value = it.dropLast(1)
-                        focusManager.clearFocus()
-                        val backupRoot = OABX.context.getBackupRoot()
-                        val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
-                        selectionsDir.createFile(name.value)
-                            .writeText(selection.joinToString("\n"))
-                        onAction()
-                    } else
-                        name.value = it
-                }
-            )
-        },
-        onClick = {}
-    )
+    if (BuildConfig.DEBUG)
+        TextInput(
+            text = name.value,
+        ) {
+            name.value = it
+            val backupRoot = OABX.context.getBackupRoot()
+            val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
+            selectionsDir.createFile(name.value)
+                .writeText(selection.joinToString("\n"))
+        }
+    else
+        DropdownMenuItem(
+            text = {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .testTag("input")
+                        .focusRequester(textFieldFocusRequester),
+                    value = name.value,
+                    placeholder = { Text(text = "selection name", color = Color.Gray) },
+                    singleLine = false,
+                    keyboardOptions = KeyboardOptions(
+                        autoCorrect = false
+                    ),
+                    onValueChange = {
+                        if (it.contains("\n")) {
+                            name.value = it.replace("\n", "")
+                            focusManager.clearFocus()
+                            val backupRoot = OABX.context.getBackupRoot()
+                            val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
+                            selectionsDir.createFile(name.value)
+                                .writeText(selection.joinToString("\n"))
+                            onAction()
+                        } else
+                            name.value = it
+                    }
+                )
+            },
+            onClick = {}
+        )
 
     Selections {
         it.writeText(selection.joinToString("\n"))
@@ -241,7 +256,7 @@ fun openSubMenu(
 }
 
 fun closeSubMenu(
-    subMenu: MutableState<(@Composable () -> Unit)?>
+    subMenu: MutableState<(@Composable () -> Unit)?>,
 ) {
     subMenu.value = null
 }
@@ -310,7 +325,10 @@ fun MainPackageContextMenu(
     DropdownMenu(
         expanded = expanded.value,
         //offset = DpOffset(20.dp, 0.dp),
-        offset = with(LocalDensity.current) { DpOffset(offsetX.roundToInt().toDp(), offsetY.roundToInt().toDp()) },
+        offset = with(LocalDensity.current) {
+            DpOffset(offsetX.roundToInt().toDp(),
+                offsetY.roundToInt().toDp())
+        },
         modifier = Modifier
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp))
             .pointerInput(Unit) {
