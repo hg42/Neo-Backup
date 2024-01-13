@@ -807,7 +807,7 @@ fun Context.updateAppTables() {
 @Throws(PackageManager.NameNotFoundException::class)
 fun Context.getPackageStorageStats(
     packageName: String,
-    storageUuid: UUID = packageManager.getApplicationInfo(packageName, 0).storageUuid,
+    storageUuid: UUID = packageManager.getApplicationInfo(packageName, PackageManager.MATCH_UNINSTALLED_PACKAGES).storageUuid,
 ): StorageStats? {
     val storageStatsManager =
         getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager

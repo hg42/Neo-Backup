@@ -19,6 +19,7 @@ package com.machiav3lli.backup.items
 
 import android.app.usage.StorageStats
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import androidx.lifecycle.viewModelScope
 import com.machiav3lli.backup.OABX
@@ -374,8 +375,21 @@ class Package {
     val isApp: Boolean
         get() = packageInfo is AppInfo && !packageInfo.isSpecial
 
+    fun getApplicationInfoOrNull(flags: Int = 8192) = runCatching {
+        OABX.context.packageManager.getApplicationInfo(packageName, flags)
+    }.getOrNull()
+
+    val isHidden: Boolean //TODO live retrieving, not cached
+        get() = getApplicationInfoOrNull()?.let {
+            (ApplicationInfo::class.java.getField("privateFlags").get(it) as Int) and 1 == 1
+        } ?: false
+    // from Hail:
+    // fun isAppHidden(packageName: String): Boolean = getApplicationInfoOrNull(packageName)?.let {
+    //     (ApplicationInfo::class.java.getField("privateFlags").get(it) as Int) and 1 == 1
+    // } ?: false
+
     val isInstalled: Boolean
-        get() = (isApp && (packageInfo as AppInfo).installed) || packageInfo.isSpecial
+        get() = (isApp && (packageInfo as AppInfo).installed) || isHidden || packageInfo.isSpecial
 
     val isDisabled: Boolean
         get() = isInstalled && !isSpecial && !(packageInfo is AppInfo && (packageInfo as AppInfo).enabled)

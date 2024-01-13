@@ -58,7 +58,7 @@ fun getStats(appsList: List<Package>): Triple<Int, Int, Int> {
 }
 
 fun PackageManager.getInstalledPackageInfosWithPermissions() =
-    getInstalledPackages(0).mapNotNull {
+    getInstalledPackages(8192).mapNotNull {
         try {
             getPackageInfo(it.packageName, PackageManager.GET_PERMISSIONS)
         } catch (e: Throwable) {
