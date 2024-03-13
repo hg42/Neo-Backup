@@ -206,6 +206,28 @@ open class SpecialInfo : PackageInfo {
                                 ), R.drawable.ic_wifi
                             )
                         )
+
+                    //TODO add simple file list plugins here
+                    /*
+                    scan plugin/name/plugin.json
+                      or plugin/name.json
+                        .map read json -> plugin
+                        .filter plugin.type == "filelist"
+                        .filter plugin.version in version_range
+                        .filter sdk in plugin.sdk_range
+                            .forEach plugin ->
+                                specialInfos
+                                    .add(
+                                        SpecialInfo(
+                                            plugin.name
+                                            plugin.label[lang] || (plugin.label || plugin.name).translate
+                                            Build.VERSION.RELEASE,                      // always the same ?
+                                            Build.VERSION.SDK_INT,                      // always the same ?
+                                            plugin.files.replace_vars(),
+                                            plugin.icon
+                                        )
+                                    )
+                    */
                 }
                 locked = false
             }
