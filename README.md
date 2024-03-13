@@ -1,3 +1,36 @@
+This is my personal fork for testing purposes.
+
+I'm not creating any official releases.
+
+This repository mainly exists to communicate what is going on on my side.  
+It's basically a snapshot of my local repository.
+
+I usually push branches when the work of a day is done. 
+
+But don't expect any stable code here. No guaranties for anything.
+Especially it is not meant to generate apps from it.
+
+The layout of this repo should be seen combined with the NeoApplications repo.   
+Then it basically looks like this: 
+
+`main ... rc ... experimental`
+
+I maintain a queue of commits in my local repository. Those are in flux, they are often rebased, sorted and squashed or even thrown away.
+This work is (force) pushed from time to time to the `experimental` branch (in a somehow "final" state for a section of work).
+
+Between main and `experimental` you find the `rc` branch.
+  
+More matured commits, that don't change often any more, are moved down to this branch.
+It is meant as containing the candidates to be integrate into main soon.  
+This isn't pushed to `main`, because there is a chance that they still change as the result of testing.
+
+If this branch is considered as stable, I usually simply fast forward the `main` branch to `rc`.
+
+I intentionally left out the `main` branch in this repo, because it would never been guarantied to be up to date.  
+Instead use both the official and this repo together to get a complete picture from my POV. 
+
+--- the original README begins here ---
+
 # Neo Backup  <img title="" src="./fastlane/metadata/android/en-US/images/icon.png" align="left" width="64">
 
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](COC.md)
