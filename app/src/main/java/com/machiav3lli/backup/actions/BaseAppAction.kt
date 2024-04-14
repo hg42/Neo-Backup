@@ -51,9 +51,10 @@ abstract class BaseAppAction protected constructor(
         val extension = buildString {
             if (isCompressed) {
                 append(when (compressionType) {
+                    null, "none"  -> ""
                     "gz"  -> ".gz"
                     "zst" -> ".zst"
-                    else -> ""
+                    else  -> ".gz"
                 })
             }
             if (isEncrypted) {

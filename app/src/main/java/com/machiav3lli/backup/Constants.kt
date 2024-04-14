@@ -33,29 +33,35 @@ const val PREFS_SHARED_PRIVATE = "com.machiav3lli.backup"
 
 const val ADMIN_PREFIX = "!-"
 
-val SELECTIONS_FOLDER_NAME_BASE = "SELECTIONS"
-val SELECTIONS_FOLDER_NAME = "$ADMIN_PREFIX$SELECTIONS_FOLDER_NAME_BASE"
+val COMPRESSION_TYPES = mapOf(
+    "gz"  to "Gzip Compression",    // TODO translation?
+    "zst" to "Zstd Compression",    // TODO translation?
+    "none" to "No Compression"      // TODO translation?
+)
 
-val EXPORTS_FOLDER_NAME_BASE = "EXPORTS"
-val EXPORTS_FOLDER_NAME = "$ADMIN_PREFIX$EXPORTS_FOLDER_NAME_BASE"
-val EXPORTS_FOLDER_NAME_ALT = EXPORTS_FOLDER_NAME_BASE
+const val SELECTIONS_FOLDER_NAME_BASE = "SELECTIONS"
+const val SELECTIONS_FOLDER_NAME = "$ADMIN_PREFIX$SELECTIONS_FOLDER_NAME_BASE"
 
-val LOGS_FOLDER_NAME_BASE = "LOGS"
-val LOGS_FOLDER_NAME = "${ADMIN_PREFIX}LOGS"
-val LOGS_FOLDER_NAME_ALT = LOGS_FOLDER_NAME_BASE
+const val EXPORTS_FOLDER_NAME_BASE = "EXPORTS"
+const val EXPORTS_FOLDER_NAME = "$ADMIN_PREFIX$EXPORTS_FOLDER_NAME_BASE"
+const val EXPORTS_FOLDER_NAME_ALT = EXPORTS_FOLDER_NAME_BASE
+
+const val LOGS_FOLDER_NAME_BASE = "LOGS"
+const val LOGS_FOLDER_NAME = "${ADMIN_PREFIX}LOGS"
+const val LOGS_FOLDER_NAME_ALT = LOGS_FOLDER_NAME_BASE
 
 const val ERROR_PREFIX = "${ADMIN_PREFIX}ERROR."
 
-val PREFS_BACKUP_FILE = "${ADMIN_PREFIX}app.preferences"
+const val PREFS_BACKUP_FILE = "${ADMIN_PREFIX}app.preferences"
 
 const val PROP_NAME = "properties"
 const val LOG_INSTANCE = "%s.log.txt"
 
-val ISO_LIKE_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
-val ISO_LIKE_DATE_TIME_MIN_PATTERN = "yyyy-MM-dd HH:mm"
-val ISO_LIKE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd HH:mm:ss:SSS"
-val FILE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd-HH-mm-ss-SSS"
-val FILE_DATE_TIME_PATTERN = "yyyy-MM-dd-HH-mm-ss"
+const val ISO_LIKE_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
+const val ISO_LIKE_DATE_TIME_MIN_PATTERN = "yyyy-MM-dd HH:mm"
+const val ISO_LIKE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd HH:mm:ss:SSS"
+const val FILE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd-HH-mm-ss-SSS"
+const val FILE_DATE_TIME_PATTERN = "yyyy-MM-dd-HH-mm-ss"
 
 val ISO_DATE_TIME_FORMAT
     get() = SimpleDateFormat(
@@ -103,8 +109,8 @@ fun backupInstancePropsFlat(packageInfo: PackageInfo, dateTimeStr: String) =
 
 const val BACKUP_INSTANCE_PROPERTIES_INDIR = "backup.$PROP_NAME"
 const val BACKUP_PACKAGE_FOLDER_REGEX_PATTERN = """\w+(\.\w+)+"""
-val BACKUP_SPECIAL_FILE_REGEX_PATTERN = """(^\.|^$ADMIN_PREFIX|^$ERROR_PREFIX)"""
-val BACKUP_SPECIAL_FOLDER_REGEX_PATTERN =
+const val BACKUP_SPECIAL_FILE_REGEX_PATTERN = """(^\.|^$ADMIN_PREFIX|^$ERROR_PREFIX)"""
+const val BACKUP_SPECIAL_FOLDER_REGEX_PATTERN =
     """(^\.|^$ADMIN_PREFIX|$EXPORTS_FOLDER_NAME_BASE|$LOGS_FOLDER_NAME_BASE|$SELECTIONS_FOLDER_NAME_BASE)"""
 const val EXPORTS_INSTANCE = "%s.scheds"
 

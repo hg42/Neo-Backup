@@ -24,7 +24,7 @@ import org.junit.Test
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 //val timeCompareFormat = "yyyy-MM-dd'T'HH:mm:ss"
 val timeCompareFormat = "yyyy-MM-dd'T'HH:mm"
@@ -305,12 +305,12 @@ class Test_BackupRestore {
             if (toType == "tarapi")
                 restoreAction.genericRestoreFromArchiveTarApi(
                     "data", archive, restoreDir.toString(),
-                    compress, false, null, restoreCache
+                    compress, null, false, null, restoreCache
                 )
             else
                 restoreAction.genericRestoreFromArchiveTarCmd(
                     "data", archive, restoreDir.toString(),
-                    compress, false, null
+                    compress, null, false, null
                 )
         }
         Timber.w("#################### RES ${archive.path}")

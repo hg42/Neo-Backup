@@ -238,18 +238,16 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         return ActionResult(app, backup, "", true)
     }
 
-    @Throws(IOException::class, CryptoSetupException::class)
-    protected fun createBackupArchiveTarApi(
-        backupInstanceDir: StorageFile,
+    fun createArchiveFile(
         dataType: String,
-        allFilesToBackup: List<ShellHandler.FileInfo>,
+        backupInstanceDir: StorageFile,
         compress: Boolean,
-        iv: ByteArray?,
-    ) {
+        iv: ByteArray?
+    ): OutputStream {
+
         val password = getEncryptionPassword()
         val shouldCompress = compress && isCompressionEnabled()
 
-        Timber.i("Creating $dataType backup via API")
         val backupFilename = getBackupArchiveFilename(
             dataType,
             shouldCompress,
@@ -267,6 +265,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         if (shouldCompress) {
             val compressionLevel = getCompressionLevel()
             when (getCompressionType()) {
+                "none" -> {}
                 "gz" -> {
                     val gzipParams = GzipParameters()
                     gzipParams.compressionLevel = compressionLevel
@@ -276,10 +275,29 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                         gzipParams
                     )
                 }
-                "zst" -> outStream = ZstdCompressorOutputStream(outStream, compressionLevel)
+                "zst" -> {
+                    outStream = ZstdCompressorOutputStream(
+                        outStream,
+                        compressionLevel
+                    )
+                }
                 else -> throw UnsupportedOperationException("Unsupported compression algorithm: ${getCompressionType()}")
             }
         }
+        return outStream
+    }
+
+    @Throws(IOException::class, CryptoSetupException::class)
+    protected fun createBackupArchiveTarApi(
+        backupInstanceDir: StorageFile,
+        dataType: String,
+        allFilesToBackup: List<ShellHandler.FileInfo>,
+        compress: Boolean,
+        iv: ByteArray?,
+    ) {
+        Timber.i("Creating $dataType backup via API")
+
+        val outStream = createArchiveFile(dataType, backupInstanceDir, compress, iv)
 
         try {
             TarArchiveOutputStream(outStream).use { archive ->
@@ -287,11 +305,10 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 archive.suAddFiles(allFilesToBackup)
             }
         } finally {
-            Timber.d("Done compressing. Closing $backupFilename")
+            Timber.d("Done compressing. Closing archive stream.")
             outStream.close()
         }
     }
-
 
     @Throws(BackupFailedException::class)
     protected open fun backupPackage(app: Package, backupInstanceDir: StorageFile) {
@@ -404,40 +421,9 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         if (!ShellUtils.fastCmdResult("test -d ${quote(sourcePath)}"))
             return false
 
-        val password = getEncryptionPassword()
-        val shouldCompress = compress && isCompressionEnabled()
-
         Timber.i("Creating $dataType backup via tar")
-        val backupFilename = getBackupArchiveFilename(
-            dataType,
-            shouldCompress,
-            getCompressionType(),
-            iv != null && isEncryptionEnabled()
-        )
-        val backupFile = backupInstanceDir.createFile(backupFilename)
 
-        var outStream: OutputStream = backupFile.outputStream()!!
-
-        if (iv != null && password.isNotEmpty() && isEncryptionEnabled()) {
-            outStream = outStream.encryptStream(password, getCryptoSalt(), iv)
-        }
-
-        if (shouldCompress) {
-            val compressionLevel = getCompressionLevel()
-            when (getCompressionType()) {
-                "gz" -> {
-                    val gzipParams = GzipParameters()
-                    gzipParams.compressionLevel = compressionLevel
-
-                    outStream = GzipCompressorOutputStream(
-                        outStream,
-                        gzipParams
-                    )
-                }
-                "zst" -> outStream = ZstdCompressorOutputStream(outStream, compressionLevel)
-                else -> throw UnsupportedOperationException("Unsupported compression algorithm: ${getCompressionType()}")
-            }
-        }
+        val outStream = createArchiveFile(dataType, backupInstanceDir, compress, iv)
 
         var result = false
         try {
@@ -501,7 +487,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
             LogsHandler.unexpectedException(e, message)
             throw BackupFailedException(message, e)
         } finally {
-            Timber.d("Done compressing. Closing $backupFilename")
+            Timber.d("Done compressing. Closing archive stream.")
             outStream.close()
         }
         return result

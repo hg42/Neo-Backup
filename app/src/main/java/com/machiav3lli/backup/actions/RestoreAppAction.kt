@@ -18,6 +18,7 @@
 package com.machiav3lli.backup.actions
 
 import android.content.Context
+import com.machiav3lli.backup.COMPRESSION_TYPES
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.MODE_DATA
 import com.machiav3lli.backup.MODE_DATA_DE
@@ -455,9 +456,10 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         }
         if (isCompressed) {
             when (compressionType) {
-                "gz" -> inputStream = GzipCompressorInputStream(inputStream)
+                "none" -> {}
+                "gz"  -> inputStream = GzipCompressorInputStream(inputStream)
                 "zst" -> inputStream = ZstdCompressorInputStream(inputStream)
-                else -> throw RestoreFailedException("Unsupported compression algorithm: ${compressionType}")
+                else  -> throw RestoreFailedException("Unsupported compression algorithm: ${compressionType}")
             }
         }
         return inputStream
@@ -769,6 +771,48 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         }
     }
 
+    data class FoundBackupArchive(
+        val file: StorageFile,
+        val isCompressed: Boolean,
+        val compressionType: String?,
+        val isEncrypted: Boolean,
+    )
+
+    fun findBackupArchive(dataType: String, backup: Backup, backupDir: StorageFile) : FoundBackupArchive {
+
+        // try all variants starting with that described in the properties file
+        val encryptionsToTry = listOf(backup.isEncrypted, ! backup.isEncrypted)
+        val compressionsToTry = (listOf(if(backup.isCompressed) backup.compressionType else "none") + COMPRESSION_TYPES.keys).toSet()
+
+        var count = 0
+        for (tryEncrypted in encryptionsToTry) {
+            for (tryCompression in compressionsToTry) {
+                count += 1
+                val tryCompressed = tryCompression != null
+                try {
+                    val backupFilename = getBackupArchiveFilename(
+                        dataType,
+                        tryCompressed,
+                        tryCompression,
+                        tryEncrypted
+                    )
+                    val backupArchive = backupDir.findFile(backupFilename)
+                        ?: continue
+
+                    Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
+                    if (count > 1)
+                        Timber.w("found $backupFilename but properties file describes: compression=${backup.isCompressed}/${backup.compressionType} encryption=${backup.isEncrypted}")
+
+                    return FoundBackupArchive(backupArchive, tryCompressed, tryCompression, tryEncrypted)
+
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+        }
+        throw RestoreFailedException("no backup archive variant found for $dataType")
+    }
+
     @Throws(RestoreFailedException::class, CryptoSetupException::class)
     open fun restoreData(
         app: Package,
@@ -776,20 +820,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         backupDir: StorageFile,
     ) {
         val dataType = BACKUP_DIR_DATA
-        val backupFilename = getBackupArchiveFilename(
-            dataType,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted
-        )
-        Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
-        val backupArchive = backupDir.findFile(backupFilename)
-                            ?: throw RestoreFailedException(
-                                String.format(
-                                    LOG_BACKUP_ARCHIVE_MISSING,
-                                    backupFilename
-                                )
-                            )
+        val backupArchive = findBackupArchive(dataType, backup, backupDir)
         val extractTo = app.dataPath
         if (!isPlausiblePath(extractTo, app.packageName))
             throw RestoreFailedException(
@@ -803,11 +834,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         val uidgidcon = shell.suGetOwnerGroupContext(extractTo)
         genericRestoreFromArchive(
             dataType,
-            backupArchive,
+            backupArchive.file,
             extractTo,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted,
+            backupArchive.isCompressed,
+            backupArchive.compressionType,
+            backupArchive.isEncrypted,
             backup.iv,
             RootFile(context.cacheDir),
             isOldVersion(backup)
@@ -826,20 +857,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         backupDir: StorageFile,
     ) {
         val dataType = BACKUP_DIR_DEVICE_PROTECTED_FILES
-        val backupFilename = getBackupArchiveFilename(
-            dataType,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted
-        )
-        Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
-        val backupArchive = backupDir.findFile(backupFilename)
-                            ?: throw RestoreFailedException(
-                                String.format(
-                                    LOG_BACKUP_ARCHIVE_MISSING,
-                                    backupFilename
-                                )
-                            )
+        val backupArchive = findBackupArchive(dataType, backup, backupDir)
         val extractTo = app.devicesProtectedDataPath
         if (!isPlausiblePath(extractTo, app.packageName))
             throw RestoreFailedException(
@@ -853,11 +871,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         val uidgidcon = shell.suGetOwnerGroupContext(extractTo)
         genericRestoreFromArchive(
             dataType,
-            backupArchive,
+            backupArchive.file,
             extractTo,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted,
+            backupArchive.isCompressed,
+            backupArchive.compressionType,
+            backupArchive.isEncrypted,
             backup.iv,
             RootFile(deviceProtectedStorageContext.cacheDir),
             isOldVersion(backup)
@@ -876,20 +894,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         backupDir: StorageFile,
     ) {
         val dataType = BACKUP_DIR_EXTERNAL_FILES
-        val backupFilename = getBackupArchiveFilename(
-            dataType,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted
-        )
-        Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
-        val backupArchive = backupDir.findFile(backupFilename)
-                            ?: throw RestoreFailedException(
-                                String.format(
-                                    LOG_BACKUP_ARCHIVE_MISSING,
-                                    backupFilename
-                                )
-                            )
+        val backupArchive = findBackupArchive(dataType, backup, backupDir)
         val extractTo = app.getExternalDataPath(context)
         if (!isPlausiblePath(extractTo, app.packageName))
             throw RestoreFailedException(
@@ -899,11 +904,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
         genericRestoreFromArchive(
             dataType,
-            backupArchive,
+            backupArchive.file,
             extractTo,
-            backup.isCompressed,
-            backup.compressionType,
-            backup.isEncrypted,
+            backupArchive.isCompressed,
+            backupArchive.compressionType,
+            backupArchive.isEncrypted,
             backup.iv,
             context.externalCacheDir?.let { RootFile(it) },
             isOldVersion(backup)
@@ -938,29 +943,16 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         } else {
 
             val dataType = BACKUP_DIR_OBB_FILES
-            val backupFilename = getBackupArchiveFilename(
-                dataType,
-                backup.isCompressed,
-                backup.compressionType,
-                backup.isEncrypted
-            )
-            Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
-            val backupArchive = backupDir.findFile(backupFilename)
-                                ?: throw RestoreFailedException(
-                                    String.format(
-                                        LOG_BACKUP_ARCHIVE_MISSING,
-                                        backupFilename
-                                    )
-                                )
+            val backupArchive = findBackupArchive(dataType, backup, backupDir)
 
             val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
             genericRestoreFromArchive(
                 dataType,
-                backupArchive,
+                backupArchive.file,
                 extractTo,
-                backup.isCompressed,
-                backup.compressionType,
-                backup.isEncrypted,
+                backupArchive.isCompressed,
+                backupArchive.compressionType,
+                backupArchive.isEncrypted,
                 backup.iv,
                 context.externalCacheDir?.let { RootFile(it) },
             )
@@ -995,29 +987,16 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         } else {
 
             val dataType = BACKUP_DIR_MEDIA_FILES
-            val backupFilename = getBackupArchiveFilename(
-                dataType,
-                backup.isCompressed,
-                backup.compressionType,
-                backup.isEncrypted
-            )
-            Timber.d(LOG_EXTRACTING_S, backup.packageName, backupFilename)
-            val backupArchive = backupDir.findFile(backupFilename)
-                                ?: throw RestoreFailedException(
-                                    String.format(
-                                        LOG_BACKUP_ARCHIVE_MISSING,
-                                        backupFilename
-                                    )
-                                )
+            val backupArchive = findBackupArchive(dataType, backup, backupDir)
 
             val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
             genericRestoreFromArchive(
                 dataType,
-                backupArchive,
+                backupArchive.file,
                 extractTo,
-                backup.isCompressed,
-                backup.compressionType,
-                backup.isEncrypted,
+                backupArchive.isCompressed,
+                backupArchive.compressionType,
+                backupArchive.isEncrypted,
                 backup.iv,
                 context.externalCacheDir?.let { RootFile(it) }
             )

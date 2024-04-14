@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BuildConfig
+import com.machiav3lli.backup.COMPRESSION_TYPES
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
@@ -274,11 +275,8 @@ val pref_compressionType = ListPref(
     summaryId = R.string.prefs_compression_type_summary,
     icon = Phosphor.FileZip,
     iconTint = ColorExodus,
-    entries = mapOf(
-        "gz"  to "Gzip Compression",
-        "zst" to "Zstd Compression"
-    ),
-    defaultValue = "gz"
+    entries = COMPRESSION_TYPES,
+    defaultValue = "zst"
 )
 
 val pref_compressionLevel = IntPref(
