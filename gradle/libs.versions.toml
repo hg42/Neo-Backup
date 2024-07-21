@@ -33,6 +33,9 @@ timber = "5.0.1"
 work = "2.9.0"
 zstd-jni = "1.5.6-4"
 
+# hg42
+git-version = "0.15.0"
+
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
@@ -96,3 +99,6 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+# hg42
+git-version = { id = "com.palantir.git-version", version.ref = "git-version" }
