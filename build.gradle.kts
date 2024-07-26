@@ -149,7 +149,7 @@ val buildLabel by extra {
         .replace(Regex("^experimental$"), "X")
 }
 var buildVersion by extra { "$major.$minor.$revision.$buildNumber-hg42-${headHash}-${buildTime}-${buildLabel}" }
-var buildVersionCode by extra { "$major$minor$revision$buildNumber".toInt() }
+var buildVersionCode by extra { "$major$minor$revision${buildNumber.padStart(5, '0')}".toInt() }
 
 println(
     """
