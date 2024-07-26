@@ -26,36 +26,107 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.git.version)
 }
 
+data class InfoFromGit(
+    val lastTag: String?,
+    val lastTagDateTime: LocalDateTime?,
+    val lastTagMajor: Int?,
+    val lastTagMinor: Int?,
+    val lastTagPatch: Int?,
+    val currentBranch: String,
+    val headHash: String
+)
 
-//------------------------------------------------------------ version
-val major by extra(8)
-val minor by extra(3)
-//------------------------------------------------------------
+fun getInfoFromGit(): InfoFromGit {
+    val tagPattern = "(\\d+)\\.(\\d+)\\.(\\d+)"
+    val tagProcess = ProcessBuilder("git", "log", "--tags", "--simplify-by-decoration", "--pretty=format:%ai %d", "--date=iso")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+
+    val tagResult = tagProcess.inputStream.bufferedReader().use { it.readText() }
+    tagProcess.waitFor(10, TimeUnit.SECONDS)
+
+    val regex = Regex(tagPattern)
+    val matchResult = regex.find(tagResult)
+
+    var lastTag: String? = null
+    var lastTagDateTime: LocalDateTime? = null
+    var lastTagMajor: Int? = null
+    var lastTagMinor: Int? = null
+    var lastTagPatch: Int? = null
+
+    if (matchResult != null) {
+        val tagLine = tagResult.lines().first { it.contains(matchResult.value) }
+        val dateTime = tagLine.split(" ")[0] + "T" + tagLine.split(" ")[1]
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
+
+        val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
+
+        lastTag = matchResult.value
+        lastTagMajor = major
+        lastTagMinor = minor
+        lastTagPatch = patch
+    }
+
+    // Aktuellen Branch ermitteln
+    val branchProcess = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val currentBranch = branchProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    branchProcess.waitFor(10, TimeUnit.SECONDS)
+
+    // Hash des HEADs ermitteln
+    val hashProcess = ProcessBuilder("git", "rev-parse", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val headHash = hashProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    hashProcess.waitFor(10, TimeUnit.SECONDS)
+
+    return InfoFromGit(
+        lastTag = lastTag,
+        lastTagDateTime = lastTagDateTime,
+        lastTagMajor = lastTagMajor,
+        lastTagMinor = lastTagMinor,
+        lastTagPatch = lastTagPatch,
+        currentBranch = currentBranch,
+        headHash = headHash.take(8)
+    )
+}
+
+val gitInfo = getInfoFromGit()
+
+val lastTag = gitInfo.lastTag
+val lastTagDateTime = gitInfo.lastTagDateTime
+val lastTagMajor = gitInfo.lastTagMajor
+val lastTagMinor = gitInfo.lastTagMinor
+val lastTagPatch = gitInfo.lastTagPatch
+val currentBranch = gitInfo.currentBranch
+val headHash = gitInfo.headHash
 
 
-//val gitVersion: groovy.lang.Closure<String> by extra
-//val gitversion = gitVersion()
-//println("gitversion: $gitversion")
+// extract base version from last git tag
+val major by extra(lastTagMajor)
+val minor by extra(lastTagMinor)
+val revision by extra(lastTagPatch)
 
-val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-
-val gitDetails = versionDetails()
-//println("gitDetails: $gitDetails")
-val gitCommit = gitDetails.gitHash.take(8)
-val gitTag = gitDetails.lastTag
-val gitDistance = gitDetails.commitDistance
-val gitHash = gitDetails.gitHash
-// gitHashFull // full 40-character Git commit hash
-val gitBranch = gitDetails.branchName // is null if the repository in detached HEAD mode
-var gitDirty = !gitDetails.isCleanTag
+//val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+//
+//val gitDetails = versionDetails()
+////println("gitDetails: $gitDetails")
+//val gitCommit = gitDetails.gitHash.take(8)
+////val gitTag = gitDetails.lastTag
+//val gitDistance = gitDetails.commitDistance
+//val gitHash = gitDetails.gitHash
+//// gitHashFull // full 40-character Git commit hash
+//val gitBranch = gitDetails.branchName // is null if the repository in detached HEAD mode
+//var gitDirty = !gitDetails.isCleanTag
 
 //val refTime = java.util.GregorianCalendar(2020, 0, 1).time!! // Date
 //val startTime = java.util.Date()
 //val seconds = ((startTime.time - refTime.time) / 1000); println("seconds:     $seconds")
-val refTime = LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
+val refTime = lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
 val startTime = LocalDateTime.now(); println("startTime:   $startTime")
 val seconds = startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC); println("seconds:     $seconds")
 val minutes = seconds / 60; println("minutes:     $minutes")
@@ -65,10 +136,10 @@ val hours = seconds / 60 / 60; println("hours:       $hours")
 
 val buildTime by extra { startTime.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) }
 //var buildNumber by extra(buildTime.substring(1..6))
-val buildNumber : String by extra { tenminutes.toString() }
+val buildNumber : String by extra { minutes.toString() }
 //var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
 val buildLabel by extra {
-    gitBranch
+    currentBranch
         .replace(Regex("^feature-"), "F-")
         .replace(Regex("^PR-"), "P-")
         .replace(Regex("^fix-"), "I-")
@@ -77,16 +148,20 @@ val buildLabel by extra {
         .replace(Regex("^temp$"), "T")
         .replace(Regex("^experimental$"), "X")
 }
-var buildVersion by extra { "$major.$minor.${buildNumber}-hg42-${gitCommit}-${buildTime}-${buildLabel}" }
-// does not work? neither dirty (always?) nor distance (from last tag?)
-// "${if(gitDirty) "+$gitDistance" else ""}"
+var buildVersion by extra { "$major.$minor.$revision.$buildNumber-hg42-${headHash}-${buildTime}-${buildLabel}" }
+var buildVersionCode by extra { "$major$minor$revision$buildNumber".toInt() }
 
 println(
     """
 version build:
-    startTime:      $startTime
-    buildTime:      $buildTime
-    buildVersion:   $buildVersion
+    startTime:          $startTime
+    buildTime:          $buildTime
+    buildVersion:       $buildVersion
+    buildVersionCode:   $buildVersionCode
+    basedOn:            $lastTag
+        time:               $lastTagDateTime
+        commit:             $headHash
+        branch:             $currentBranch
 """
 )
 
@@ -116,7 +191,7 @@ android {
         minSdk = 26
         targetSdk = 34
 
-        versionCode = "$major$minor$buildNumber".toInt()
+        versionCode = buildVersionCode
         versionName = buildVersion
         buildConfigField("int", "MAJOR", "$major")
         buildConfigField("int", "MINOR", "$minor")
