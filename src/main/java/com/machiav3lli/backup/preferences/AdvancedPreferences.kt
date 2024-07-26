@@ -388,6 +388,12 @@ val pref_busyHitTime = IntPref(
     defaultValue = 2000
 )
 
+val pref_lookForEmptyBackups = BooleanPref(
+    key = "dev-alt.lookForEmptyBackups",
+    summary = "scan for empty backups (slower refresh, especially remote)",
+    defaultValue = false
+)
+
 val pref_earlyEmptyBackups = BooleanPref(   //TODO hg42 to be removed
     key = "dev-alt.earlyEmptyBackups",
     summary = "empty backup lists for installed packages early, to prevent single scanning",
