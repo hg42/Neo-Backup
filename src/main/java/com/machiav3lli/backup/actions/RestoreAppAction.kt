@@ -28,7 +28,6 @@ import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.hasPmBypassLowTargetSDKBlock
@@ -62,7 +61,6 @@ import com.machiav3lli.backup.utils.getCryptoSalt
 import com.machiav3lli.backup.utils.getEncryptionPassword
 import com.machiav3lli.backup.utils.isAllowDowngrade
 import com.machiav3lli.backup.utils.isDisableVerification
-import com.machiav3lli.backup.utils.isEncryptionEnabled
 import com.machiav3lli.backup.utils.isRestoreAllPermissions
 import com.machiav3lli.backup.utils.suCopyFileFromDocument
 import com.machiav3lli.backup.utils.suRecursiveCopyFileFromDocument
@@ -86,6 +84,14 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         backup: Backup,
         backupMode: Int,
     ): ActionResult {
+
+        fun handleException(e: Throwable): ActionResult {
+            val message =
+                "${e::class.simpleName}: ${e.message}${e.cause?.let { " - ${it.message}" }}"
+            Timber.e("Restore failed: $message")
+            return ActionResult(app, null, message, false)
+        }
+
         try {
             Timber.i("Restoring: ${app.packageName} (${app.packageLabel})")
             work?.setOperation("R")
@@ -139,12 +145,14 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                     }
                 return ActionResult(app, null, message, false)
             } catch (e: CryptoSetupException) {
-                return ActionResult(app, null, "${e::class.simpleName}: ${e.message}", false)
+                return handleException(e)
             } finally {
                 work?.setOperation("======")
                 if (killApp)
                     pauseApp(type = "restore", wh = When.post, packageName = app.packageName)
             }
+        } catch (e: Throwable) {
+            return handleException(e)
         } finally {
             work?.setOperation("======>")
             Timber.i("$app: Restore done: $backup")
@@ -452,10 +460,12 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         var inputStream: InputStream = BufferedInputStream(archive.inputStream()!!)
         if (isEncrypted) {
             val password = getEncryptionPassword()
-            if (iv != null && password.isNotEmpty() && isEncryptionEnabled()) {
-                Timber.d("Decryption enabled")
-                inputStream = inputStream.decryptStream(password, getCryptoSalt(), iv)
-            }
+            if (password.isEmpty())
+                throw RestoreFailedException("Password is empty, set it in preferences!")
+            if (iv == null)
+                throw RestoreFailedException("IV vector could not be read from properties file, decryption impossible")
+            Timber.d("Decryption enabled")
+            inputStream = inputStream.decryptStream(password, getCryptoSalt(), iv)
         }
         if (isCompressed) {
             when (compressionType) {
@@ -527,9 +537,6 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 "Could not restore a file due to a failed root command for $targetPath: $error",
                 e
             )
-        } catch (e: Throwable) {
-            LogsHandler.unexpectedException(e)
-            throw RestoreFailedException("Could not restore a file due to a failed root command", e)
         } finally {
             // Clean up the temporary directory if it was initialized
             tempDir?.let {
@@ -622,12 +629,6 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 val error = extractErrorMessage(e.shellResult)
                 throw RestoreFailedException(
                     "Could not restore a file due to a failed root command for $targetDir: $error",
-                    e
-                )
-            } catch (e: Throwable) {
-                LogsHandler.unexpectedException(e)
-                throw RestoreFailedException(
-                    "Could not restore a file due to a failed root command",
                     e
                 )
             }

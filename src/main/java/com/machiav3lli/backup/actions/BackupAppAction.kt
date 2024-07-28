@@ -79,6 +79,14 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         var backup: Backup? = null
         var ok = false
         val fakeSeconds = pref_fakeBackupSeconds.value
+
+        fun handleException(e: Throwable): ActionResult {
+            val message =
+                "${e::class.simpleName}: ${e.message}${e.cause?.let { " - ${it.message}" }}"
+            Timber.e("Backup failed: $message")
+            return ActionResult(app, null, message, false)
+        }
+
         try {
             Timber.i("Backing up: ${app.packageName} (${app.packageLabel})")
             //invalidateCacheForPackage(app.packageName)    //TODO hg42 ???
@@ -110,46 +118,18 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 app.getAppBackupRoot(create = true)!!
             } catch (e: BackupLocationInAccessibleException) {
                 // Usually, this should never happen, but just in case...
-                val realException: Exception =
-                    BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e)
-                return ActionResult(
-                    app,
-                    null,
-                    "${realException::class.simpleName}: ${e.message}",
-                    false
-                )
+                return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             } catch (e: StorageLocationNotConfiguredException) {
-                val realException: Exception =
-                    BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e)
-                return ActionResult(
-                    app,
-                    null,
-                    "${realException::class.simpleName}: ${e.message}",
-                    false
-                )
+                return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             } catch (e: Throwable) {
                 LogsHandler.unexpectedException(e, app)
                 // Usually, this should never happen, but just in case...
-                val realException: Exception =
-                    BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e)
-                return ActionResult(
-                    app,
-                    null,
-                    "${realException::class.simpleName}: ${e.message}",
-                    false
-                )
+                return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }
             val backupBuilder = try {
                 BackupBuilder(app.packageInfo, appBackupRoot)
             } catch (e: Throwable) {
-                val realException: Exception =
-                    BackupFailedException(STORAGE_LOCATION_NOTWRITABLE, e)
-                return ActionResult(
-                    app,
-                    null,
-                    "${realException::class.simpleName}: ${e.message}${e.cause?.let { it.message?.let {" - ${it}" }}}",
-                    false
-                )
+                return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }
             val iv = initIv(CIPHER_ALGORITHM) // as we're using a static Cipher Algorithm
             backupBuilder.setIv(iv)
@@ -158,13 +138,6 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
             val pauseApp = pref_backupPauseApps.value
             if (pauseApp)
                 pauseApp(type = "backup", wh = When.pre, packageName = app.packageName)
-
-            fun handleException(e: Throwable): ActionResult {
-                val message =
-                    "${e::class.simpleName}: ${e.message}${e.cause?.let { " - ${it.message}" }}"
-                Timber.e("Backup failed: $message")
-                return ActionResult(app, null, message, false)
-            }
 
             try {
                 if (backupMode and MODE_APK == MODE_APK) {
@@ -226,8 +199,6 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 return handleException(e)
             } catch (e: IOException) {
                 return handleException(e)
-            } catch (e: Throwable) {
-                return handleException(e)
             } finally {
                 work?.setOperation("======")
                 if (pauseApp)
@@ -242,6 +213,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                     app.deleteBackup(backup)
                 }
             }
+        } catch (e: Throwable) {
+            return handleException(e)
         } finally {
             work?.setOperation("======>")
             Timber.i("${app.packageName}: Backup done: ${backup}")
@@ -263,13 +236,15 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
             dataType,
             shouldCompress,
             getCompressionType(),
-            iv != null && isEncryptionEnabled()
+            isEncryptionEnabled()
         )
         val backupFile = backupInstanceDir.createFile(backupFilename)
 
         var outStream: OutputStream = backupFile.outputStream()!!
 
-        if (iv != null && password.isNotEmpty() && isEncryptionEnabled()) {
+        if (isEncryptionEnabled()) {
+            if (iv == null)          throw CryptoSetupException(Exception("IV is null"))
+            if (password.isEmpty())  throw CryptoSetupException(Exception("password is empty"))
             outStream = outStream.encryptStream(password, getCryptoSalt(), iv)
         }
 
@@ -358,13 +333,6 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
             return false
         }
         try {
-            /*
-            if (compress) {
-                createBackupArchiveTarApi(backupInstanceDir, dataType, filesToBackup, compress, iv)
-            } else {
-                copyToBackupArchive(backupInstanceDir, dataType, filesToBackup)
-            }
-            */
             createBackupArchiveTarApi(backupInstanceDir, dataType, filesToBackup, compress, iv)
         } catch (e: IOException) {
             val message = "${e::class.canonicalName} occurred on $dataType backup: $e"
