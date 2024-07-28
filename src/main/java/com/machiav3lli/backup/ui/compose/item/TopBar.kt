@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -73,6 +74,9 @@ import java.lang.Float.max
 @Preview
 @Composable
 fun ProgressPreview() {
+
+    OABX.fakeContext = LocalContext.current.applicationContext
+
     var count by remember { mutableIntStateOf(0) }
 
     val maxCount = 4
@@ -81,7 +85,7 @@ fun ProgressPreview() {
     repeat(10) { OABX.addInfoLogText("line $it") }
     OABX.setProgress(count, maxCount)
 
-    LaunchedEffect(OABX) {
+    LaunchedEffect(true) {
         MainScope().launch {
             while (count < maxCount) {
                 OABX.beginBusy()
