@@ -160,7 +160,7 @@ fun appInfo(): List<String> {
         "------ application",
         "package   = ${BuildConfig.APPLICATION_ID}",
         "version   = ${SystemUtils.versionName} : ${SystemUtils.versionCode}",
-        SystemUtils.applicationIssuer?.let { "signed by = $it" } ?: "unsigned",
+        SystemUtils.applicationIssuer.let { "signed by = $it" },
     )
 }
 
