@@ -16,7 +16,8 @@ import java.io.OutputStream
 import java.net.URI
 import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 /*
 * based on:
@@ -462,6 +463,7 @@ class RootFile internal constructor(file: File) : File(file.absolutePath) {
         //private fun cmd(c: String): String = ShellHandler.runAsRoot(c).out[0].toString()
         //private fun cmdBool(c: String): Boolean = ShellHandler.runAsRoot(c).code == 0
 
+        //TODO hg42 should use our own isRootGranted instead of Shell.isAppGrantedRoot()
 
         fun open(pathname: String): File {
             return if (Shell.isAppGrantedRoot() == true) RootFile(pathname) else File(pathname)
