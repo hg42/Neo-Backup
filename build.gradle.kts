@@ -154,10 +154,10 @@ var buildVersionCode by extra { "$major$minor$revision${buildNumber.padStart(5, 
 println(
     """
 version build:
-    startTime:          $startTime
-    buildTime:          $buildTime
     buildVersion:       $buildVersion
     buildVersionCode:   $buildVersionCode
+    startTime:          $startTime
+    buildTime:          $buildTime
     basedOn:            $lastTag
         time:               $lastTagDateTime
         commit:             $headHash
