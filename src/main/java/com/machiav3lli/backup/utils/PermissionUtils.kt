@@ -22,21 +22,14 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.preferences.persist_ignoreBatteryOptimization
-import com.topjohnwu.superuser.Shell
 
 // Getters
 
 fun Activity.checkRootAccess(showDialogOnError: Boolean = false): Boolean {
-    val isRooted = Shell.getShell().isRoot
+    val isRooted = ShellHandler.isRoot
     if (!isRooted) {
         if (showDialogOnError)
             showFatalUiWarning(getString(R.string.noSu))
-        return false
-    }
-    try {
-        ShellHandler.runAsRoot("id")
-    } catch (e: ShellHandler.ShellCommandFailedException) {
-        showFatalUiWarning(getString(R.string.noSu))
         return false
     }
     return true
@@ -176,6 +169,7 @@ val Context.checkContactsPermission: Boolean
         }
     }
 
+@Suppress("DEPRECATION")
 val Context.checkUsageStatsPermission: Boolean
     get() {
         val appOps = (getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager)

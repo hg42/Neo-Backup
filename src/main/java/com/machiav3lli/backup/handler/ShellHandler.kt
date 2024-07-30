@@ -17,13 +17,14 @@
  */
 package com.machiav3lli.backup.handler
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.core.text.isDigitsOnly
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addErrorCommand
 import com.machiav3lli.backup.OABX.Companion.isDebug
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.ShellHandler.Companion.splitCommand
 import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInfo
 import com.machiav3lli.backup.preferences.baseInfo
 import com.machiav3lli.backup.traceDebug
@@ -31,13 +32,14 @@ import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
-import com.topjohnwu.superuser.internal.MainShell
+import com.topjohnwu.superuser.ShellUtils.fastCmd
 import com.topjohnwu.superuser.io.SuRandomAccessFile
 import de.voize.semver4k.Semver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.junit.Test
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
@@ -160,7 +162,7 @@ class ShellHandler {
 
     init {
         Shell.enableVerboseLogging = isDebug
-        Shell.setDefaultBuilder(shellDefaultBuilder())
+        initLibSU()
         needFreshShell(startup = true)
 
         baseInfo().forEach { Timber.i(it) }
@@ -624,32 +626,34 @@ class ShellHandler {
 
         val isGrantedRoot get() = Shell.isAppGrantedRoot()
         val hasRootShell get() = Shell.getShell().status >= Shell.ROOT_SHELL
-        val hasMountMaster get() = Shell.getShell().status >= Shell.ROOT_MOUNT_MASTER
+        //val hasMountMaster get() = Shell.getShell().status >= Shell.ROOT_MOUNT_MASTER     //TODO wech
 
-        val hasMountMasterOption: Boolean by lazy {
-                // only return true if command does not choke on the option and exits with code 0
-                runCatching {
-                    ShellUtils.fastCmdResult("echo true | su --mount-master")
-                }.getOrNull() ?: false
-            }
+        //TODO wech
+        //val hasMountMasterOption: Boolean by lazy {
+        //    // only return true if command does not choke on the option and exits with code 0
+        //    runCatching {
+        //        ShellUtils.fastCmdResult("echo true | su --mount-master")
+        //    }.getOrNull() ?: false
+        //}
 
-        val hasNsEnter: Boolean by lazy {
-                // only return true if command does not choke on the option and exits with code 0
-            runCatching {
-                    ShellUtils.fastCmdResult("nsenter --help")
-                }.getOrNull() ?: false
-            }
+        //TODO wech
+        //val hasNsEnter: Boolean by lazy {
+        //    // only return true if command does not choke on the option and exits with code 0
+        //    runCatching {
+        //        ShellUtils.fastCmdResult("nsenter --help")
+        //    }.getOrNull() ?: false
+        //}
 
         val hasPmBypassLowTargetSDKBlock: Boolean by lazy {
             runCatching {
-                // the option is not include in usage output, instead check,
+                // the option is not included in usage output, instead check,
                 // if the error message is complaining about the missing file
                 // and not about that option
                 ShellUtils.fastCmdResult(
                     "pm install --bypass-low-target-sdk-block not-existing.apk 2>&1 | grep not-existing.apk"
                 )
                         &&
-                        ! ShellUtils.fastCmdResult(
+                        !ShellUtils.fastCmdResult(
                             "pm install --bypass-low-target-sdk-block not-existing.apk 2>&1 | grep bypass-low-target-sdk-block"
                         )
             }.getOrNull() ?: false
@@ -658,7 +662,7 @@ class ShellHandler {
         fun sysInfo() =
             listOf(
                 "system       = Android ${Build.VERSION.RELEASE} - ${ShellUtils.fastCmd("uname -r -m -o")}",
-                "has nsenter  = $hasNsEnter",
+                //"has nsenter  = $hasNsEnter", //TODO wech
                 "has bypass-low-target-sdk-block = $hasPmBypassLowTargetSDKBlock",
             )
 
@@ -667,36 +671,166 @@ class ShellHandler {
                 "app is granted root        = $isGrantedRoot",
                 "libsu shell status         = ${Shell.getShell().status} = ${
                     when (Shell.getShell().status) {
-                        Shell.UNKNOWN           -> "UNKNOWN"
-                        Shell.NON_ROOT_SHELL    -> "NON_ROOT_SHELL"
-                        Shell.ROOT_SHELL        -> "ROOT_SHELL"
-                        Shell.ROOT_MOUNT_MASTER -> "ROOT_MOUNT_MASTER"
-                        else                    -> "unknown code"
+                        Shell.UNKNOWN        -> "UNKNOWN"
+                        Shell.NON_ROOT_SHELL -> "NON_ROOT_SHELL"
+                        Shell.ROOT_SHELL     -> "ROOT_SHELL"
+                        //Shell.ROOT_MOUNT_MASTER -> "ROOT_MOUNT_MASTER"     //TODO wech
+                        else                 -> "unknown code"
                     }
                 }",
-                "libsu has root shell       = $hasRootShell",
-                "libsu has mount master     = $hasMountMaster",
-                "su has mount master option = $hasMountMasterOption",
+                "libsu uses root shell          = $hasRootShell",               //TODO wech (never becasue initialized as non-root)
+                //"libsu has mount master         = $hasMountMaster",           //TODO wech
+                //"su has mount master option     = $hasMountMasterOption",     //TODO wech
+                "su command run to gain root    = $suCommand",
             )
+
+        var suCommand: List<String> = listOf()
+            private set
+
+        val profileId: String get() = ShellCommands.currentProfile.toString()
+
+        fun splitCommand(command: String): List<String> {
+            val result = mutableListOf<String>()
+            var current = StringBuilder()
+            var inDoubleQuotes = false
+            var inSingleQuotes = false
+            var escapeNext = false
+
+            for (char in command) {
+                when {
+                    escapeNext -> {
+                        current.append(char)
+                        escapeNext = false
+                    }
+                    char == '\\' -> {
+                        if (inDoubleQuotes) {
+                            escapeNext = true
+                        } else {
+                            current.append(char)
+                        }
+                    }
+                    char == '"' -> {
+                        if (inSingleQuotes) {
+                            current.append(char)
+                        } else {
+                            inDoubleQuotes = !inDoubleQuotes
+                            if (!inDoubleQuotes) {
+                                result.add(current.toString())
+                                current = StringBuilder()
+                            }
+                        }
+                    }
+                    char == '\'' -> {
+                        if (inDoubleQuotes) {
+                            current.append(char)
+                        } else {
+                            inSingleQuotes = !inSingleQuotes
+                            if (!inSingleQuotes) {
+                                result.add(current.toString())
+                                current = StringBuilder()
+                            }
+                        }
+                    }
+                    char.isWhitespace() -> {
+                        if (inDoubleQuotes || inSingleQuotes) {
+                            current.append(char)
+                        } else {
+                            if (current.isNotEmpty()) {
+                                result.add(current.toString())
+                                current = StringBuilder()
+                            }
+                        }
+                    }
+                    else -> {
+                        current.append(char)
+                    }
+                }
+            }
+
+            if (current.isNotEmpty()) {
+                result.add(current.toString())
+            }
+
+            return result
+        }
+
+        fun checkCommand(command: String, check: (String) -> Boolean): Boolean {
+            try {
+                val result = fastCmd(command)
+                if (check(result))
+                    return true
+                else {
+                    Timber.i("check failed: $command")
+                }
+            } catch (e: Throwable) {
+                Timber.i("check failed: $command")
+                logException(e, prefix = "    ")
+            }
+            return false
+        }
+
+        val isRoot: Boolean
+            get() {
+                return checkCommand("id -u") { it.toInt() == 0 } &&
+                        checkCommand("echo \$ANDROID_DATA/user/${profileId}/*") {
+                            it.trim().isNotEmpty()
+                        } &&
+                        checkCommand("echo \$ANDROID_DATA/app/*") {
+                            it.trim().isNotEmpty()
+                        } &&
+                        checkCommand("echo \$ANDROID_ASSETS/*") {
+                            it.trim().isNotEmpty()
+                        }
+            }
 
         class ShellInit : Shell.Initializer() {
             override fun onInit(context: Context, shell: Shell): Boolean {
                 shell.newJob()
-                    .add("nsenter --mount=/proc/1/ns/mnt sh")
+                    .add(suCommand.joinToString(" ", "'", "'"))
                     .exec()
                 return true
             }
         }
 
-        fun shellDefaultBuilder() =
-            Shell.Builder.create()
-                .setTimeout(20)
-                .setInitializers(ShellInit::class.java)
-        //.setInitializers(BusyBoxInstaller::class.java)
-        //.setFlags(Shell.FLAG_MOUNT_MASTER)
+        private fun tryGainAccessCommand(command: List<String>): Boolean {
+            try {
+                Shell.setDefaultBuilder(
+                    Shell.Builder.create()
+                        .setFlags(Shell.FLAG_NON_ROOT_SHELL)    // we add our own suCommands
+                        //.setCommands(*command.toTypedArray())
+                        .setTimeout(20)
+                        .setInitializers(ShellInit::class.java)
+                    //.setInitializers(BusyBoxInstaller::class.java)
+                )
+                if (isRoot)
+                    return true
+            } catch (e: Throwable) {
+                Timber.i(command.joinToString(" ", "'", "'"))
+                logException(e, prefix = "   ")
+            }
+            Shell.getCachedShell()?.let {
+                if (it.isAlive)
+                    it.waitAndClose(0L, TimeUnit.SECONDS)
+            }
+            return false
+        }
+
+        fun initLibSU() {
+            for (command in listOf(
+                listOf("su", "-c", "nsenter --mount=/proc/1/ns/mnt sh"),
+                listOf("su", "--mount-master"),
+                listOf("su"),
+                //listOf("sh")
+            )) {
+                suCommand = command
+                if (tryGainAccessCommand(command)) {
+                    return
+                }
+            }
+            //suCommand = listOf()  // setDefaultBuilder would be missing here
+        }
 
         fun needFreshShell(
-            builder: Shell.Builder = shellDefaultBuilder(),
             startup: Boolean = false,
         ): Shell {
             val shellBefore = Shell.getCachedShell()
@@ -718,26 +852,9 @@ class ShellHandler {
             return shellAfter
         }
 
-        interface RunnableShellCommand {
-            fun runCommand(command: String): Shell.Job
-        }
-
-        class ShRunnableShellCommand : RunnableShellCommand {
-            override fun runCommand(command: String): Shell.Job {
-                return Shell.cmd(command)
-            }
-        }
-
-        class SuRunnableShellCommand : RunnableShellCommand {
-            @SuppressLint("RestrictedApi") // TODO re-evaluate this
-            override fun runCommand(command: String): Shell.Job {
-                return MainShell.newJob(true, command)
-            }
-        }
-
         @Throws(ShellCommandFailedException::class)
         private fun runShellCommand(
-            shell: RunnableShellCommand,
+            shell: Shell,
             command: String,
             throwFail: Boolean = true,
         ): Shell.Result {
@@ -749,7 +866,7 @@ class ShellHandler {
             Timber.d("Running Command: $command")
             val stdout: List<String> = arrayListOf()
             val stderr: List<String> = arrayListOf()
-            val result = shell.runCommand(command).to(stdout, stderr).exec()
+            val result = Shell.cmd(command).to(stdout, stderr).exec()
             Timber.d("Command(s) $command ended with ${result.code}")
             if (!result.isSuccess) {
                 addErrorCommand(command)
@@ -760,13 +877,8 @@ class ShellHandler {
         }
 
         @Throws(ShellCommandFailedException::class)
-        fun runAsUser(command: String, throwFail: Boolean = true): Shell.Result {
-            return runShellCommand(ShRunnableShellCommand(), command, throwFail)
-        }
-
-        @Throws(ShellCommandFailedException::class)
         fun runAsRoot(command: String, throwFail: Boolean = true): Shell.Result {
-            return runShellCommand(SuRunnableShellCommand(), command, throwFail)
+            return runShellCommand(Shell.getShell(), command, throwFail)
         }
 
         fun runAsRootPipeInCollectErr(
@@ -873,25 +985,6 @@ class ShellHandler {
             return err.isNotEmpty() && err[0].contains("no such file or directory", true)
         }
 
-        var suCommand: List<String> = listOf()
-            get() {
-                if (field.isEmpty()) {
-                    // only set to true if command is executed and returns exit code 0
-                    field = when {
-                        hasNsEnter           -> listOf(
-                            "su",
-                            "-c",
-                            "nsenter --mount=/proc/1/ns/mnt sh"
-                        )
-
-                        hasMountMasterOption -> listOf("su", "--mount-master")
-                        else                 -> listOf("su")
-                    }
-                    //Timber.i("using '$field' for streaming commands")
-                }
-                return field
-            }
-
         @Throws(IOException::class)
         fun quirkLibsuReadFileWorkaround(inputFile: FileInfo, output: OutputStream) {
             quirkLibsuReadFileWorkaround(inputFile.absolutePath, inputFile.fileSize, output)
@@ -965,3 +1058,12 @@ class ShellHandler {
         }
     }
 }
+
+
+@Test
+fun test_splitCommand() {
+    val command = """echo "Hello\ World!\n" 'This is a test with a backslash->\' \\\\escaped\\ space"""
+    val cmdArray = splitCommand(command)
+    for (arg in cmdArray) { println("'$arg'") }
+}
+
