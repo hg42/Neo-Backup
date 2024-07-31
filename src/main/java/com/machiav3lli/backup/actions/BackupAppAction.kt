@@ -40,7 +40,7 @@ import com.machiav3lli.backup.items.ActionResult
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.plugins.ShellScriptPlugin
+import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.pref_backupCache
 import com.machiav3lli.backup.preferences.pref_backupPauseApps
 import com.machiav3lli.backup.preferences.pref_backupTarCmd
@@ -156,10 +156,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
 
             val backupInstanceDir = backupBuilder.backupDir
             val pauseApp = pref_backupPauseApps.value
-            if (pauseApp) {
-                Timber.d("pre-process package (to avoid file inconsistencies during backup etc.)")
-                preprocessPackage(type = "backup", packageName = app.packageName)
-            }
+            if (pauseApp)
+                pauseApp(type = "backup", wh = When.pre, packageName = app.packageName)
 
             fun handleException(e: Throwable): ActionResult {
                 val message =
@@ -232,10 +230,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 return handleException(e)
             } finally {
                 work?.setOperation("======")
-                if (pauseApp) {
-                    Timber.d("post-process package (to set it back to normal operation)")
-                    postprocessPackage(type = "backup", packageName = app.packageName)
-                }
+                if (pauseApp)
+                    pauseApp(type = "backup", wh = When.post, packageName = app.packageName)
                 if (backup == null)
                     backup = backupBuilder.createBackup()
                 // TODO maybe need to handle some emergent props
@@ -412,7 +408,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
 
         var result = false
         try {
-            val tarScript = ShellScriptPlugin.findScript("tar").toString()
+            val tarScript = InternalShellScriptPlugin.findScript("tar").toString()
 
             var options = ""
             options += " --exclude ${quote(OABX.assets.BACKUP_EXCLUDE_FILE)}"

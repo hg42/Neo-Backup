@@ -86,11 +86,7 @@ class RestoreSystemAppAction(context: Context, work: AppActionWork?, shell: Shel
         } ?: throw RestoreFailedException("Could not find apk location in backup")
     }
 
-    override fun preprocessPackage(type: String, packageName: String) {
-        // stub
-    }
-
-    override fun postprocessPackage(type: String, packageName: String) {
-        // stub
+    override fun pauseApp(type: String, wh: When, packageName: String) {
+        // system apps will not be paused
     }
 }

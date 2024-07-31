@@ -25,9 +25,10 @@ import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.plugins.RegexPlugin.Companion.findRegex
-import com.machiav3lli.backup.plugins.ShellScriptPlugin
+import com.machiav3lli.backup.plugins.InternalRegexPlugin.Companion.findRegex
+import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
+import com.machiav3lli.backup.preferences.pref_restoreKillApps
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.topjohnwu.superuser.Shell
@@ -37,7 +38,7 @@ import timber.log.Timber
 abstract class BaseAppAction protected constructor(
     protected val context: Context,
     protected val work: AppActionWork?,
-    protected val shell: ShellHandler
+    protected val shell: ShellHandler,
 ) {
 
     protected val deviceProtectedStorageContext: Context =
@@ -47,16 +48,18 @@ abstract class BaseAppAction protected constructor(
         what: String,
         isCompressed: Boolean,
         compressionType: String?,
-        isEncrypted: Boolean
+        isEncrypted: Boolean,
     ): String {
         val extension = buildString {
             if (isCompressed) {
-                append(when (compressionType) {
-                    null, "no"  -> ""
-                    "gz"  -> ".gz"
-                    "zst" -> ".zst"
-                    else  -> ".gz"
-                })
+                append(
+                    when (compressionType) {
+                        null, "no" -> ""
+                        "gz"       -> ".gz"
+                        "zst"      -> ".zst"
+                        else       -> ".gz"
+                    }
+                )
             }
             if (isEncrypted) {
                 append(".enc")
@@ -70,28 +73,60 @@ abstract class BaseAppAction protected constructor(
         protected constructor(message: String?, cause: Throwable?) : super(message, cause)
     }
 
-    private fun prepostOptions(type: String): String =
-        when (type) {
-            "backup" -> if (pref_backupSuspendApps.value) "--suspend" else ""
-            else     -> ""
-        }
+    private fun pauseOptions(wh: String) =
+        when (wh) {
+            "pre-backup"  -> listOfNotNull(
+                if (pref_backupSuspendApps.value) "--suspend" else null,
+            )
+            "post-backup"  -> listOfNotNull(
+                if (pref_backupSuspendApps.value) "--suspend" else null,
+            )
 
-    open fun preprocessPackage(type: String, packageName: String) {
+            "pre-restore" -> listOfNotNull(
+                if (pref_restoreKillApps.value) "--kill" else null
+            )
+            "post-restore" -> listOfNotNull(
+            )
+
+            else      -> listOf()
+
+        }.joinToString(" ")
+
+    enum class When { pre, post }
+
+    open fun pauseApp(type: String, wh: When, packageName: String) {
+        if (packageName.matches(doNotStop)) return // will stop most activity, needs a good blacklist
         try {
-            val profileId = currentProfile
+
             val applicationInfo = context.packageManager.getApplicationInfo(packageName, 0)
-            val script = ShellScriptPlugin.findScript("package").toString()
-            traceBold { "---------------------------------------- preprocess $type $packageName profile $profileId uid ${applicationInfo.uid}" }
-            if (applicationInfo.uid < android.os.Process.FIRST_APPLICATION_UID) { // exclude several system users, e.g. system, radio
+            val appuid = applicationInfo.uid
+            if (appuid < android.os.Process.FIRST_APPLICATION_UID) { // exclude several system users, e.g. system, radio
                 Timber.w("$type $packageName: ignore processes of system user UID < ${android.os.Process.FIRST_APPLICATION_UID}")
                 return
             }
-            if (!packageName.matches(doNotStop)) { // will stop most activity, needs a good blacklist
-                val shellResult =
-                    runAsRoot("sh $script pre-$type $profileId $utilBoxQ ${prepostOptions(type)} $packageName ${applicationInfo.uid}")
-                preprocessResults["$type:$packageName:$profileId"] = shellResult.out.asSequence()
-                    .filter { line: String -> line.isNotEmpty() }
-                    .toMutableList()
+            val profileId = currentProfile
+            val script = InternalShellScriptPlugin.findScript("pause").toString()
+
+            val options = pauseOptions("$wh-$type")
+
+            var stoppedPids: List<String>? = null     // pids
+            if (wh == When.post) {
+                stoppedPids = preprocessResults["$type:$packageName:$profileId"]
+                Timber.w("pids: ${stoppedPids?.joinToString(" ")}")
+            }
+            val params = stoppedPids?.joinToString("", " ") ?: ""
+
+            val cmd = "sh $script $wh-$type $profileId $utilBoxQ $options $packageName $appuid$params"
+            traceBold { "$type $packageName: $cmd" }
+
+            val shellResult = runAsRoot(cmd)
+
+            if (wh == When.pre) {
+                // save the stopped pids
+                preprocessResults["$type:$packageName:$profileId"] =
+                    shellResult.out.asSequence()
+                        .filter { line: String -> line.isNotEmpty() }
+                        .toMutableList()
                 Timber.w(
                     "$type $packageName: pre-results: ${
                         preprocessResults["$type:$packageName:$profileId"]?.joinToString(
@@ -100,43 +135,14 @@ abstract class BaseAppAction protected constructor(
                     }"
                 )
             }
-        } catch (e: PackageManager.NameNotFoundException) {
-            Timber.i("$type $packageName: cannot preprocess: package does not exist")
-        } catch (e: ShellCommandFailedException) {
-            Timber.i("$type $packageName: cannot preprocess: ${e.shellResult.err.joinToString(" ")}")
-        } catch (e: Throwable) {
-            LogsHandler.unexpectedException(e)
-        }
-    }
-
-    open fun postprocessPackage(type: String, packageName: String) {
-        try {
-            val profileId = currentProfile
-            val applicationInfo = context.packageManager.getApplicationInfo(packageName, 0)
-            val script = ShellScriptPlugin.findScript("package").toString()
-            traceBold { "........................................ postprocess $type $packageName profile $profileId uid ${applicationInfo.uid}" }
-            if (applicationInfo.uid < android.os.Process.FIRST_APPLICATION_UID) { // exclude several system users, e.g. system, radio
-                Timber.w("$type $packageName: ignore processes of system user UID < ${android.os.Process.FIRST_APPLICATION_UID}")
-                return
-            }
-            preprocessResults["$type:$packageName:$profileId"]?.let { results ->
-                Timber.w("$type $packageName: postprocess pre-results: ${results.joinToString(" ")}")
-                runAsRoot(
-                    "sh $script post-$type $profileId $utilBoxQ ${prepostOptions(type)} $packageName ${applicationInfo.uid} ${
-                        results.joinToString(
-                            " "
-                        )
-                    }"
-                )
+            if (wh == When.post) {
                 preprocessResults.remove("$type:$packageName:$profileId")
-            } ?: run {
-                Timber.w("$type $packageName: no pre-results")
-                runAsRoot("sh $script post-$type $profileId $utilBoxQ ${prepostOptions(type)} $packageName ${applicationInfo.uid}")
             }
+
         } catch (e: PackageManager.NameNotFoundException) {
-            Timber.w("$type $packageName: cannot postprocess: package does not exist")
+            Timber.i("$type $packageName: cannot ${wh}-process: package does not exist")
         } catch (e: ShellCommandFailedException) {
-            Timber.w("$type $packageName: cannot postprocess: ${e.shellResult.err.joinToString(" ")}")
+            Timber.i("$type $packageName: cannot ${wh}-process: ${e.shellResult.err.joinToString(" ")}")
         } catch (e: Throwable) {
             LogsHandler.unexpectedException(e)
         }
@@ -152,8 +158,15 @@ abstract class BaseAppAction protected constructor(
         const val BACKUP_DIR_OBB_FILES = "obb_files"
         const val BACKUP_DIR_MEDIA_FILES = "media_files"
 
-        val ignoredPackages = findRegex("ignored_packages")
-        val doNotStop = findRegex("do_not_stop")
+        val replacements = mapOf(
+            "<ownPackage>" to com.machiav3lli.backup.BuildConfig.APPLICATION_ID.replace(
+                ".",
+                """\."""
+            )
+        )
+
+        val ignoredPackages = findRegex("ignored_packages", replacements)
+        val doNotStop = findRegex("do_not_stop", replacements)
 
         init {
             Timber.i("ignoredPackages = $ignoredPackages")

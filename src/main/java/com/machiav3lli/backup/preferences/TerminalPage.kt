@@ -85,6 +85,7 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.share
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler.Companion.needFreshShell
+import com.machiav3lli.backup.handler.ShellHandler.Companion.quoteMultiple
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeOutCollectErr
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
@@ -246,7 +247,7 @@ fun accessTest() =
             listOf(
                 "--- not using libsu",
                 "uses: echo command | ${
-                    suCommand.joinToString(" ") { "'$it'" }
+                    quoteMultiple(suCommand)
                 } (used for streaming commands in backup/restore)"
             ) +
             accessTest1("system app",

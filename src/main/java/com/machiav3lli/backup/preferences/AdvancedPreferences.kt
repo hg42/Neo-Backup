@@ -64,7 +64,7 @@ fun DevPrefGroups() {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         PrefsGroupCollapsed(prefs = devUserOptions, heading = "advanced users (those who know)")
-        PrefsGroupCollapsed(prefs = devAltOptions, heading = "alternates (to compare two variants)")
+        PrefsGroupCollapsed(prefs = devAltOptions, heading = "alternatives (to compare two variants)")
         PrefsGroupCollapsed(prefs = devLogOptions, heading = "logging")
         PrefsGroupCollapsed(prefs = devTraceOptions, heading = "tracing")
         PrefsGroupCollapsed(prefs = devFileOptions, heading = "file handling")
