@@ -241,14 +241,6 @@ android {
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
             signingConfig = signingConfigs.getByName("hg42test")
         }
-        named("debug") {
-            applicationIdSuffix = ".hg42.debug"
-            versionNameSuffix = "-debug"
-            isMinifyEnabled = false
-            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
-            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
-            signingConfig = signingConfigs.getByName("hg42test")
-        }
         create("neo") {
             applicationIdSuffix = ".neo"
             isMinifyEnabled = false
@@ -256,6 +248,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        named("debug") {
+            applicationIdSuffix = ".hg42.debug"
+            versionNameSuffix = "-debug"
+            isMinifyEnabled = false
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
         create("pumpkin") {
             applicationIdSuffix = ".hg42"
