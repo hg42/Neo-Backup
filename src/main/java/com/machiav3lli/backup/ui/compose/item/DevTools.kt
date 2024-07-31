@@ -1,5 +1,6 @@
 package com.machiav3lli.backup.ui.compose.item
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK
@@ -31,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -69,7 +71,11 @@ import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.UndeterminedStorageFile
 import com.machiav3lli.backup.plugins.Plugin
+import com.machiav3lli.backup.plugins.Plugin.Companion.displayPath
+import com.machiav3lli.backup.plugins.Plugin.Companion.fileFor
+import com.machiav3lli.backup.plugins.Plugin.Companion.getAll
 import com.machiav3lli.backup.plugins.Plugin.Companion.pluginTypes
+import com.machiav3lli.backup.plugins.Plugin.Companion.typeFor
 import com.machiav3lli.backup.plugins.SpecialFilesPlugin
 import com.machiav3lli.backup.plugins.TextPlugin
 import com.machiav3lli.backup.pref_autoLogAfterSchedule
@@ -268,29 +274,12 @@ fun TextInput(name: TextFieldValue, onNameChange: (TextFieldValue) -> Unit) {
     )
 }
 
-fun fileFor(dir: File, name: String, type: String) =
-    Plugin.pluginExtension.get(type)?.let {
-        dir.resolve("$name.$it")
-    }
-
-fun typeFor(plugin: Plugin?) = plugin?.typeName ?: "Unknown"
-
-const val BUILTIN = "<builtin>"
-const val USER = "<user>"
-
-fun displayPath(path: String): String {
-    var result = path
-    Plugin.builtinDir?.path?.let { builtinDir ->
-        result = result.replace(builtinDir, BUILTIN)
-    }
-    Plugin.userDir?.path?.let { userDir ->
-        result = result.replace(userDir, USER)
-    }
-    return result
-}
-
 @Composable
-fun MenuSelector(selectedOption: String, options: MutableSet<String>, onOptionSelected: (String) -> Unit) {
+fun MenuSelector(
+    selectedOption: String,
+    options: MutableSet<String>,
+    onOptionSelected: (String) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
@@ -319,26 +308,23 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
 
     var name by remember { mutableStateOf(TextFieldValue(plugin?.name ?: "")) }
     var editPlugin by remember { mutableStateOf(plugin) }
-    var selectedClass by remember { mutableStateOf(
-        editPlugin?.let { typeFor(it) } ?: Plugin.DEFAULT_TYPE
-    ) }
-    val where = displayPath(editPlugin?.file?.path ?: "")
-
-    val pluginDir by remember {
+    var selectedType by remember {
         mutableStateOf(
-            OABX.context.getExternalFilesDir(null)?.resolve("plugin")
+            editPlugin?.let { Plugin.typeFor(it) } ?: Plugin.DEFAULT_TYPE
         )
     }
+    val where = displayPath(editPlugin?.file?.path ?: "")
 
     fun submit() {
         if ((plugin != null)
             && (plugin.name == (editPlugin?.name ?: ""))
             && (plugin::class != editPlugin?.let { it::class })
-            && (plugin.file.parent == pluginDir?.path)
+            && (!plugin.isBuiltin)
         ) {
             plugin.delete()
         }
-        editPlugin!!.save()
+        editPlugin?.ensureEditable()
+        editPlugin?.save()
         onSubmit(editPlugin)
     }
 
@@ -361,39 +347,42 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            MenuSelector(selectedClass, pluginTypes.keys) {
-                selectedClass = it
+            MenuSelector(selectedType, pluginTypes.keys) {
+                selectedType = it
             }
             Spacer(modifier = Modifier.weight(1f))
             if (editPlugin == null) {
                 TerminalButton("Create") {
-                    if (pluginDir != null) {
+                    if (Plugin.userDir != null) {
                         val file = fileFor(
-                            dir = pluginDir!!,
+                            dir = Plugin.userDir!!,
                             name = name.text,
-                            type = selectedClass
+                            type = selectedType
                         )!!
                         editPlugin = Plugin.createFrom(file = file)
                     }
                     editPlugin!!.save()
                 }
             } else {
-                TerminalButton(if (where.startsWith(BUILTIN)) "Save Copy" else "Save") {
-                    if (editPlugin != null && pluginDir != null) {
-                        val file = fileFor(
-                            dir = pluginDir!!,
-                            name = name.text,
-                            type = selectedClass
-                        )!!
-                        if (typeFor(editPlugin) != selectedClass) {
-                            val text = if (editPlugin is TextPlugin)
-                                (editPlugin as TextPlugin).text
-                            else
-                                null
-                            editPlugin = Plugin.createFrom(file = file)
-                            text?.let { (editPlugin as TextPlugin).text = it }
+                TerminalButton(if (editPlugin?.isBuiltin ?: true) "Save Copy" else "Save") {
+                    if (editPlugin != null && Plugin.userDir != null) {
+                        try {
+                            val file = fileFor(
+                                dir = Plugin.userDir!!,
+                                name = name.text,
+                                type = selectedType
+                            )!!
+                            if (typeFor(editPlugin) != selectedType) {
+                                val text = if (editPlugin is TextPlugin)
+                                    (editPlugin as TextPlugin).text
+                                else
+                                    null
+                                editPlugin = Plugin.createFrom(file = file)
+                                text?.let { (editPlugin as TextPlugin).text = it }
+                            }
+                            editPlugin!!.file = file
+                        } catch (_: Throwable) {
                         }
-                        editPlugin!!.file = file
                     }
                     submit()
                 }
@@ -421,21 +410,29 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
 
 
 @Composable
-fun PluginItem(plugin: Plugin, onEdit: (plugin: Plugin) -> Unit) {
+fun PluginItem(
+    plugin: Plugin,
+    onChange: (plugin: Plugin) -> Unit,
+    onEdit: (plugin: Plugin) -> Unit,
+) {
     val path = displayPath(plugin.file.path)
     Card(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.outlinedCardColors(
-            containerColor = if (path.startsWith(BUILTIN))
-                MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (plugin.isBuiltin)
+                MaterialTheme.colorScheme.surfaceContainerHighest
             else
-                MaterialTheme.colorScheme.primaryContainer
+                MaterialTheme.colorScheme.surfaceContainerLow
         ),
         modifier = Modifier.clickable {
             onEdit(plugin)
         }
     ) {
         Row {
+            Checkbox(checked = plugin.enabled, onCheckedChange = {
+                plugin.enable(it)
+                onChange(plugin)
+            })
             Column(
                 modifier = Modifier
                     .padding(4.dp)
@@ -460,17 +457,17 @@ fun PluginsPage() {
 
     var dialog by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
-    val plugins = remember { mutableStateListOf<Plugin>() }
+    val pluginList = remember { mutableStateListOf<Plugin>() }
+    //val pluginList by remember { derivedStateOf { getAll<Plugin>() } }
 
-    fun scan() {
+    fun reload() {
+        pluginList.clear()
         Plugin.scan()
-        plugins.clear()
-        plugins.addAll(Plugin.plugins.values)
+        pluginList.addAll(getAll())
     }
 
     LaunchedEffect(true) {
-        plugins.clear()
-        plugins.addAll(Plugin.plugins.values)
+        reload()
     }
 
     fun edit(plugin: Plugin?) {
@@ -478,7 +475,7 @@ fun PluginsPage() {
             DevDialog(onDismiss = { dialog = null }) {
                 PluginEditor(plugin) {
                     dialog = null
-                    scan()
+                    reload()
                 }
             }
         }
@@ -492,8 +489,8 @@ fun PluginsPage() {
                 edit(null)
             }
 
-            TerminalButton("Scan") {
-                scan()
+            TerminalButton("Reload") {
+                reload()
             }
         }
         LazyColumn(
@@ -503,7 +500,7 @@ fun PluginsPage() {
         ) {
             val scope = this
             pluginTypes.keys.forEach { type ->
-                val typePlugins = plugins.filter { typeFor(it) == type }.sortedBy { it.name }
+                val typePlugins = pluginList.filter { typeFor(it) == type }.sortedBy { it.name }
                 if (typePlugins.isNotEmpty()) {
                     scope.apply {
                         stickyHeader {
@@ -521,11 +518,12 @@ fun PluginsPage() {
                                 )
                             }
                         }
-                        items(
-                            typePlugins,
-                            key = { it.name }
-                        ) { plugin ->
-                            PluginItem(plugin) { edit(plugin) }
+                        items(typePlugins, key = { it.name }) { plugin ->
+                            PluginItem(
+                                plugin,
+                                onChange = { reload() },
+                                onEdit = { edit(plugin) },
+                            )
                         }
                     }
                 }
@@ -536,13 +534,14 @@ fun PluginsPage() {
     dialog?.let { it() }
 }
 
+@SuppressLint("SdCardPath")
 @Preview
 @Composable
 fun PluginsPagePreview() {
 
     OABX.fakeContext = LocalContext.current.applicationContext
 
-    Plugin.plugins = mutableMapOf(
+    Plugin.setPlugins(
         "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
         "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
         "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),
@@ -939,13 +938,14 @@ fun DevTools(
     }
 }
 
+@SuppressLint("SdCardPath")
 @Preview
 @Composable
 fun DevToolsPreview() {
 
     OABX.fakeContext = LocalContext.current.applicationContext
 
-    Plugin.plugins = mutableMapOf(
+    Plugin.setPlugins(
         "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
         "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
         "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),

@@ -44,7 +44,7 @@ import com.machiav3lli.backup.items.ActionResult
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.plugins.ShellScriptPlugin
+import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.pref_delayBeforeRefreshAppInfo
 import com.machiav3lli.backup.preferences.pref_enableSessionInstaller
 import com.machiav3lli.backup.preferences.pref_installationPackage
@@ -90,10 +90,9 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
             Timber.i("Restoring: ${app.packageName} (${app.packageLabel})")
             work?.setOperation("R")
             val killApp = pref_restoreKillApps.value
-            if (killApp) {
-                Timber.d("pre-process package")
-                preprocessPackage(type = "restore", packageName = app.packageName)
-            }
+            if (killApp)
+                pauseApp(type = "restore", wh = When.pre, packageName = app.packageName)
+
             try {
                 val backupDir = backup.dir
                     ?: run {
@@ -143,10 +142,8 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 return ActionResult(app, null, "${e::class.simpleName}: ${e.message}", false)
             } finally {
                 work?.setOperation("======")
-                if (killApp) {
-                    Timber.d("post-process package (to set it back to normal operation)")
-                    postprocessPackage(type = "restore", packageName = app.packageName)
-                }
+                if (killApp)
+                    pauseApp(type = "restore", wh = When.post, packageName = app.packageName)
             }
         } finally {
             work?.setOperation("======>")
@@ -576,7 +573,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                         OABX.assets.DATA_RESTORE_EXCLUDED_BASENAMES
                     )
 
-                    val tarScript = ShellScriptPlugin.findScript("tar").toString()
+                    val tarScript = InternalShellScriptPlugin.findScript("tar").toString()
                     val qTarScript = quote(tarScript)
 
                     var options = ""

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.room.Entity
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.plugins.SpecialFilesPlugin
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
@@ -129,7 +130,7 @@ open class SpecialInfo : PackageInfo {
                             )
                     }
 
-                    specialInfos += SpecialFilesPlugin.specialInfos()
+                    specialInfos += SpecialFilesPlugin.specialInfos(ShellCommands.currentProfile.toString())
                 }
                 locked = false
             }

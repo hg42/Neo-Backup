@@ -9,16 +9,19 @@ import kotlin.reflect.KClass
 
 interface PluginCompanion {
 
-    fun klass() : KClass<out Plugin>
-    fun name() : String = klass().simpleName?.removeSuffix("Plugin") ?: "Unknown"
-    fun register() : Boolean
-    fun create(file: File) : Plugin?
+    fun klass(): KClass<out Plugin>
+    fun name(): String = klass().simpleName?.removeSuffix("Plugin") ?: "Unknown"
+    fun register(): Boolean
+    fun create(file: File): Plugin?
 }
+
+const val OFF_SUFFIX = "_off"
 
 abstract class Plugin(val name: String, var file: File) {
 
     val className: String? get() = this::class.simpleName
     val typeName: String get() = className?.replace("Plugin", "") ?: "Unknown"
+    var enabled = true
 
     @Composable
     abstract fun Editor()
@@ -26,14 +29,48 @@ abstract class Plugin(val name: String, var file: File) {
     abstract fun save()
     abstract fun delete()
 
+    fun enable(enable: Boolean = true) {
+        if (enable != enabled) {
+            enabled = enable
+            ensureEditable()
+            if (enable) {
+                if (file.path.endsWith(OFF_SUFFIX)) {
+                    file.renameTo(File(file.path.removeSuffix(OFF_SUFFIX)))
+                    scan()
+                }
+            } else {
+                if (!file.path.endsWith(OFF_SUFFIX)) {
+                    file.renameTo(File(file.path + OFF_SUFFIX))
+                    scan()
+                }
+            }
+        }
+    }
+
+    val isBuiltin get() = file.path.startsWith(builtinDir!!.path)
+
+    fun ensureEditable() {
+        if (isBuiltin) {
+            val userFile = fileFor(
+                dir = userDir!!,
+                name = name,
+                type = typeName
+            )!!
+            if (userFile.path != file.path) {
+                file = File(userFile.path)
+                save()
+            }
+        }
+    }
+
     companion object {
 
         // add new plugin classes here, necessary to have all classes initialized
 
         val pluginCompanions = mutableListOf<PluginCompanion>(
             SpecialFilesPlugin.Companion,
-            RegexPlugin.Companion,
-            ShellScriptPlugin.Companion,
+            InternalRegexPlugin.Companion,
+            InternalShellScriptPlugin.Companion,
         )
 
         var pluginTypes = mutableMapOf<String, PluginCompanion>()
@@ -55,16 +92,36 @@ abstract class Plugin(val name: String, var file: File) {
             return true
         }
 
-        fun createFrom(file: File) =
-            pluginExtensions[file.extension]?.let { type ->
-                pluginTypes[type]?.create(file)
+        fun createFrom(file: File): Plugin? {
+            var extension = file.extension
+            var off = false
+            if (extension.endsWith(OFF_SUFFIX)) {
+                off = true
+                extension = extension.removeSuffix(OFF_SUFFIX)
             }
+            return pluginExtensions[extension]?.let { type ->
+                val plugin = pluginTypes[type]?.create(file)
+                plugin?.enable(!off)
+                plugin
+            }
+        }
 
         var scanned = false
 
-        var plugins = mutableMapOf<String, Plugin>()
+        private var plugins = mutableMapOf<String, Plugin>()
 
-        val builtinDir get() = OABX.context.filesDir?.resolve("plugin")
+        fun setPlugins(vararg args: Pair<String, Plugin>) { plugins = mutableMapOf(*args) }
+
+        fun get(name: String) = plugins.get(name)
+
+        fun getEnabled(name: String) = get(name)?.takeIf { it.enabled }
+
+        fun getAll(predicate: (Map.Entry<String, Plugin>) -> Boolean) = plugins.filter(predicate = predicate)
+        inline fun <reified T> getAll() = getAll { it.value is T }.map { it.value as T }
+
+        // files need to be copied from ap[k to filesDir, so use assets.directory instead of filesDir
+        //        val builtinDir get() = OABX.context.filesDir?.resolve("plugin")
+        val builtinDir get() = OABX.assets.directory.resolve("plugin")
         val userDir get() = OABX.context.getExternalFilesDir(null)?.resolve("plugin")
 
         fun loadPluginFromDir(dir: File): Plugin? {
@@ -88,17 +145,15 @@ abstract class Plugin(val name: String, var file: File) {
             }
         }
 
-        fun scan() {
+        fun scan() {    // must be omnipotent
 
             pluginCompanions.forEach { it.register() }
 
             synchronized(Plugin) {
                 scanned = false
                 plugins.clear()
-                loadPluginsFromDir(OABX.assets.directory.resolve("plugin"))
-                OABX.context.getExternalFilesDir(null)?.let {
-                    loadPluginsFromDir(it.resolve("plugin"))
-                }
+                builtinDir?.let { loadPluginsFromDir(it) }
+                userDir?.let { loadPluginsFromDir(it) }
                 scanned = true
             }
         }
@@ -111,5 +166,26 @@ abstract class Plugin(val name: String, var file: File) {
             }
         }
 
+        fun fileFor(dir: File, name: String, type: String) =
+            Plugin.pluginExtension.get(type)?.let {
+                dir.resolve("$name.$it")
+            }
+
+        fun typeFor(plugin: Plugin?) = plugin?.typeName ?: "Unknown"
+
+        const val BUILTIN = "<builtin>"
+        const val USER = "<user>"
+
+        fun displayPath(path: String): String {
+            var result = path
+            Plugin.builtinDir?.path?.let { builtinDir ->
+                result = result.replace(builtinDir, BUILTIN)
+            }
+            Plugin.userDir?.path?.let { userDir ->
+                result = result.replace(userDir, USER)
+            }
+            return result
+        }
     }
 }
+
