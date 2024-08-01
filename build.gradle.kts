@@ -314,6 +314,17 @@ android {
         kotlinOptions {
             jvmTarget = compileOptions.sourceCompatibility.toString()
             freeCompilerArgs = listOf("-Xjvm-default=all")
+
+            if (project.findProperty("enableComposeCompilerReports") == "true") {
+                val metricsDir = "${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
+                println("--- enableComposeCompilerReports -> $metricsDir")
+                freeCompilerArgs += listOf(
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$metricsDir",
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$metricsDir",
+                )
+            }
         }
     }
     lint {
