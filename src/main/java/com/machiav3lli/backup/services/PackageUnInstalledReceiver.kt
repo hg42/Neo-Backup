@@ -23,6 +23,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.AppInfo
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.pref_autoLogUnInstallBroadcast
 import com.machiav3lli.backup.preferences.supportLog
@@ -35,43 +36,53 @@ import kotlinx.coroutines.launch
 class PackageUnInstalledReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val db = OABX.db
-        val packageName =
-            intent.data?.let { if (it.scheme == "package") it.schemeSpecificPart else null }
-        if (packageName != null) {
-            Package.invalidateSystemCacheForPackage(packageName)
-            when (intent.action.orEmpty()) {
-                Intent.ACTION_PACKAGE_ADDED,
-                Intent.ACTION_PACKAGE_REPLACED,
-                -> {
-                    context.packageManager.getPackageInfo(
-                        packageName,
-                        PackageManager.GET_PERMISSIONS
-                    )?.let { packageInfo ->
-                        val appInfo = AppInfo(context, packageInfo)
+        try {
+            val db = OABX.db
+            val packageName =
+                intent.data?.let { if (it.scheme == "package") it.schemeSpecificPart else null }
+            if (packageName != null) {
+                Package.invalidateSystemCacheForPackage(packageName)
+                when (intent.action.orEmpty()) {
+                    Intent.ACTION_PACKAGE_ADDED,
+                    Intent.ACTION_PACKAGE_REPLACED,
+                    -> {
+                        context.packageManager.getPackageInfo(
+                            packageName,
+                            PackageManager.GET_PERMISSIONS
+                        )?.let { packageInfo ->
+                            val appInfo = AppInfo(context, packageInfo)
+                            GlobalScope.launch(Dispatchers.IO) {
+                                db.getAppInfoDao().replaceInsert(appInfo)
+                            }
+                        }
+                    }
+
+                    Intent.ACTION_PACKAGE_REMOVED,
+                    -> {
                         GlobalScope.launch(Dispatchers.IO) {
-                            db.getAppInfoDao().replaceInsert(appInfo)
+                            val backups = db.getBackupDao().get(packageName)
+                            if (backups.isEmpty())
+                                db.getAppInfoDao().deleteAllOf(packageName)
+                            else {
+                                val appInfo = backups.maxBy { it.backupDate }.toAppInfo()
+                                db.getAppInfoDao().replaceInsert(appInfo)
+                            }
                         }
                     }
                 }
-                Intent.ACTION_PACKAGE_REMOVED -> {
+
+                if (pref_autoLogUnInstallBroadcast.value) {
                     GlobalScope.launch(Dispatchers.IO) {
-                        val backups = db.getBackupDao().get(packageName)
-                        if (backups.isEmpty())
-                            db.getAppInfoDao().deleteAllOf(packageName)
-                        else {
-                            val appInfo = backups.maxBy { it.backupDate }.toAppInfo()
-                            db.getAppInfoDao().replaceInsert(appInfo)
-                        }
+                        delay(60_0000)
+                        supportLog("PackageUnInstalledReceiver")
                     }
                 }
             }
-            if (pref_autoLogUnInstallBroadcast.value) {
-                GlobalScope.launch(Dispatchers.IO) {
-                    delay(60_0000)
-                    supportLog("PackageUnInstalledReceiver")
-                }
-            }
+        } catch (e: Throwable) {
+            //TODO how to communicate that error to the main app?
+            // it currently leads to a "missing directories from PM" error,
+            // even when only restoring the apk
+            logException(e)
         }
     }
 }
