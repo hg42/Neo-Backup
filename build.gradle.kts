@@ -221,12 +221,20 @@ android {
         println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
 
-    applicationVariants.all { variant ->
-        variant.outputs.all {
+    applicationVariants.all {
+        outputs.all {
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "Neo_Backup_${variant.name}_${variant.versionName}.apk"
+                "nb-${
+                    name
+                        .replace("release", "")
+                        .replace("hg42", "")
+                        .replace("pumpkin", "")
+                        .replace("pumprel", "rel")
+                }-${buildVersion}.apk"
+                    .replace(Regex("""--+"""), "-")
+
+            println("----------------------------------------> output $outputFileName")
         }
-        true
     }
 
     buildTypes {
@@ -280,26 +288,6 @@ android {
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
             signingConfig = signingConfigs.getByName("hg42test")
-        }
-        applicationVariants.all {
-            outputs.all {
-                this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-                //val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-                //println("--< ${outputFileName}")
-
-                //output.outputFileName =
-                outputFileName =
-                    "nb-${
-                        name
-                            .replace("release", "")
-                            .replace("hg42", "")
-                            .replace("pumpkin", "")
-                            .replace("pumprel", "rel")
-                    }-${buildVersion}.apk"
-                        .replace(Regex("""--+"""), "-")
-
-                println("----------------------------------------> output ${outputFileName}")
-            }
         }
     }
     buildFeatures {
