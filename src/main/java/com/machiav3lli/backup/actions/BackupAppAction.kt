@@ -82,7 +82,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
 
         fun handleException(e: Throwable): ActionResult {
             val message =
-                "${e::class.simpleName}: ${e.message}${e.cause?.let { " - ${it.message}" }}"
+                "${e::class.simpleName}: ${e.message}${e.cause?.message?.let { " - $it" } ?: ""}"
             Timber.e("Backup failed: $message")
             return ActionResult(app, null, message, false)
         }

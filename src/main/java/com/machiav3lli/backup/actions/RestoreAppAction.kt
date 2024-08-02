@@ -87,7 +87,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
 
         fun handleException(e: Throwable): ActionResult {
             val message =
-                "${e::class.simpleName}: ${e.message}${e.cause?.let { " - ${it.message}" }}"
+                "${e::class.simpleName}: ${e.message}${e.cause?.message?.let { " - $it" } ?: ""}"
             Timber.e("Restore failed: $message")
             return ActionResult(app, null, message, false)
         }
