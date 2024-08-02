@@ -129,11 +129,11 @@ fun HomePage() {
 
     // prefetch icons
     if (filteredList.size > IconCache.size) {    // includes empty cache and empty filteredList
-        beginNanoTimer("prefetchIcons")
+        //beginNanoTimer("prefetchIcons")
         filteredList.forEach { pkg ->
             cachedAsyncImagePainter(model = pkg.iconData)
         }
-        endNanoTimer("prefetchIcons")
+        //endNanoTimer("prefetchIcons")
     }
 
     Scaffold(

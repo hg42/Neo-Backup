@@ -164,14 +164,14 @@ fun ButtonIcon(
     @StringRes textId: Int,
     tint: Color = LocalContentColor.current,
 ) {
-    beginNanoTimer("btnIcon")
+    //beginNanoTimer("btnIcon")
     Image(
         imageVector = icon,
         contentDescription = stringResource(id = textId),
         modifier = Modifier.size(ICON_SIZE_SMALL),
         colorFilter = ColorFilter.tint(tint),
     )
-    endNanoTimer("btnIcon")
+    //endNanoTimer("btnIcon")
 }
 
 @Composable
@@ -195,7 +195,7 @@ fun PackageIcon(
     imageData: Any,
     imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
-    beginNanoTimer("pkgIcon.rCAIP")
+    //beginNanoTimer("pkgIcon.rCAIP")
     Image(
         modifier = modifier
             .size(ICON_SIZE_LARGE)
@@ -208,7 +208,7 @@ fun PackageIcon(
         contentDescription = null,
         contentScale = ContentScale.Crop
     )
-    endNanoTimer("pkgIcon.rCAIP")
+    //endNanoTimer("pkgIcon.rCAIP")
 }
 
 object IconCache {
@@ -243,14 +243,14 @@ object IconCache {
 
     fun dropAllButUsed(pkgs: List<Package>) {
         val used = pkgs.map { it.iconData }.toSet()
-        beginNanoTimer("limitIconCache")
+        //beginNanoTimer("limitIconCache")
         val keys = synchronized(painterCache) { painterCache.keys.toSet() }
         (keys - used).forEach {
             if (it !is Int) {
                 removeIcon(it)
             }
         }
-        endNanoTimer("limitIconCache")
+        //endNanoTimer("limitIconCache")
     }
 
     val size: Int
@@ -267,10 +267,10 @@ fun cachedAsyncImagePainter(
     imageLoader: ImageLoader = LocalContext.current.imageLoader,
     altPainter: Painter? = null,
 ): Painter {
-    beginNanoTimer("rmbrCachedAIP")
+    //beginNanoTimer("rmbrCachedAIP")
     var painter = IconCache.getIcon(model)
     if (painter == null) {
-        beginNanoTimer("rmbrAIP")
+        //beginNanoTimer("rmbrAIP")
         val request =
             ImageRequest.Builder(LocalContext.current)
                 .data(model)
@@ -287,7 +287,7 @@ fun cachedAsyncImagePainter(
                         }
                 }
             )
-        endNanoTimer("rmbrAIP")
+        //endNanoTimer("rmbrAIP")
         painter = if (rememberedPainter.state is AsyncImagePainter.State.Success) {
             //synchronized(painterCache) { painterCache.put(model, rememberedPainter) }
             rememberedPainter
@@ -295,7 +295,7 @@ fun cachedAsyncImagePainter(
             altPainter ?: rememberedPainter
         }
     }
-    endNanoTimer("rmbrCachedAIP")
+    //endNanoTimer("rmbrCachedAIP")
     return painter
 }
 
@@ -915,7 +915,7 @@ fun ExpandingFadingVisibility(
 fun RowScope.PackageLabels(
     item: Package,
 ) {
-    beginNanoTimer("pkgLabels")
+    //beginNanoTimer("pkgLabels")
 
     if (!pref_hideBackupLabels.value && item.hasBackups) {
 
@@ -979,7 +979,7 @@ fun RowScope.PackageLabels(
         }
     )
 
-    endNanoTimer("pkgLabels")
+    //endNanoTimer("pkgLabels")
 }
 
 @Composable
