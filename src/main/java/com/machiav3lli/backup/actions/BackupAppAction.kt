@@ -52,6 +52,7 @@ import com.machiav3lli.backup.utils.CryptoSetupException
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
+import com.machiav3lli.backup.utils.copyRootFileToDocument
 import com.machiav3lli.backup.utils.encryptStream
 import com.machiav3lli.backup.utils.getCompressionLevel
 import com.machiav3lli.backup.utils.getCompressionType
@@ -61,7 +62,6 @@ import com.machiav3lli.backup.utils.initIv
 import com.machiav3lli.backup.utils.isCompressionEnabled
 import com.machiav3lli.backup.utils.isEncryptionEnabled
 import com.machiav3lli.backup.utils.suAddFiles
-import com.machiav3lli.backup.utils.suCopyFileToDocument
 import com.topjohnwu.superuser.ShellUtils
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream
@@ -501,7 +501,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         for (apk in apksToBackup) {
             try {
                 Timber.i("${app.packageName}: $apk")
-                suCopyFileToDocument(apk, backupInstanceDir)
+                //TODO wech suCopyFileToDocument(apk, backupInstanceDir)
+                copyRootFileToDocument(apk, backupInstanceDir, RootFile(apk).name)
             } catch (e: IOException) {
                 Timber.e("$app: Could not backup apk $apk: $e")
                 throw BackupFailedException("Could not backup apk $apk", e)

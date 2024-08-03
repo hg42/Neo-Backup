@@ -79,7 +79,7 @@ import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
 import com.machiav3lli.backup.utils.altModeToMode
-import com.machiav3lli.backup.utils.checkRootAccess
+import com.machiav3lli.backup.utils.isLikeRoot
 import com.machiav3lli.backup.utils.isBiometricLockAvailable
 import com.machiav3lli.backup.utils.isBiometricLockEnabled
 import com.machiav3lli.backup.utils.isDarkTheme
@@ -192,7 +192,7 @@ class MainActivityX : BaseActivity() {
             navController = rememberNavController()
         }
 
-        if (!checkRootAccess()) {
+        if (!isLikeRoot()) {
             setContent {
                 AppTheme {
                     RootMissing(this)

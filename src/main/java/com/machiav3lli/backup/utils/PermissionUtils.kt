@@ -25,8 +25,8 @@ import com.machiav3lli.backup.preferences.persist_ignoreBatteryOptimization
 
 // Getters
 
-fun Activity.checkRootAccess(showDialogOnError: Boolean = false): Boolean {
-    val isRooted = ShellHandler.isRoot
+fun Activity.isLikeRoot(showDialogOnError: Boolean = false): Boolean {
+    val isRooted = ShellHandler.checkRootEquivalent()
     if (!isRooted) {
         if (showDialogOnError)
             showFatalUiWarning(getString(R.string.noSu))

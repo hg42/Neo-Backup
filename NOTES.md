@@ -4,8 +4,12 @@
   * [Technicalities](#technicalities)
 * [Reliability of schedules and WorkManager items](#reliability-of-schedules-and-workmanager-items)
   * [WorkManager](#workmanager)
+* [root and SAF](#root-and-SAF)
 * [nsenter](#nsenter)
 * [keystore](#keystore)
+
+
+
 
 ## The experimental flatStructure scheme
 
@@ -22,6 +26,7 @@ You find flatStructure under
 
 - → `advanced/devsettings/alternatives`
 
+
 ### Why?
 
 Theoretically, this should result in faster scanning because it reduces the number of directory
@@ -33,6 +38,7 @@ changed the game and remote access seems to focus more on file reading (properti
 directory scanning.
 Though this might be heavily dependent on the remote file service. In my (@hg42) tests it was ssh on
 local network using extRact (which uses rclone).
+
 
 ### Technicalities
 
@@ -99,6 +105,8 @@ so it looks like this:
   → `the.package.name (1)/YYYY-MM-DD-hh-mm-ss-mmm-user_x`
 
 
+
+
 ## Reliability of schedules and WorkManager items
 
 this is really a multipart problem. I'll try to list all the parts:
@@ -121,6 +129,7 @@ this is really a multipart problem. I'll try to list all the parts:
     * see below
     * if WorkManager is using JobScheduler, there is a limit of 10 minutes
     * setExpedited should override that, but it's unclear if there are quotae
+
 
 ### WorkManager
 
@@ -184,17 +193,142 @@ Returns ListenableFuture<ForegroundInfo>
 A ListenableFuture of ForegroundInfo instance if the WorkRequest is marked immediate.
 For more information look at WorkRequest.Builder.setExpedited(OutOfQuotaPolicy).
 
+
+
+
+## root and SAF
+
+in general file access is split into these parts:
+
+* RootFile: system files and app data
+  * streams to a RootFile
+  * streams from a RootFile
+
+RootFile is completely managed by commands with root privilege 
+
+* StorageFile: SAF document, only backup directory
+  * streams to a document
+  * streams from a document
+
+SAF is managed by the Android Document API
+
+root is also necessary for 
+
+* commands to retrieve info, like ls, pm list
+* commands to manipulate the system, like pm grant
+* commands to mainpulate the file system
+
+Most root commands are executed in a shell that is started by libsu. 
+That shell is started in the background and then receives commands from stdin.
+Somehow libsu collects the output of that shell and knows when that output ends (I don't know how, yet). 
+
+The API can collect stdout and stderr, but it cannot stream to or from commands.
+Streams are handled via our own functions via Runtime/exec to run a process and manage the streams. 
+This is mostly used for tar.
+In backup case tar runs as root process and produces a stream,
+the OutputStream from the process is then pumped to internal streams to add compression and encryption,   
+and at the end it runs into an SAF stream (a StorageFile the backup instance directory).
+
+```system files -> tar -> tar archive stream -> compression -> encryption -> backup archive document```  
+
+The restore case is the opposite:
+
+```backup archive document -> decrypot -> decompress -> tar archive stream -> tar -> system files``` 
+
+The libsu shell is started as non-root (other than usual, where it is a su shell).
+Then in case of the MainShell (that getting most commands on stdin) it is put into root mode
+by executing a command:
+
+These commands are tried in sequence:
+```
+su -c 'nsenter --mount=/proc/1/ns/mnt sh'
+su --mount-master
+su
+```
+
+the command that first works (tested by check* functions) is the `suCommand` (see below).
+
+For our own streaming functions, the same suCommand is used like a shell to stream the command into it, which then starts the streaming. 
+
+example:
+
+given that the suCommand is the usual
+
+```suCommand = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'"```
+
+the MainShell of libsu is started in the background and the suCommand is written as the first command to the stdin of the MainShell process.
+
+Because the suCommand is also a shell construct (the last `sh` reads commands and executes them),
+the resulting construct is a stack of commands `su > nsenter > sh`.
+
+* the `su` ensures, that it gets root privileges
+* the `nsenter` puts the shell into the namespace(s) of a system process (allowing access to more system files and isolated namespaces, apps, user profiles, ...)
+* the final `sh` is a child of both and therefore runs the commands within the same environment/namespaces/permissions/...
+
+Now commands like `ls -AllZ /data/user/0/` are written via stdin to the shell, which executes them and the produced output is collected.
+
+To allow streaming, we use the same suCommand as process and write our streaming commands (like tar) to it's stdin.
+
+Lets say we use tar to collect files, then the resulting process is similar to this:  
+
+```echo "tar -c /data/user/0/a.package.name" | $suCommand```
+
+the stdout is read from that process. 
+
+In practice the more complicated tar commands are inside a script. 
+It is found in the `tar.internal_sh` plugin.
+
+We also have functions to copy a document to a file and vice versa.
+This is basically the same, the function does something like this: 
+
+```echo "cat $filePath" | $suCommand```
+
+the stdout of the resulting process constuct is read
+
+or
+
+```echo "cat >'$filePath'" | $suCommand```
+
+writing the stream to the stdin of that process construct.
+
+The echo is only for demonstration, in practice NB writes the commands directly to the stdin of the suCommand.
+
+**To ensure that all these have the same privileges, it is important that all variants for accessing root files and root commands use the same suCommand as (inner) shell.**
+
+This is the main reason, we no more use the libsu streaming functions, because they rely on other ways to initialize the root environment, which is then different from what the suCommand setup. The libsu library uses su as it's implemented in Magisk.
+
+Using the same suCommand for all these variants also allows to use a configurable command instead.
+
+There are other kinds of `su` (e.g. ffsu, which needs a password) or the nsenter command might be different and other variations.
+
+For example, it may be useful, to use the kthread process pid=2 (not sure if it is always 2) instead of the init process pid=1. 
+Most system processes use the same environment like kthread.
+
+Piping commands to the shell has advantages:
+* you don't rely on the commandline syntax of the shell (the su solutions and also sh are not compatible)
+* you can switch things like namespaces by starting a subshell which then reads the following commands
+
+The last point is also a disadvantage:
+Any command run inside the shell can change the environment (env vars, namespaces, stdiun, stdout etc.) and influence the following commands.
+So you have to be careful. 
+It's not a problem when we only run a certain set of commands and we know what we do.
+
+
+
+
 ## nsenter
 
-Use `nsenter` to run commands in the global mount namespace (of init process -> pid=1)
+NB uses `nsenter` to run commands in the global mount namespace (e.g. of the init process -> pid=1)
 
-- This probably works with all superuser solutions (tested: Magisk, KernelSU, phhsu)
-- The only condition is piping commands into `su` command and existence of `nsenter`.
-- According
+- this probably works with all superuser solutions (tested: Magisk, KernelSU, phhsu)
+- the only condition is piping commands into `su` command and existence of `nsenter`, removing the need of a --mount-master parameter to su and avoiding certain 
+- according
   to https://android.googlesource.com/platform/system/core/+/master/shell_and_utilities/README.md it
-  is available since Andorid 10
-- For older android versions it falls back to the --mount-master method if available
-- The availability of each option is logged at start and in support log
+  is available since Android 10 (it is part of toybox)
+- for older android versions NB falls back to `su --mount-master` method if available, or even a simple `su`
+
+
+
 
 ## keystore
 I once predicted, that the number of apps using keystore will increase over time...at least for my apps I see this effect, the percentage is growing.
@@ -214,3 +348,4 @@ That's one aspect of "we don't support root".
 The bad thing is, the user cannot do anything about it, but clear the data, so the backup is useless.
 
 I guess it would be possible to write a magisk/ksu module to intercept the function call and catch that exception and return some nonsense instead (garbage in -> garbage out, instead of garbage in -> crash).
+

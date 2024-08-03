@@ -3,7 +3,6 @@ package com.machiav3lli.backup.items
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
-import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.io.SuFileInputStream
@@ -463,22 +462,20 @@ class RootFile internal constructor(file: File) : File(file.absolutePath) {
         //private fun cmd(c: String): String = ShellHandler.runAsRoot(c).out[0].toString()
         //private fun cmdBool(c: String): Boolean = ShellHandler.runAsRoot(c).code == 0
 
-        //TODO hg42 should use our own isRootGranted instead of Shell.isAppGrantedRoot()
-
         fun open(pathname: String): File {
-            return if (Shell.isAppGrantedRoot() == true) RootFile(pathname) else File(pathname)
+            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(pathname) else File(pathname)
         }
 
         fun open(parent: String?, child: String): File {
-            return if (Shell.isAppGrantedRoot() == true) RootFile(parent, child) else File(parent, child)
+            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(parent, child) else File(parent, child)
         }
 
         fun open(parent: File?, child: String): File {
-            return if (Shell.isAppGrantedRoot() == true) RootFile(parent, child) else File(parent, child)
+            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(parent, child) else File(parent, child)
         }
 
         fun open(uri: URI): File {
-            return if (Shell.isAppGrantedRoot() == true) RootFile(uri) else File(uri)   //TODO hg42 ???
+            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(uri) else File(uri)   //TODO hg42 ???
         }
     }
 }

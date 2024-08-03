@@ -56,14 +56,13 @@ import com.machiav3lli.backup.preferences.pref_restoreTarCmd
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.CryptoSetupException
 import com.machiav3lli.backup.utils.Dirty
+import com.machiav3lli.backup.utils.copyDocumentToRootFile
 import com.machiav3lli.backup.utils.decryptStream
 import com.machiav3lli.backup.utils.getCryptoSalt
 import com.machiav3lli.backup.utils.getEncryptionPassword
 import com.machiav3lli.backup.utils.isAllowDowngrade
 import com.machiav3lli.backup.utils.isDisableVerification
 import com.machiav3lli.backup.utils.isRestoreAllPermissions
-import com.machiav3lli.backup.utils.suCopyFileFromDocument
-import com.machiav3lli.backup.utils.suRecursiveCopyFileFromDocument
 import com.machiav3lli.backup.utils.suUnpackTo
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
@@ -254,7 +253,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
             Timber.d("<$packageName> The backup does not contain split apks")
         } else {
             apksToRestore += splitApksInBackup.drop(0) // drop(0) means clone
-            Timber.i("[%s] Package is splitted into %d apks", packageName, apksToRestore.size)
+            Timber.i("[%s] Package is split into %d apks", packageName, apksToRestore.size)
         }
         /* in newer android versions selinux rules prevent system_server
          * from accessing many directories. in android 9 this prevents pm
@@ -302,7 +301,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                         )
                     }"
                 )
-                suCopyFileFromDocument(
+                copyDocumentToRootFile(
                     apkFile,
                     RootFile(stagingApkPath, "$packageName.${apkFile.name}").absolutePath
                 )
@@ -423,31 +422,32 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         }
     }
 
-    @Throws(RestoreFailedException::class)
-    private fun genericRestoreDataByCopying(
-        targetPath: String,
-        backupInstanceDir: StorageFile,
-        what: String,
-    ) {
-        try {
-            val backupDirToRestore = backupInstanceDir.findFile(what)
-                ?: throw RestoreFailedException(
-                    String.format(
-                        LOG_DIR_IS_MISSING_CANNOT_RESTORE,
-                        what
-                    )
-                )
-            suRecursiveCopyFileFromDocument(backupDirToRestore, targetPath)
-        } catch (e: IOException) {
-            throw RestoreFailedException("Could not read the input file due to IOException", e)
-        } catch (e: ShellCommandFailedException) {
-            val error = extractErrorMessage(e.shellResult)
-            throw RestoreFailedException(
-                "Shell command failed: ${e.command}\n$error",
-                e
-            )
-        }
-    }
+    //TODO wech
+    //@Throws(RestoreFailedException::class)
+    //private fun genericRestoreDataByCopying(
+    //    targetPath: String,
+    //    backupInstanceDir: StorageFile,
+    //    what: String,
+    //) {
+    //    try {
+    //        val backupDirToRestore = backupInstanceDir.findFile(what)
+    //            ?: throw RestoreFailedException(
+    //                String.format(
+    //                    LOG_DIR_IS_MISSING_CANNOT_RESTORE,
+    //                    what
+    //                )
+    //            )
+    //        suRecursiveCopyFileFromDocument(backupDirToRestore, targetPath)
+    //    } catch (e: IOException) {
+    //        throw RestoreFailedException("Could not read the input file due to IOException", e)
+    //    } catch (e: ShellCommandFailedException) {
+    //        val error = extractErrorMessage(e.shellResult)
+    //        throw RestoreFailedException(
+    //            "Shell command failed: ${e.command}\n$error",
+    //            e
+    //        )
+    //    }
+    //}
 
     @Throws(RestoreFailedException::class, CryptoSetupException::class, IOException::class)
     protected fun openArchiveFile(
@@ -952,15 +952,16 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 "path '$extractTo' does not contain ${app.packageName}"
             )
 
-        if (isOldVersion(backup)) {
-
-            genericRestoreDataByCopying(
-                extractTo,
-                backupDir,
-                BACKUP_DIR_OBB_FILES
-            )
-
-        } else {
+        //TODO wech
+        //if (isOldVersion(backup)) {
+        //
+        //    genericRestoreDataByCopying(
+        //        extractTo,
+        //        backupDir,
+        //        BACKUP_DIR_OBB_FILES
+        //    )
+        //
+        //} else {
 
             val dataType = BACKUP_DIR_OBB_FILES
             val backupArchive = findBackupArchive(dataType, backup, backupDir)
@@ -981,7 +982,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 extractTo,
                 uidgidcon
             )
-        }
+        //}
     }
 
     @Throws(RestoreFailedException::class)
@@ -996,15 +997,16 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 "path '$extractTo' does not contain ${app.packageName}"
             )
 
-        if (isOldVersion(backup)) {
-
-            genericRestoreDataByCopying(
-                extractTo,
-                backupDir,
-                BACKUP_DIR_MEDIA_FILES
-            )
-
-        } else {
+        //TODO wech
+        //if (isOldVersion(backup)) {
+        //
+        //    genericRestoreDataByCopying(
+        //        extractTo,
+        //        backupDir,
+        //        BACKUP_DIR_MEDIA_FILES
+        //    )
+        //
+        //} else {
 
             val dataType = BACKUP_DIR_MEDIA_FILES
             val backupArchive = findBackupArchive(dataType, backup, backupDir)
@@ -1025,7 +1027,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                 extractTo,
                 uidgidcon
             )
-        }
+        //}
     }
 
     private fun getPackageInstallCommand(

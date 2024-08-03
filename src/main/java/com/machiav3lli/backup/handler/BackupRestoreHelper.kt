@@ -31,6 +31,7 @@ import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
 import com.machiav3lli.backup.items.ActionResult
 import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile.Companion.invalidateCache
 import com.machiav3lli.backup.preferences.pref_numBackupRevisions
 import com.machiav3lli.backup.preferences.pref_paranoidHousekeeping
@@ -39,8 +40,8 @@ import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleExceptio
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
+import com.machiav3lli.backup.utils.copyRootFileToDocument
 import com.machiav3lli.backup.utils.getBackupRoot
-import com.machiav3lli.backup.utils.suCopyFileToDocument
 import timber.log.Timber
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -114,7 +115,8 @@ object BackupRestoreHelper {
                 if (fileInfos.size != 1) {
                     throw FileNotFoundException("Could not find Neo Backup's own apk file")
                 }
-                suCopyFileToDocument(fileInfos[0], backupRoot)
+                //TODO wech suCopyFileToDocument(fileInfos[0], backupRoot)
+                copyRootFileToDocument(fileInfos[0].absolutePath, backupRoot, RootFile(fileInfos[0].absolutePath).name)
                 // Invalidating cache, otherwise the next call will fail
                 // Can cost a lot time, but this function won't be run that often
                 invalidateCache() //TODO hg42 how to filter only the apk? or eliminate the need to invalidate

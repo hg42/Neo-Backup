@@ -85,7 +85,6 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.share
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler.Companion.needFreshShell
-import com.machiav3lli.backup.handler.ShellHandler.Companion.quoteMultiple
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeOutCollectErr
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
@@ -245,10 +244,8 @@ fun accessTest() =
             shell("readlink /proc/1/ns/mnt") +
             shell("readlink /proc/self/ns/mnt") +
             listOf(
-                "--- not using libsu",
-                "uses: echo command | ${
-                    quoteMultiple(suCommand)
-                } (used for streaming commands in backup/restore)"
+                "--- when not using libsu (for streaming in backup/restore)",
+                "uses: echo command | $suCommand"
             ) +
             accessTest1("system app",
                 "\$ANDROID_ASSETS", "packages (system app)"
