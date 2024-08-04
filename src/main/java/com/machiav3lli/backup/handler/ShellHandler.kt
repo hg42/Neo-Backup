@@ -851,13 +851,14 @@ class ShellHandler {
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
                 "su",
+                "sh"
             )) {
                 suCommand = command
                 if (tryGainAccessCommand(command)) {
                     return
                 }
             }
-            //suCommand = listOf()  // setDefaultBuilder would be missing here
+            //suCommand = ""  // setDefaultBuilder would be missing here
         }
 
         fun needFreshShell(
