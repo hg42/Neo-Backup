@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+8.3.8 (04.08.2024) +30 Commits & +9 0 Translations
+------------
+
+#### Function
+
+- Add: enableOnBackInvokedCallback to Manifest
+- Add: Inject DB and WorkHandler using Koin
+- Fix: Plugins
+- Update: Move regex and sh files to the plugins
+- Update: Get versionName, versionCode from manifest
+
+#### UI & UX
+
+- Add: Plugins page (dev)
+- Fix: Running jobs count
+- Fix: Pref search in dev panel
+- Update: Show seconds in schedule counter only when < 10min remaining time 
+- Update: Color the password icon when (in)active
+- Update: Replace legacy Encryption & Error AlertDialogues with compose
+- Update: Revamp all dialog buttons
+
 8.3.7 (24.07.2024) +100 Commits & +20 Translations
 ------------
 
