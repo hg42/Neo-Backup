@@ -751,8 +751,7 @@ class ShellHandler {
                     Timber.i("check failed: $command")
                 }
             } catch (e: Throwable) {
-                Timber.i("check failed: $command")
-                logException(e, prefix = "    ")
+                logException(e, what = "check failed: $command")
             }
             return false
         }
@@ -823,7 +822,7 @@ class ShellHandler {
             }
         }
 
-        private fun tryGainAccessCommand(command: String): Boolean {
+        fun tryGainAccessCommand(): Boolean {
             try {
                 val builder = Shell.Builder.create()
                     .setTimeout(pref_libsuTimeout.value.toLong())
@@ -836,8 +835,7 @@ class ShellHandler {
                 if (checkRootEquivalent())
                     return true
             } catch (e: Throwable) {
-                Timber.i("$ $command")
-                logException(e, prefix = "   ")
+                logException(e, what = "$ $suCommand")
             }
             Shell.getCachedShell()?.let {
                 if (it.isAlive)
@@ -846,17 +844,32 @@ class ShellHandler {
             return false
         }
 
+        fun validateSuCommand(command: String): Boolean {
+            val old = suCommand
+            try {
+                Timber.i("validateSuCommand: $command")
+                suCommand = command
+                if (tryGainAccessCommand()) {
+                    return true
+                }
+            } catch(e: Throwable) {
+                logException(e, what = "$ $suCommand")
+            }
+            suCommand = old
+            return false
+        }
+
         fun initLibSU() {
-            for (command in listOf(
+            for (command in listOfNotNull(
+                if (pref_suCommand.value != "") pref_suCommand.value else null,
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
                 "su",
+                "/system/bin/su",
                 "sh"
             )) {
-                suCommand = command
-                if (tryGainAccessCommand(command)) {
+                if (validateSuCommand(command))
                     return
-                }
             }
             //suCommand = ""  // setDefaultBuilder would be missing here
         }
