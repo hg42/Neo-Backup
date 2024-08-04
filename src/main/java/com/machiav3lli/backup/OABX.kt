@@ -277,8 +277,8 @@ class OABX : Application() {
         //TODO hg42 beginBusy(startupMsg)
         hitBusy(60000)
 
-        initShellHandler()
         Plugin.ensureScanned()
+        initShellHandler()
 
         db = ODatabase.getInstance(applicationContext)
 
