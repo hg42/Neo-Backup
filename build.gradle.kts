@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import com.android.build.gradle.internal.api.BaseVariantImpl
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -35,12 +37,19 @@ data class InfoFromGit(
     val lastTagMinor: Int?,
     val lastTagPatch: Int?,
     val currentBranch: String,
-    val headHash: String
+    val headHash: String,
 )
 
 fun getInfoFromGit(): InfoFromGit {
     val tagPattern = "(\\d+)\\.(\\d+)\\.(\\d+)"
-    val tagProcess = ProcessBuilder("git", "log", "--tags", "--simplify-by-decoration", "--pretty=format:%ai %d", "--date=iso")
+    val tagProcess = ProcessBuilder(
+        "git",
+        "log",
+        "--tags",
+        "--simplify-by-decoration",
+        "--pretty=format:%ai %d",
+        "--date=iso"
+    )
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .start()
 
@@ -126,9 +135,11 @@ val revision by extra(lastTagPatch)
 //val refTime = java.util.GregorianCalendar(2020, 0, 1).time!! // Date
 //val startTime = java.util.Date()
 //val seconds = ((startTime.time - refTime.time) / 1000); println("seconds:     $seconds")
-val refTime = lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
+val refTime =
+    lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
 val startTime = LocalDateTime.now(); println("startTime:   $startTime")
-val seconds = startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC); println("seconds:     $seconds")
+val seconds =
+    startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC); println("seconds:     $seconds")
 val minutes = seconds / 60; println("minutes:     $minutes")
 val fiveminutes = seconds / 60 / 5; println("fiveminutes: $fiveminutes")
 val tenminutes = seconds / 60 / 10; println("tenminutes:  $tenminutes")
@@ -136,7 +147,7 @@ val hours = seconds / 60 / 60; println("hours:       $hours")
 
 val buildTime by extra { startTime.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) }
 //var buildNumber by extra(buildTime.substring(1..6))
-val buildNumber : String by extra { minutes.toString() }
+val buildNumber: String by extra { minutes.toString() }
 //var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
 val buildLabel by extra {
     currentBranch
@@ -148,8 +159,23 @@ val buildLabel by extra {
         .replace(Regex("^temp$"), "T")
         .replace(Regex("^experimental$"), "X")
 }
-var buildVersion by extra { "$major.$minor.$revision.$buildNumber-hg42-${headHash}-${buildTime}-${buildLabel}" }
-var buildVersionCode by extra { "$major$minor$revision${buildNumber.padStart(5, '0')}".toInt() }
+val buildNumber5 = buildNumber.padStart(5, '0')
+val buildNumber4 = buildNumber5.dropLast(1)
+val buildNumber3 = buildNumber5.dropLast(2)
+val buildVersionCodeFromVersion = (
+        "${
+            major
+        }${
+            minor.toString().padStart(2, '0')
+        }${
+            revision.toString().padStart(2, '0')
+        }${
+            buildNumber3
+        }"
+        )
+val buildVersionCodeFromTime = buildTime.dropLast(12 - 9)
+val buildVersionCode by extra { buildVersionCodeFromTime.toInt() }
+val buildVersion by extra { "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildTime}--${buildLabel}" }
 
 println(
     """
@@ -158,7 +184,7 @@ version build:
     buildVersionCode:   $buildVersionCode
     startTime:          $startTime
     buildTime:          $buildTime
-    basedOn:            $lastTag
+    basedOnTag:         $lastTag
         time:               $lastTagDateTime
         commit:             $headHash
         branch:             $currentBranch
@@ -221,20 +247,36 @@ android {
         println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
 
-    applicationVariants.all {
+    fun <T : BaseVariantImpl> T.setOutputFileName() {
         outputs.all {
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "nb-${
-                    name
-                        .replace("release", "")
-                        .replace("hg42", "")
-                        .replace("pumpkin", "")
-                        .replace("pumprel", "rel")
-                }-${buildVersion}.apk"
-                    .replace(Regex("""--+"""), "-")
-
-            println("----------------------------------------> output $outputFileName")
+            (this as? BaseVariantOutputImpl)?.let {
+                it.outputFileName =
+                    "nb-${
+                        buildVersion.replace(
+                            "--",
+                            "--" +
+                                    it.name
+                                        .replace(Regex(".*Test"), "TEST")
+                                        .replace("debug", "DEBUG")
+                                        //.replace("hg42", "")
+                                        .replace("release", "rel")
+                                        //.replace("pumpkin", "")
+                                        //.replace("pumprel", "rel")
+                                        .replace(Regex("""--+"""), """-""")
+                                        .replace(Regex("""-+$"""), """""")
+                                        .uppercase()
+                                    + "--"
+                        ).replace("----", "--")
+                    }.apk"
+                println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+            }
         }
+    }
+    testVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+    }
+    applicationVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
     }
 
     buildTypes {
@@ -304,7 +346,8 @@ android {
             freeCompilerArgs = listOf("-Xjvm-default=all")
 
             if (project.findProperty("enableComposeCompilerReports") == "true") {
-                val metricsDir = "${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
+                val metricsDir =
+                    "${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
                 println("--- enableComposeCompilerReports -> $metricsDir")
                 freeCompilerArgs += listOf(
                     "-P",
