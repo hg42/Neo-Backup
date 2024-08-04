@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -25,6 +26,7 @@ import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isRelease
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
@@ -137,6 +139,32 @@ else
 
 
 //---------------------------------------- developer settings - advanced users
+
+val pref_suCommand = StringPref(
+    key = "dev-adv.suCommand",
+    summary = "the command used to elevate the shell to a 'root' shell (in our sense), the whole command must be a shell, reading commands from stdin and executing them in an elevated environment to be able to access the system and app data and execute some system commands like pm, if it fails there are also fallback commands (the default is one of them, also a simple su, see log for which one was used)",
+    defaultValue = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
+    onChanged = {
+        val pref = it as StringPref
+        pref.iconTint = if (validateSuCommand(pref.value))
+            Color.Green
+        else
+            Color.Red
+    }
+)
+
+val pref_libsuUseRootShell = BooleanPref(
+    key = "dev-adv.libsuUseRootShell",
+    summary = "use root shell for libsu (just in case automatic detection fails, libsu should automatically fallback to a normal shell if 'su' command not available",
+    defaultValue = true
+)
+
+val pref_libsuTimeout = IntPref(
+    key = "dev-adv.libsuTimeout",
+    summary = "[seconds] timeout for libsu commands that produce outputs (extracting backups does not use a timeout!)",
+    entries = (10..300 step 20).toList(),
+    defaultValue = 60
+)
 
 val pref_maxJobs = IntPref(
     key = "dev-adv.maxJobs",
@@ -458,7 +486,7 @@ val pref_fakeBackupSeconds = IntPref(
 
 val pref_fakeScheduleMin = IntPref(
     key = "dev-fake.fakeScheduleMin",
-    summary = "[minute] =1: day->hour, hour->minute, minutes->seconds  >1: run enabled schedules every x min [for testing only]",
+    summary = "[minutes] =1: day->hour, hour->minute, minutes->seconds  >1: run enabled schedules every x min [for testing only]",
     entries = (listOf(0, 1) + (3..9 step 1) + (10..60 step 5)).toList(),
     defaultValue = 0
 )

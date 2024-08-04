@@ -27,6 +27,9 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.ShellHandler.Companion.splitCommand
 import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInfo
 import com.machiav3lli.backup.preferences.baseInfo
+import com.machiav3lli.backup.preferences.pref_libsuTimeout
+import com.machiav3lli.backup.preferences.pref_libsuUseRootShell
+import com.machiav3lli.backup.preferences.pref_suCommand
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
@@ -822,13 +825,13 @@ class ShellHandler {
 
         private fun tryGainAccessCommand(command: String): Boolean {
             try {
-                Shell.setDefaultBuilder(
-                    Shell.Builder.create()
-                        .setFlags(Shell.FLAG_NON_ROOT_SHELL)    // we add our own suCommands
-                        .setTimeout(20)
-                        .setInitializers(ShellInit::class.java)
-                    //.setInitializers(BusyBoxInstaller::class.java)
-                )
+                val builder = Shell.Builder.create()
+                    .setTimeout(pref_libsuTimeout.value.toLong())
+                    .setInitializers(ShellInit::class.java)
+                if (!pref_libsuUseRootShell.value)
+                    builder.setFlags(Shell.FLAG_NON_ROOT_SHELL)    // we add our own suCommands
+                //.setInitializers(BusyBoxInstaller::class.java)
+                Shell.setDefaultBuilder(builder)
                 needFreshShell(true)
                 if (checkRootEquivalent())
                     return true
