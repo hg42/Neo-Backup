@@ -116,7 +116,7 @@
     <string name="prefs_rememberfiltering">Sıralama ve filtrelemeyi hatırla</string>
     <string name="prefs_rememberfiltering_summary">Seçilen sıralama ve filtreleme yöntemini kaydeder. Yalnızca menüde işaretlenenler dikkate alınır.</string>
     <string name="prefs_oldbackups">Yedekleri yaşa göre filtrele</string>
-    <string name="prefs_oldbackups_summary">'\Eski yedekleri göster\' filtresiyle birlikte kullanılır. Yaşı gün olarak belirtilen değerden eski yedekleri filtreler.</string>
+    <string name="prefs_oldbackups_summary">\'Eski yedekleri göster\' filtresiyle birlikte kullanılır. Yaşı gün olarak belirtilen değerden eski yedekleri filtreler.</string>
     <string name="prefs_encryption">Şifreleme</string>
     <string name="prefs_encryption_summary">Veri yedeklerini şifrelemek için etkinleştirin</string>
     <string name="prefs_password">Şifreleme parolası</string>
