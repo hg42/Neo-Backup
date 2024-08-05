@@ -90,7 +90,6 @@ import com.machiav3lli.backup.viewmodels.ExportsViewModel
 import com.machiav3lli.backup.viewmodels.LogViewModel
 import com.machiav3lli.backup.viewmodels.MainViewModel
 import com.machiav3lli.backup.viewmodels.SchedulerViewModel
-import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -192,7 +191,7 @@ class MainActivityX : BaseActivity() {
         //    }
         //}
 
-        Shell.getShell()    //TODO hg42 ???
+        //TODO wech Shell.getShell() // should be handled in ShellHandler
 
         //TODO wech end ???
 
