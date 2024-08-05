@@ -25,7 +25,7 @@ open class Pref(
     val summary: String? = null,
     @StringRes val summaryId: Int,
     val icon: ImageVector? = null,
-    val iconTint: Color?,
+    var iconTint: Color?,
     val enableIf: (() -> Boolean)? = null,
     val onChanged: ((Pref) -> Unit)? = null,
     var group: String = "",
