@@ -1,5 +1,6 @@
 package tests.research.Try_UI_derivedStateVsRememberKey
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -324,7 +325,7 @@ fun Remember__Param10(param: Int) {
 }
 
 @Composable
-fun DerivedState_from_State() {
+fun DerivedState_State() {
    val value by remember { derivedStateOf { externalState.value } }
    Row {
         Text(
@@ -334,13 +335,13 @@ fun DerivedState_from_State() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_State", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_State", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_State10() {
+fun DerivedState_State10() {
    val value by remember { derivedStateOf { externalState.value / 10 } }
    Row {
         Text(
@@ -350,13 +351,13 @@ fun DerivedState_from_State10() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_State10", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_State10", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_StateValue() {
+fun DerivedState_StateValue() {
    val value by remember { derivedStateOf { externalStateValue } }
    Row {
         Text(
@@ -366,13 +367,13 @@ fun DerivedState_from_StateValue() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_StateValue", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_StateValue", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_StateValue10() {
+fun DerivedState_StateValue10() {
    val value by remember { derivedStateOf { externalStateValue / 10 } }
    Row {
         Text(
@@ -382,13 +383,13 @@ fun DerivedState_from_StateValue10() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_StateValue10", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_StateValue10", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_byState() {
+fun DerivedState_byState() {
    val value by remember { derivedStateOf { externalByState } }
    Row {
         Text(
@@ -398,13 +399,13 @@ fun DerivedState_from_byState() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_byState", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_byState", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_byState10() {
+fun DerivedState_byState10() {
    val value by remember { derivedStateOf { externalByState / 10 } }
    Row {
         Text(
@@ -414,13 +415,13 @@ fun DerivedState_from_byState10() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_byState10", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_byState10", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_byStateValue() {
+fun DerivedState_byStateValue() {
    val value by remember { derivedStateOf { externalByStateValue } }
    Row {
         Text(
@@ -430,13 +431,13 @@ fun DerivedState_from_byStateValue() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_byStateValue", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_byStateValue", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DerivedState_from_byStateValue10() {
+fun DerivedState_byStateValue10() {
    val value by remember { derivedStateOf { externalByStateValue / 10 } }
    Row {
         Text(
@@ -446,7 +447,7 @@ fun DerivedState_from_byStateValue10() {
                 .width(70.dp)
                 .recomposeHighlighter()
         )
-        Text("  DerivedState_from_byStateValue10", modifier = Modifier.recomposeHighlighter())
+        Text("  DerivedState_byStateValue10", modifier = Modifier.recomposeHighlighter())
         Spacer(modifier = Modifier.weight(1f))
     }
 }
@@ -776,7 +777,12 @@ fun Param10(param: Int) {
 @Composable
 fun TheComposable() {
 
-    Column(modifier = Modifier.recomposeHighlighter().padding(8.dp)) {
+    Column(
+        modifier = Modifier
+            .recomposeHighlighter()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(8.dp)
+    ) {
 
         Text("externalValue: ${externalValue}")
         Text("externalState: ${externalState.value}")
@@ -800,14 +806,14 @@ fun TheComposable() {
         Remember__stateofParam10(externalValue)
         Remember__Param(externalValue)
         Remember__Param10(externalValue)
-        DerivedState_from_State()
-        DerivedState_from_State10()
-        DerivedState_from_StateValue()
-        DerivedState_from_StateValue10()
-        DerivedState_from_byState()
-        DerivedState_from_byState10()
-        DerivedState_from_byStateValue()
-        DerivedState_from_byStateValue10()
+        DerivedState_State()
+        DerivedState_State10()
+        DerivedState_StateValue()
+        DerivedState_StateValue10()
+        DerivedState_byState()
+        DerivedState_byState10()
+        DerivedState_byStateValue()
+        DerivedState_byStateValue10()
         RememberKey_State_stateofState()
         RememberKey_State_stateofState10()
         RememberKey_State10_stateofState10()
@@ -830,7 +836,7 @@ fun TheComposable() {
         Param10(externalValue)
 
         Text("")
-        Text("generated: 2024-08-05 10:53:56 +0200")
+        Text("generated: 2024-08-05 10:54:40 +0200")
 
         //invocations-end
     }
@@ -853,32 +859,29 @@ fun startCounter() {
 @RunWith(AndroidJUnit4::class)
 class Try_UI_derivedStateVsRememberKey {
 
-
     @get:Rule
     val test = createComposeRule()
 
     @Before
     fun setUp() {
-        //test.setContent {  }
+        test.setContent {
+            TheComposable()
+        }
+        test.onRoot().printToLog("root")
     }
 
     @Test
     fun test_composables() {
 
-        test.onRoot().printToLog("root")
-
         startCounter()
 
-        test.runOnUiThread {
-            test.setContent {
-                TheComposable()
-            }
+        test.waitUntil(60000) {
+            externalValue >= 50000/countTime
         }
     }
 }
 
-
-@Preview(showBackground = true, backgroundColor = 0xFFFEFEFE)
+@Preview(showBackground = true)
 @Composable
 fun Try_UI_derivedStateVsRememberKey_Preview() {
 

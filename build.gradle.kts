@@ -172,6 +172,8 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     // Needed for createComposeRule, but not createAndroidComposeRule:
     debugImplementation(libs.compose.ui.test.manifest)
+    //---------------------------------------- hg42
+    implementation(libs.kotlin.main.kts)
 }
 
 // using a task as a preBuild dependency instead of a function that takes some time insures that it runs

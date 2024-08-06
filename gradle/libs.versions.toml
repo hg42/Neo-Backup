@@ -1,4 +1,5 @@
 [versions]
+
 activity = "1.9.1"
 agp = "8.5.1"
 biometric = "1.2.0-alpha05"
@@ -33,7 +34,12 @@ timber = "5.0.1"
 work = "2.9.0"
 zstd-jni = "1.5.6-4"
 
+######################################## hg42
+
+####################################################################################################
+
 [libraries]
+
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
@@ -90,9 +96,17 @@ test-runner = { module = "androidx.test:runner", version.ref = "test" }
 test-rules = { module = "androidx.test:rules", version.ref = "test-rules" }
 test-ext = { module = "androidx.test.ext:junit-ktx", version.ref = "test-ext" }
 
+######################################## hg42
+kotlin-main-kts = { module = "org.jetbrains.kotlin:kotlin-main-kts", version.ref = "kotlin" }
+
+####################################################################################################
+
 [plugins]
+
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+######################################## hg42
