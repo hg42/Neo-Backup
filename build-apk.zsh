@@ -7,6 +7,8 @@ variant=${1:-pumpkin}
 Variant=${(C)variant}
 
 startdir=$(pwd)
+echo "startdir: $startdir"
+
 basedir="$(dirname $startdir)/$(basename $startdir)--build-clean/$variant"
 builddir="$basedir/build"
 outdir="$builddir/outputs/apk/$variant"
@@ -14,22 +16,29 @@ savedir="/z/src/android/Neo-Backup--etc/apks/"
 pushdir="/sdcard/Download/NB-apk/"
 marker="$basedir/.marker"
 
-gitstatus=$(git status --porcelain)
-echo $gitstatus
+gitdirty=0
+git status --porcelain $startdir | while read line; do
+  echo $line
+  gitdirty=$((gitdirty+1))
+done
 
-if [[ $(echo $gitstatus | wc -l) != 0 ]]; then
+if [[ $gitdirty != 0 ]]; then
   print
   print "git status is not clean"
   print
   #exit 1
-  timeout=4
-  print -n "waiting $timeout sec..."
+  timeout=10
+  print -n "waiting..."
+  i=$timeout
   repeat $timeout; do
-    print -n "."
+    print -n "$i."
     sleep 1
+    i=$((i-1))
   done
   print "go..."
   sleep 1
+else
+  echo "git is clean"
 fi
 
 #set -x
