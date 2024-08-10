@@ -173,7 +173,10 @@ dependencies {
     // Needed for createComposeRule, but not createAndroidComposeRule:
     debugImplementation(libs.compose.ui.test.manifest)
     //---------------------------------------- hg42
-    implementation(libs.kotlin.main.kts)
+    // can only be enabled on demand, otherwise it conflicts with compilation
+    // TODO hg42 without thew library the .main.kts script still works, but syntax checking is not working
+    // TODO hg42 and ide complains about script at wrong place
+    //implementation(libs.kotlin.main.kts)
 }
 
 // using a task as a preBuild dependency instead of a function that takes some time insures that it runs
