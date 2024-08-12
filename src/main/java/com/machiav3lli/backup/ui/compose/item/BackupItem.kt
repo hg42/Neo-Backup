@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -40,6 +38,8 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.ui.compose.BalancedWrapRow
+import com.machiav3lli.backup.ui.compose.balancedWrap
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Lock
@@ -52,47 +52,35 @@ fun BackupItem_headlineContent(
     item: Backup,
     onNote: ((Backup) -> Unit) ? = null
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.Top,
-        ) {
+    BalancedWrapRow {
+        Text(
+            text = item.versionName ?: "",
+            modifier = Modifier.balancedWrap(),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 5,
+            style = MaterialTheme.typography.titleMedium
+        )
+        AnimatedVisibility(visible = (item.cpuArch != android.os.Build.SUPPORTED_ABIS[0])) {
             Text(
-                text = item.versionName ?: "",
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .widthIn(min = 30.dp)
-                    .weight(1f),
+                text = " ${item.cpuArch} ",
+                color = Color.Red,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 5,
-                style = MaterialTheme.typography.titleMedium
+                maxLines = 1,
+                style = MaterialTheme.typography.labelMedium,
             )
-            AnimatedVisibility(visible = (item.cpuArch != android.os.Build.SUPPORTED_ABIS[0])) {
-                Text(
-                    text = " ${item.cpuArch}",
-                    color = Color.Red,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
-            NoteTagItem(
-                item,
-                maxLines = 2,
-                onNote = onNote,
-            )
-            Spacer(modifier = Modifier.width(16.dp))
         }
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BackupLabels(item = item)
-        }
+        NoteTagItem(
+            item,
+            modifier = Modifier.balancedWrap(),
+            maxLines = 5,
+            onNote = onNote,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        BackupLabels(item = item)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun BackupItem_supportingContent(item: Backup) {
     Row(
@@ -100,14 +88,14 @@ fun BackupItem_supportingContent(item: Backup) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier.weight(1f, fill = true)
         ) {
             Text(
                 text = item.backupDate.format(BACKUP_DATE_TIME_SHOW_FORMATTER),
                 modifier = Modifier.align(Alignment.Top),
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = 2,
                 style = MaterialTheme.typography.labelMedium,
             )
             if (item.tag.isNotEmpty())
@@ -119,9 +107,13 @@ fun BackupItem_supportingContent(item: Backup) {
                     style = MaterialTheme.typography.labelMedium,
                 )
         }
-        Row {
+        Spacer(modifier = Modifier.width(8.dp))
+        FlowRow {
             Text(
-                text = if (item.backupVersionCode == 0) "old" else "${item.backupVersionCode / 1000}.${item.backupVersionCode % 1000}",
+                text = if (item.backupVersionCode == 0)
+                    "old"
+                else
+                    "${item.backupVersionCode / 1000}.${item.backupVersionCode % 1000}",
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 3,
                 style = MaterialTheme.typography.labelMedium,
@@ -295,7 +287,7 @@ fun BackupRestorePreview() {
 
     OABX.fakeContext = LocalContext.current.applicationContext
 
-    var note by remember { mutableStateOf("a note text") }
+    var note by remember { mutableStateOf("a very very very long note text") }
     var maxLines by remember { mutableStateOf(1) }
 
     val backup = Backup(
@@ -312,7 +304,7 @@ fun BackupRestorePreview() {
         hasObbData = false,
         hasMediaData = false,
         compressionType = "zst",
-        cipherType = "aes-256-cbc",
+        cipherType = "aes-256-cbc-etc",
         iv = null,
         cpuArch = "arm64",
         permissions = emptyList(),
@@ -334,6 +326,9 @@ fun BackupRestorePreview() {
             }
             ActionButton("long") {
                 note = "a very very very long note text"
+            }
+            ActionButton("extreme") {
+                note = "a very very very very very very very very long note text and even longer"
             }
             ActionButton("multiline") {
                 note = "a very very very long note text\nmultiple\nlines"
