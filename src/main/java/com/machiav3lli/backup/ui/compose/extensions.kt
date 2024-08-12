@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 fun Modifier.vertical() = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
@@ -221,3 +224,129 @@ fun LazyListState.isAtBottom() = remember {
     }
 }.value
 
+
+// implement a row layout that balances height (and width)
+// of wrapping elements that are marked with balancedWrap()
+// * marked elements are usually Text (remove other modifiers like weight and width)
+// * spare space is distributed evenly between marked elements
+// * the area of marked elements is determined
+// * the width of the marked elements is adjusted so that they get a similar height as far as this is possible in one
+
+const val BALANCED_WRAP = "BalancedWrap"
+
+@Composable
+fun Modifier.balancedWrap(): Modifier = this then Modifier.layoutId(BALANCED_WRAP)
+
+@Composable
+fun BalancedWrapRow(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    //val density = LocalDensity.current
+
+    Layout(
+        content = content,
+        modifier = modifier,
+        measurePolicy = { measurables, constraints ->
+
+            val minBalancedWidth = 10.dp.toPx().toInt()
+
+            val isText = measurables.map {
+                it to (it.layoutId.toString() == BALANCED_WRAP)
+            }.toMap()
+            val nTexts = max(1,  isText.count { it.value })
+
+            // measure with initial constraints
+            val maxWidths =
+                measurables.map { it to it.maxIntrinsicWidth(0) }
+            val widths = maxWidths.toMap().toMutableMap()
+            // calculate area of elements to be balanced in height
+            val areas = measurables.map {
+                val width = max(minBalancedWidth, it.maxIntrinsicWidth(0))
+                val height = it.maxIntrinsicHeight(width)
+                it to (width * height)
+            }.toMap()
+            val totalBalancedArea = areas.map { (measurable, area) ->
+                if (isText[measurable] == true)
+                    area
+                else
+                    0
+            }.sum()
+
+            // get width of fixed and balanced elements
+            val maxWidth = constraints.maxWidth
+            val totalFixedWidth = maxWidths.map { (measurable, minWidth) ->
+                if (isText[measurable] == true) 0 else minWidth
+            }.sum()
+            val totalBalancedWidth = maxWidths.map { (measurable, minWidth) ->
+                if (isText[measurable] == true)
+                    max(minBalancedWidth, minWidth)
+                else
+                    0
+            }.sum()
+            val maxBalancedWidth = maxWidth - totalFixedWidth
+            //val totalWidth = totalFixedWidth + totalTextWidth
+            val balancedHeight = (totalBalancedArea / maxBalancedWidth)
+
+            // determine new widths
+            if (totalBalancedWidth > maxBalancedWidth) {
+                measurables.map { measurable ->
+                    val width = (widths[measurable] ?: 0)
+                    // use a factor because it's estimated
+                    val factor = 1.25f
+                    val adjustedWidth = if (isText[measurable] == true)
+                        (areas[measurable]!! / (balancedHeight * factor)).toInt()
+                    else
+                        width
+                    widths[measurable] = adjustedWidth
+                }
+                val finalTotalBalancedWidth = widths.map { (measurable, width) ->
+                    if (isText[measurable] == true)
+                        max(minBalancedWidth, width)
+                    else
+                        0
+                }.sum()
+                val addSpace = (maxBalancedWidth - finalTotalBalancedWidth) / nTexts
+                measurables.map { measurable ->
+                    val width = (widths[measurable] ?: 0)
+                    val adjustedWidth = if (isText[measurable] == true)
+                        max(0, width + addSpace)
+                    else
+                        width
+                    widths[measurable] = adjustedWidth
+                }
+            } else {
+                val addSpace = (maxBalancedWidth - totalBalancedWidth) / nTexts
+                measurables.map { measurable ->
+                    val width = (widths[measurable] ?: 0)
+                    val adjustedWidth = if (isText[measurable] == true)
+                        width + addSpace
+                    else
+                        width
+                    widths[measurable] = adjustedWidth
+                }
+            }
+            val placeables =
+                measurables.map { measurable ->
+                    val width = (widths[measurable] ?: 0)
+                    measurable.measure(
+                        constraints.copy(
+                            minWidth = width,
+                            maxWidth = width
+                        )
+                    )
+                }
+
+            // get final height
+            val maxHeight = placeables.map { it.height }.maxOrNull() ?: 0
+
+            layout(maxWidth, maxHeight) {
+                var xPosition = 0
+                placeables.forEach {
+                    it.placeRelative(x = xPosition, y = 0)
+                    xPosition += it.width
+                }
+            }
+        }
+    )
+}

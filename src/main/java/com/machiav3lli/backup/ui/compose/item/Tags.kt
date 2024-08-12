@@ -143,9 +143,8 @@ fun NoteTagItem(
             modifier = modifier
                 // max doesn't make sense, restriction depends on outside,
                 // why shorten the note, if there is enough space? and 128.dp is a random value
-                .widthIn(min = 32.dp)
-                .clip(MaterialTheme.shapes.medium)
                 .clickable(onClick = { onNote?.let { it(item) } })
+                .clip(MaterialTheme.shapes.medium)
                 .border(
                     BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     MaterialTheme.shapes.medium
@@ -158,7 +157,9 @@ fun NoteTagItem(
                     else MaterialTheme.colorScheme.onSurface),
         ) {
             Text(
-                modifier = Modifier.padding(2.dp),
+                modifier = Modifier
+                    .padding(2.dp)
+                    .widthIn(min = 32.dp),
                 text = tag.ifEmpty { stringResource(id = R.string.edit_note) },
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = maxLines,
@@ -237,7 +238,6 @@ fun AddTagView(
         }
     }
 }
-
 
 
 @OptIn(ExperimentalLayoutApi::class)
