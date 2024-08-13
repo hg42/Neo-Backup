@@ -1,6 +1,5 @@
 package com.machiav3lli.backup.ui.compose.item
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -35,7 +34,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,72 +69,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.Float.max
 
-@Preview
-@Composable
-fun ProgressPreview() {
-
-    OABX.fakeContext = LocalContext.current.applicationContext
-
-    var count by remember { mutableIntStateOf(0) }
-
-    val maxCount = 4
-
-    OABX.clearInfoLogText()
-    repeat(10) { OABX.addInfoLogText("line $it") }
-    OABX.setProgress(count, maxCount)
-
-    LaunchedEffect(true) {
-        MainScope().launch {
-            while (count < maxCount) {
-                OABX.beginBusy()
-                OABX.addInfoLogText("count is $count")
-                delay(1000)
-                count = (count + 1) % (maxCount + 2)
-                OABX.endBusy()
-                if (count > maxCount)
-                    OABX.setProgress()
-                OABX.addInfoLogText("count is $count")
-                delay(1000)
-            }
-        }
-    }
-
-    TopBar(title = "Count $count", modifier = Modifier.background(color = Color.LightGray)) {
-        Button(
-            onClick = {
-                count = (count + 1) % (maxCount + 2)
-                OABX.setProgress(count, maxCount)
-                if (count > maxCount)
-                    OABX.setProgress()
-                OABX.addInfoLogText("test $count")
-            }
-        ) {
-            Text("$count")
-        }
-    }
-}
-
-@Preview
-@Composable
-fun VerticalPreview() {
-    Row(
-        modifier = Modifier.wrapContentSize()
-    ) {
-        Text(
-            modifier = Modifier
-                .vertical()
-                .rotate(-90f),
-            fontWeight = FontWeight.Bold,
-            text = "vertical text"
-        )
-        Text(text = "horizontal")
-    }
-}
-
 @Composable
 fun ProgressIndicator() {
-    val progress by remember { OABX.progress }
-    AnimatedVisibility(visible = progress.first) {
+    val busy by remember(OABX.busy.value) { OABX.busy }
+    val progress by remember(
+        OABX.progress.value.first,
+        OABX.progress.value.second
+    ) { OABX.progress }
+
+    if (progress.first) {
         LinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
@@ -144,6 +85,14 @@ fun ProgressIndicator() {
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             color = MaterialTheme.colorScheme.primary,
             progress = { max(0.02f, progress.second) }
+        )
+    } else if (busy) {
+        LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -251,6 +200,7 @@ fun TopBar(
         !showDevTools.value && (OABX.showInfoLog || tempShowInfo.value) && pref_showInfoLogBar.value
 
     Box { // overlay TopBar and indicators
+
         TopAppBar(
             modifier = modifier.wrapContentHeight(),
             title = {
@@ -287,7 +237,9 @@ fun TopBar(
             actions = actions
         )
 
+        // must be second item to overlay first
         GlobalIndicators()
+
     }
 }
 
@@ -380,4 +332,80 @@ fun ExpandedSearchView(
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
     )
+}
+
+
+@Preview
+@Composable
+fun ProgressPreview() {
+
+    OABX.fakeContext = LocalContext.current.applicationContext
+
+    var count by remember { mutableStateOf(0) }
+
+    val maxCount = 4
+
+    SideEffect {
+        if (count >= 0)
+            OABX.setProgress(count, maxCount)
+        else if (count == -2)
+            OABX.setProgress()
+        else
+            OABX.hitBusy(2000)
+    }
+
+    OABX.clearInfoLogText()
+    repeat(10) { OABX.addInfoLogText("line $it") }
+    OABX.setProgress(count, maxCount)
+
+    LaunchedEffect(true) {
+        MainScope().launch {
+            while (count < maxCount) {
+                OABX.beginBusy()
+                OABX.addInfoLogText("count is $count")
+                delay(1000)
+                count = (count + 1) % (maxCount + 2)
+                OABX.endBusy()
+                if (count > maxCount)
+                    OABX.setProgress()
+                OABX.addInfoLogText("count is $count")
+                delay(1000)
+            }
+        }
+    }
+
+    TopBar(
+        title = if (count >= 0)
+            "count $count"
+        else if (count == -2)
+            "off"
+        else
+            "busy",
+        modifier = Modifier.background(color = Color.LightGray)
+    ) {
+        Button(
+            onClick = {
+                count = (count + 3) % (maxCount + 3) - 2
+            }
+        ) {
+            Text("$count")
+        }
+    }
+}
+
+@Preview
+@Composable
+fun VerticalPreview() {
+    Row(
+        modifier = Modifier.wrapContentSize()
+    ) {
+        Text(
+            modifier = Modifier
+                .vertical()
+                .rotate(-90f),
+            fontWeight = FontWeight.Bold,
+            text = "vertical text"
+        )
+        Text(text = "horizontal")
+    }
 }
