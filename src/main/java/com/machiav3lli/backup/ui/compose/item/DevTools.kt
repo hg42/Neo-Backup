@@ -883,7 +883,6 @@ fun DevTools(
         shape = AbsoluteRoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
     ) {
         Column(
             modifier = Modifier
