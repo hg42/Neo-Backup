@@ -617,7 +617,7 @@ class OABX : Application() {
             return try {
                 shellHandler = ShellHandler()
                 shellHandler
-            } catch (e: ShellHandler.ShellCommandFailedException) {
+            } catch (e: Throwable) {
                 null
             }
         }
