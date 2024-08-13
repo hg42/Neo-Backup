@@ -74,8 +74,6 @@ import com.machiav3lli.backup.ui.compose.item.MainPackageContextMenu
 import com.machiav3lli.backup.ui.compose.item.cachedAsyncImagePainter
 import com.machiav3lli.backup.ui.compose.recycler.HomePackageRecycler
 import com.machiav3lli.backup.ui.compose.recycler.UpdatedPackageRecycler
-import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
-import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.altModeToMode
 import com.machiav3lli.backup.viewmodels.AppSheetViewModel
 import kotlinx.coroutines.launch
@@ -99,10 +97,17 @@ fun HomePage() {
     val menuExpanded = viewModel.menuExpanded
     val menuButtonAlwaysVisible = pref_menuButtonAlwaysVisible.value
     val openBatchDialog = remember { mutableStateOf(false) }
-    val appSheetState = rememberModalBottomSheetState(true)
+    val appSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val appSheetPN: MutableState<String?> = rememberSaveable { mutableStateOf(null) }
     val appSheetPackage: MutableState<Package?> = remember(appSheetPN.value) {
         mutableStateOf(
+            //TODO use a non-filtered list, because appSheet might be kept open
+            // (e.g. in a second window) even if the filtered list doesn't contain it
+            // the packageName should also be unique
+            // I think with the reactive filtered list the appSheet will close, when changing the filter
+            // the lists probably don't need to be reactive at all
+            // an interesting question is:
+            // when does the packageName disappear from those lists = when does autoclose happen?
             (filteredList + updatedPackages)
                 .find { it.packageName == appSheetPN.value }
         )
