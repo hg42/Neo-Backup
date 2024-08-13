@@ -173,7 +173,9 @@ class ShellHandler {
         Shell.enableVerboseLogging = isDebug
         initPrivilegedShell()
 
-        baseInfo().forEach { Timber.i(it) }
+        runCatching {
+            baseInfo().forEach { Timber.i(it) }
+        }
 
         utilBoxes = mutableListOf<UtilBox>()
         try {
