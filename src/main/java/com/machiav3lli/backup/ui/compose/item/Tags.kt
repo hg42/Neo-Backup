@@ -51,11 +51,13 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.preferences.pref_useNoteIcon
+import com.machiav3lli.backup.ui.compose.balancedWrap
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.NotePencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.PlusCircle
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.icons.phosphor.XCircle
+import com.machiav3lli.backup.ui.compose.ifThen
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -126,10 +128,10 @@ fun NoteTagItem(
     maxLines: Int = 1,
     onNote: ((Backup) -> Unit)? = null,
 ) {
-    val tag = item.note
-    val fillChip = useIcon || (tag.isEmpty() && onNote != null)
-    val showIcon = useIcon && tag.isEmpty() && onNote != null
-    val showBadge = tag.isNotEmpty() || (!useIcon && onNote != null)
+    val note = item.note
+    val fillChip = useIcon || (note.isEmpty() && onNote != null)
+    val showIcon = useIcon && note.isEmpty() && onNote != null
+    val showBadge = note.isNotEmpty() || (!useIcon && onNote != null)
 
     if (showIcon) {
         Icon(
@@ -158,9 +160,10 @@ fun NoteTagItem(
         ) {
             Text(
                 modifier = Modifier
+                    .ifThen(note.isNotEmpty()) { balancedWrap() }
                     .padding(2.dp)
                     .widthIn(min = 32.dp),
-                text = tag.ifEmpty { stringResource(id = R.string.edit_note) },
+                text = note.ifEmpty { stringResource(id = R.string.edit_note) },
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = maxLines,
                 overflow = TextOverflow.Ellipsis,
@@ -247,6 +250,10 @@ fun NoteTagItemPreview() {
 
     OABX.fakeContext = LocalContext.current.applicationContext
 
+    var note by remember { mutableStateOf("note text") }
+    var maxLines by remember { mutableStateOf(1) }
+    var useIcon by remember { mutableStateOf(pref_useNoteIcon.value) }
+
     val packageInfo = PackageInfo(
         packageName = "com.machiav3lli.backup",
         versionName = "1.0",
@@ -271,8 +278,6 @@ fun NoteTagItemPreview() {
         note = "",
     )
 
-    var note by remember { mutableStateOf("note text") }
-    var maxLines by remember { mutableStateOf(1) }
     val backup_with_note = backup.copy(note = note)
 
     Column(modifier = Modifier.width(250.dp)) {
@@ -292,6 +297,10 @@ fun NoteTagItemPreview() {
             ActionButton("multiline") {
                 note = "a very very very long note text\nmultiple\nlines"
                 maxLines = 2
+            }
+            ActionButton("icon") {
+                useIcon = !useIcon
+                pref_useNoteIcon.value = useIcon
             }
         }
         Text("\ntext:\n")

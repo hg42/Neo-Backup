@@ -38,6 +38,7 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.preferences.pref_useNoteIcon
 import com.machiav3lli.backup.ui.compose.BalancedWrapRow
 import com.machiav3lli.backup.ui.compose.balancedWrap
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -50,7 +51,7 @@ import java.time.LocalDateTime
 @Composable
 fun BackupItem_headlineContent(
     item: Backup,
-    onNote: ((Backup) -> Unit) ? = null
+    onNote: ((Backup) -> Unit)? = null,
 ) {
     BalancedWrapRow {
         Text(
@@ -70,8 +71,8 @@ fun BackupItem_headlineContent(
             )
         }
         NoteTagItem(
+            // contains a contitional balancedWrap
             item,
-            modifier = Modifier.balancedWrap(),
             maxLines = 5,
             onNote = onNote,
         )
@@ -288,7 +289,7 @@ fun BackupRestorePreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
     var note by remember { mutableStateOf("a very very very long note text") }
-    var maxLines by remember { mutableStateOf(1) }
+    var useIcon by remember { mutableStateOf(pref_useNoteIcon.value) }
 
     val backup = Backup(
         base = PackageInfo(
@@ -313,6 +314,8 @@ fun BackupRestorePreview() {
         size = 123456789,
     )
 
+    val backup_without_note = backup.copy(note = "")
+
     Column(modifier = Modifier.width(500.dp)) {
         FlowRow {
             ActionButton("none") {
@@ -333,12 +336,24 @@ fun BackupRestorePreview() {
             ActionButton("multiline") {
                 note = "a very very very long note text\nmultiple\nlines"
             }
+            ActionButton("icon=$useIcon") {
+                useIcon = !useIcon
+                pref_useNoteIcon.value = useIcon
+            }
         }
 
-        BackupItem(item = backup)
-
+        Text("BackupItem:")
         Spacer(modifier = Modifier.height(8.dp))
+        BackupItem(item = backup)
+        Spacer(modifier = Modifier.height(8.dp))
+        BackupItem(item = backup_without_note)
 
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text("RestoreItem:")
+        Spacer(modifier = Modifier.height(8.dp))
         RestoreBackupItem(item = backup, index = 3)
+        Spacer(modifier = Modifier.height(8.dp))
+        RestoreBackupItem(item = backup_without_note, index = 4)
     }
 }
