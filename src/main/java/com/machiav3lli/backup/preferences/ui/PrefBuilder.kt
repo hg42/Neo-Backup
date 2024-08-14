@@ -7,6 +7,7 @@ import com.machiav3lli.backup.ui.compose.item.IntPreference
 import com.machiav3lli.backup.ui.compose.item.LaunchPreference
 import com.machiav3lli.backup.ui.compose.item.ListPreference
 import com.machiav3lli.backup.ui.compose.item.PasswordPreference
+import com.machiav3lli.backup.ui.compose.item.StringEditPreference
 import com.machiav3lli.backup.ui.compose.item.StringPreference
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.EnumPref
@@ -15,6 +16,7 @@ import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.ListPref
 import com.machiav3lli.backup.ui.item.PasswordPref
 import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.ui.item.StringEditPref
 import com.machiav3lli.backup.ui.item.StringPref
 
 @Composable
@@ -53,6 +55,14 @@ fun PrefsBuilder(
         }
 
         is PasswordPref -> PasswordPreference(
+            pref = pref,
+            index = index,
+            groupSize = size,
+        ) {
+            onDialogPref(pref)
+        }
+
+        is StringEditPref -> StringEditPreference(
             pref = pref,
             index = index,
             groupSize = size,
