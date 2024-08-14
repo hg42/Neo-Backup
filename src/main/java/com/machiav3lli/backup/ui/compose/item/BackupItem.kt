@@ -213,7 +213,10 @@ fun BackupItem(
                             onClick = togglePersistent
                         )
                     else
-                        RoundButton(icon = Phosphor.LockOpen, onClick = togglePersistent)
+                        RoundButton(
+                            icon = Phosphor.LockOpen,
+                            onClick = togglePersistent
+                        )
 
                     Spacer(modifier = Modifier.weight(1f))
 

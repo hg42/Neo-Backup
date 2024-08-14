@@ -2,9 +2,7 @@ package com.machiav3lli.backup.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -105,12 +103,6 @@ fun Modifier.blockShadow(altStyle: Boolean = pref_altBlockLayout.value) =
                 }
             )
     }
-
-@Composable
-fun SelectionContainerX(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    SelectionContainer(modifier = modifier.fillMaxWidth(), content = content)
-    //content()
-}
 
 @Composable
 fun <T> ObservedEffect(flow: Flow<T?>, onChange: (T?) -> Unit) {
