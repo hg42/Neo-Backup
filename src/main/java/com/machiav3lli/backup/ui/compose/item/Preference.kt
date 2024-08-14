@@ -186,11 +186,6 @@ fun StringPreference(
         index = index,
         groupSize = groupSize,
         onClick = onClick,
-        bottomWidget = {
-            TextInput(text = pref.value) {
-                pref.value = it
-            }
-        }
     )
 }
 
