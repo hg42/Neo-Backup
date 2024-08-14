@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,6 +59,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.PlusCircle
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.icons.phosphor.XCircle
 import com.machiav3lli.backup.ui.compose.ifThen
+import com.machiav3lli.backup.ui.compose.ifThenElse
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -129,13 +131,19 @@ fun NoteTagItem(
     onNote: ((Backup) -> Unit)? = null,
 ) {
     val note = item.note
-    val fillChip = useIcon || (note.isEmpty() && onNote != null)
-    val showIcon = useIcon && note.isEmpty() && onNote != null
-    val showBadge = note.isNotEmpty() || (!useIcon && onNote != null)
+    // with useNoteIcon enabled, show edit icon or chip with note
+    // with useNoteIcon disabled, show filled chip "edit note" or chip with note
+    // with onNote not set, disable editing (nobody reacts on the the change)
+    val fillChip = if (useIcon) true else note.isEmpty() && (onNote != null)
+    val showNode = note.isNotEmpty()
+    val showIcon = useIcon && note.isEmpty() && (onNote != null)
+    val showBadge = if (useIcon) note.isNotEmpty() else note.isNotEmpty() || (onNote != null)
 
     if (showIcon) {
         Icon(
-            modifier = Modifier.clickable { onNote?.let { it(item) } },
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { onNote?.let { it(item) } },
             imageVector = Phosphor.NotePencil,
             contentDescription = stringResource(id = R.string.edit_note),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -143,13 +151,18 @@ fun NoteTagItem(
     } else if (showBadge) {
         Badge(
             modifier = modifier
-                // max doesn't make sense, restriction depends on outside,
+                // a max width doesn't make sense, restriction depends on outside,
                 // why shorten the note, if there is enough space? and 128.dp is a random value
+                .ifThen(note.isNotEmpty()) { balancedWrap() }
                 .clickable(onClick = { onNote?.let { it(item) } })
-                .clip(MaterialTheme.shapes.medium)
-                .border(
-                    BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                    MaterialTheme.shapes.medium
+                .ifThenElse(fillChip,
+                    { clip(MaterialTheme.shapes.medium) },
+                    {
+                        border(
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            MaterialTheme.shapes.medium
+                        )
+                    }
                 ),
             containerColor = (
                     if (fillChip) MaterialTheme.colorScheme.primary
@@ -160,7 +173,6 @@ fun NoteTagItem(
         ) {
             Text(
                 modifier = Modifier
-                    .ifThen(note.isNotEmpty()) { balancedWrap() }
                     .padding(2.dp)
                     .widthIn(min = 32.dp),
                 text = note.ifEmpty { stringResource(id = R.string.edit_note) },
