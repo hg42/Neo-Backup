@@ -186,6 +186,46 @@ fun StringPreference(
         index = index,
         groupSize = groupSize,
         onClick = onClick,
+        bottomWidget = {
+            TextInput(text = pref.value) {
+                pref.value = it
+            }
+        }
+    )
+}
+
+@Composable
+fun StringEditPreference(
+    modifier: Modifier = Modifier,
+    pref: StringPref,
+    index: Int = 0,
+    groupSize: Int = 1,
+    onClick: (() -> Unit) = {},
+) {
+    BasePreference(
+        modifier = modifier,
+        pref = pref,
+        titleId = pref.titleId,
+        summaryId = pref.summaryId,
+        summary = pref.value,
+        icon = {
+            pref.icon?.let { icon ->
+                PrefIcon(
+                    icon = icon,
+                    text = stringResource(id = pref.titleId),
+                )
+            } ?: run {
+                Spacer(modifier = Modifier.requiredWidth(36.dp))
+            }
+        },
+        index = index,
+        groupSize = groupSize,
+        onClick = onClick,
+        bottomWidget = {
+            TextInput(text = pref.value) {
+                pref.value = it
+            }
+        }
     )
 }
 

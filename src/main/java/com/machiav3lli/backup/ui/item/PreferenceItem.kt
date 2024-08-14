@@ -355,6 +355,31 @@ open class StringPref(
     override fun toString(): String = value.toString()
 }
 
+class StringEditPref(
+    key: String,
+    private: Boolean = true,
+    defaultValue: String,
+    @StringRes titleId: Int = -1,
+    summary: String? = null,
+    @StringRes summaryId: Int = -1,
+    icon: ImageVector? = null,
+    iconTint: Color? = null,
+    enableIf: (() -> Boolean)? = null,
+    onChanged: ((Pref) -> Unit)? = null,
+) : StringPref(
+    key = key,
+    private = private,
+    defaultValue = defaultValue,
+    titleId = titleId,
+    summary = summary,
+    summaryId = summaryId,
+    icon = icon,
+    iconTint = iconTint,
+    enableIf = enableIf,
+    onChanged = onChanged
+)
+
+
 class PasswordPref(
     key: String,
     private: Boolean = true,
