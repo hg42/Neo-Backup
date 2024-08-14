@@ -885,7 +885,7 @@ class ShellHandler {
                     traceDebug { "previous cached shell found, trying to terminate it ($shellBefore)" }
                 shellBefore.waitAndClose(0L, TimeUnit.SECONDS)
             }
-            Shell.cmd("true").exec()
+            //TODO hg42 ??? Shell.cmd("true").exec() // find out why it was here? it crashes now
             val shellAfter = Shell.getShell()
             if (shellBefore != null) {
                 if (shellAfter === shellBefore)
