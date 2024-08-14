@@ -217,7 +217,7 @@ fun StringEditPreference(
         groupSize = groupSize,
         onClick = onClick,
         bottomWidget = {
-            TextInput(text = pref.value) {
+            TextInput(pref.value) {
                 pref.value = it
             }
         }

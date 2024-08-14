@@ -114,7 +114,7 @@ fun Confirmation(
 }
 
 @Composable
-fun TextInput(
+fun TextInputMenuItem(
     text: String = "",
     placeholder: String = "",
     trailingIcon: ImageVector? = null,
@@ -324,7 +324,7 @@ fun SelectionPutMenu(
 ) {
     val name = remember { mutableStateOf("") }
 
-    TextInput(
+    TextInputMenuItem(
         text = name.value,
         placeholder = "new selection name",
         trailingIcon = Phosphor.ArchiveTray,
@@ -562,7 +562,7 @@ fun MainPackageContextMenu(
                 text = { Text("test = ${number.intValue}") },
                 onClick = {
                     openSubMenu(subMenu) {
-                        TextInput(
+                        TextInputMenuItem(
                             text = number.intValue.toString(),
                             onAction = {
                                 number.intValue = it.toInt()

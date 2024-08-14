@@ -262,16 +262,22 @@ fun DevDialog(
 }
 
 @Composable
-fun TextInput(name: TextFieldValue, onNameChange: (TextFieldValue) -> Unit) {
+fun TextInput(text: TextFieldValue, placeholder: @Composable () -> Unit = {}, onChange: (TextFieldValue) -> Unit) {
     OutlinedTextField(
-        value = name,
-        onValueChange = onNameChange,
-        placeholder = { Text("Name") },
+        value = text,
+        onValueChange = onChange,
+        placeholder = placeholder,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         textStyle = LocalTextStyle.current.copy(fontSize = 18.sp)
     )
+}
+
+@Composable
+fun TextInput(text: String, placeholder: @Composable () -> Unit = {}, onChange: (String) -> Unit) {
+    val textFieldValue by remember { mutableStateOf(TextFieldValue(text)) }
+    TextInput(textFieldValue, placeholder, { onChange(it.text) })
 }
 
 @Composable
@@ -394,7 +400,7 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                 cancel()
             }
         }
-        TextInput(name) {
+        TextInput(name, placeholder = { Text("Name") }) {
             name = it
         }
         Text(
