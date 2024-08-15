@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -36,12 +37,10 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -53,10 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.machiav3lli.backup.ERROR_PREFIX
@@ -114,6 +113,82 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 
+
+@Composable
+fun TextInput(
+    text: TextFieldValue,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    trailingIcon: @Composable () -> Unit = {},
+    submitEachChange: Boolean = false,
+    onSubmit: (TextFieldValue) -> Unit = {},
+) {
+    val input = remember { mutableStateOf(text) }
+    //val focusManager = LocalFocusManager.current
+    //val textFieldFocusRequester = remember { FocusRequester() }
+
+    //LaunchedEffect(textFieldFocusRequester) {
+    //    delay(100)
+    //    textFieldFocusRequester.requestFocus()
+    //}
+
+    fun submit() {
+        //focusManager.clearFocus()
+        onSubmit(input.value)
+    }
+
+    OutlinedTextField(
+        modifier = modifier
+            .testTag("input"),
+        //.focusRequester(textFieldFocusRequester)
+        value = input.value,
+        placeholder = { Text(text = placeholder, color = Color.Gray) },
+        singleLine = true,
+        trailingIcon = trailingIcon,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                submit()
+            }
+        ),
+        keyboardOptions = KeyboardOptions(
+            autoCorrect = false
+        ),
+        onValueChange = {
+            if (it.text.contains("\n")) {
+                input.value = it.copy(text = it.text.replace("\n", ""))
+                submit()
+            } else
+                input.value = it
+                if (submitEachChange)
+                    submit()
+        }
+    )
+}
+
+@Composable
+fun TextInput(
+    text: String,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    trailingIcon: @Composable () -> Unit = {},
+    submitEachChange: Boolean = false,
+    onSubmit: (String) -> Unit = {},
+) {
+    val textFieldValue by remember(text) { mutableStateOf(TextFieldValue(text)) }
+    TextInput(
+        text = textFieldValue,
+        modifier = modifier,
+        placeholder = placeholder,
+        trailingIcon = trailingIcon,
+        submitEachChange = submitEachChange,
+    ) {
+        onSubmit(it.text)
+    }
+}
+
+
+
+
 var devToolsTab = mutableStateOf("")
 
 val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
@@ -167,59 +242,33 @@ fun DevSettingsTab() {
     val scroll = rememberScrollState(0)
     var search by remember { mutableStateOf("") }
 
-    val color = MaterialTheme.colorScheme.onSurface
-
     Column {
-        OutlinedTextField(
-            value = search,
+        TextInput(
+            text = search,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
-            singleLine = true,
-            //placeholder = { Text(text = "search", color = Color.Gray) },
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = color,
-                unfocusedTextColor = color,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                unfocusedTrailingIconColor = color,
-                focusedTrailingIconColor = color, //if (search.length > 0) Color.Transparent else overlayColor
-            ),
-            textStyle = MaterialTheme.typography.bodyMedium,
+            placeholder = "search",
             trailingIcon = {
                 if (search.isEmpty())
                     Icon(
                         imageVector = Phosphor.MagnifyingGlass,
                         contentDescription = "search",
-                        modifier = Modifier.size(ICON_SIZE_SMALL)
                         //tint = tint,
-                        //contentDescription = description
+                        modifier = Modifier.size(ICON_SIZE_SMALL)
                     )
                 else
                     Icon(
                         imageVector = Phosphor.X,
-                        contentDescription = "search",
+                        contentDescription = "clear",
+                        //tint = tint,
                         modifier = Modifier
                             .size(ICON_SIZE_SMALL)
                             .clickable { search = "" }
-                        //tint = tint,
-                        //contentDescription = description,
                     )
             },
-            keyboardOptions = KeyboardOptions(
-                autoCorrect = false,
-                //imeAction = ImeAction.Done
-            ),
-            //keyboardActions = KeyboardActions(
-            //    onDone = {
-            //        todo
-            //        search = ""
-            //    }
-            //),
-            onValueChange = {
-                search = it
-            }
+            submitEachChange = true,
+            onSubmit = { search = it }
         )
 
         Column(
@@ -259,25 +308,6 @@ fun DevDialog(
             dialogUI()
         }
     }
-}
-
-@Composable
-fun TextInput(text: TextFieldValue, placeholder: @Composable () -> Unit = {}, onChange: (TextFieldValue) -> Unit) {
-    OutlinedTextField(
-        value = text,
-        onValueChange = onChange,
-        placeholder = placeholder,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        textStyle = LocalTextStyle.current.copy(fontSize = 18.sp)
-    )
-}
-
-@Composable
-fun TextInput(text: String, placeholder: @Composable () -> Unit = {}, onChange: (String) -> Unit) {
-    val textFieldValue by remember { mutableStateOf(TextFieldValue(text)) }
-    TextInput(textFieldValue, placeholder, { onChange(it.text) })
 }
 
 @Composable
@@ -400,7 +430,7 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                 cancel()
             }
         }
-        TextInput(name, placeholder = { Text("Name") }) {
+        TextInput(name, placeholder = "Name") {
             name = it
         }
         Text(
