@@ -201,12 +201,6 @@ val pref_busyFadeTime = IntPref(
     defaultValue = 2000
 )
 
-val pref_hideBackupLabels = BooleanPref(
-    key = "dev-adv.hideBackupLabels",
-    summary = "speed up package list by hiding the backup data type icons (keeps the package type)",
-    defaultValue = false
-)
-
 val pref_cancelOnStart = BooleanPref(
     key = "dev-adv.cancelOnStart",
     summaryId = R.string.prefs_cancelonstart_summary,

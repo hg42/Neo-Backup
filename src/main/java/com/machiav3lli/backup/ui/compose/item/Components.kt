@@ -120,7 +120,6 @@ import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.preferences.pref_busyIconScale
 import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
-import com.machiav3lli.backup.preferences.pref_hideBackupLabels
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowSquareOut
@@ -917,50 +916,47 @@ fun RowScope.PackageLabels(
 ) {
     //beginNanoTimer("pkgLabels")
 
-    if (!pref_hideBackupLabels.value && item.hasBackups) {
-
-        if (item.isUpdated) {
-            ButtonIcon(
-                Phosphor.CircleWavyWarning, R.string.radio_updated,
-                tint = ColorUpdated
-            )
-        }
-        if (item.hasMediaData) {
-            ButtonIcon(
-                Phosphor.PlayCircle, R.string.radio_mediadata,
-                tint = ColorMedia
-            )
-        }
-        if (item.hasObbData) {
-            ButtonIcon(
-                Phosphor.GameController, R.string.radio_obbdata,
-                tint = ColorOBB
-            )
-        }
-        if (item.hasExternalData) {
-            ButtonIcon(
-                Phosphor.FloppyDisk, R.string.radio_externaldata,
-                tint = ColorExtDATA
-            )
-        }
-        if (item.hasDevicesProtectedData) {
-            ButtonIcon(
-                Phosphor.ShieldCheckered, R.string.radio_deviceprotecteddata,
-                tint = ColorDeData
-            )
-        }
-        if (item.hasAppData) {
-            ButtonIcon(
-                Phosphor.HardDrives, R.string.radio_data,
-                tint = ColorData
-            )
-        }
-        if (item.hasApk) {
-            ButtonIcon(
-                Phosphor.DiamondsFour, R.string.radio_apk,
-                tint = ColorAPK
-            )
-        }
+    if (item.isUpdated) {
+        ButtonIcon(
+            Phosphor.CircleWavyWarning, R.string.radio_updated,
+            tint = ColorUpdated
+        )
+    }
+    if (item.hasMediaData) {
+        ButtonIcon(
+            Phosphor.PlayCircle, R.string.radio_mediadata,
+            tint = ColorMedia
+        )
+    }
+    if (item.hasObbData) {
+        ButtonIcon(
+            Phosphor.GameController, R.string.radio_obbdata,
+            tint = ColorOBB
+        )
+    }
+    if (item.hasExternalData) {
+        ButtonIcon(
+            Phosphor.FloppyDisk, R.string.radio_externaldata,
+            tint = ColorExtDATA
+        )
+    }
+    if (item.hasDevicesProtectedData) {
+        ButtonIcon(
+            Phosphor.ShieldCheckered, R.string.radio_deviceprotecteddata,
+            tint = ColorDeData
+        )
+    }
+    if (item.hasAppData) {
+        ButtonIcon(
+            Phosphor.HardDrives, R.string.radio_data,
+            tint = ColorData
+        )
+    }
+    if (item.hasApk) {
+        ButtonIcon(
+            Phosphor.DiamondsFour, R.string.radio_apk,
+            tint = ColorAPK
+        )
     }
 
     ButtonIcon(
