@@ -308,7 +308,7 @@ val pref_cacheFileLists = BooleanPref(
 
 val pref_useNoteIcon = BooleanPref(
     key = "dev-alt.useNoteIcon",
-    summary = "use the icon instead of the big fat 'edit note' button",
+    summary = "use icon instead of 'edit note' button and color note background to emphasize the note instead of the always existent edit button",
     defaultValue = false
 )
 
