@@ -143,7 +143,14 @@ else
 
 val pref_suCommand = StringEditPref(
     key = "dev-adv.suCommand",
-    summary = "the command used to elevate the shell to a 'root' shell (in our sense), the whole command must be a shell, reading commands from stdin and executing them in an elevated environment to be able to access the system and app data and execute some system commands like pm, if it fails there are also fallback commands (the default is one of them, also a simple su, see log for which one was used)",
+    //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
+    summary = """
+        the command used to elevate the shell to a 'root' shell (in our sense),
+        the whole command must be a shell, reading commands from stdin and executing them
+        in an elevated environment to be able to access the system and app data and execute some
+        system commands like pm, if it fails there are also fallback commands
+        (the default is one of them, also a simple su, see log for which one was used)
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
     onChanged = {
         val pref = it as StringEditPref
@@ -156,13 +163,16 @@ val pref_suCommand = StringEditPref(
 
 val pref_libsuUseRootShell = BooleanPref(
     key = "dev-adv.libsuUseRootShell",
-    summary = "use root shell for libsu (just in case automatic detection fails, libsu should automatically fallback to a normal shell if 'su' command not available",
+    summary = """
+        start libsu shell as 'su' instead of 'sh' before suCommand elevates it \
+        (as a paranoid fallback, in case 'sh' might not allow elevating for an unknown reason)
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = true
 )
 
 val pref_libsuTimeout = IntPref(
     key = "dev-adv.libsuTimeout",
-    summary = "[seconds] timeout for libsu commands that produce outputs (extracting backups does not use a timeout!)",
+    summary = "[seconds] timeout for libsu commands (does not affect the tar commands)",
     entries = ((10..90 step 10) + (100..300 step 50)).toList(),
     defaultValue = 60
 )
@@ -227,13 +237,16 @@ val pref_useExactAlarm = BooleanPref(
 
 val pref_backupPauseApps = BooleanPref(
     key = "dev-adv.backupPauseApps",
-    summary = "pause apps during backups to avoid inconsistencies caused by ongoing file changes or other conflicts",
+    summary = """
+        pause apps during backups to avoid inconsistencies caused \
+        by ongoing file changes or other conflicts (doesn't seem to have big benefits)
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = true
 )
 
 val pref_backupSuspendApps = BooleanPref(
     key = "dev-adv.backupSuspendApps",
-    summary = "additionally use pm suspend command to pause apps",
+    summary = "additionally use pm suspend command to pause apps (unfortunately not very useful, some disadvantages)",
     defaultValue = false,
     enableIf = { pref_backupPauseApps.value }
 )
@@ -308,7 +321,10 @@ val pref_cacheFileLists = BooleanPref(
 
 val pref_useNoteIcon = BooleanPref(
     key = "dev-alt.useNoteIcon",
-    summary = "use icon instead of 'edit note' button and color note background to emphasize the note instead of the always existent edit button",
+    summary = """
+        use icon instead of 'edit note' button and color note background
+        to emphasize the note instead of the always existent edit button
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = false
 )
 
@@ -465,7 +481,10 @@ val pref_refreshAppInfoTimeout = IntPref(
 
 val pref_killThisApp = LaunchPref(
     key = "dev-fake.killThisApp",
-    summary = "terminate app, service and process, but leave the schedules(=alarms) intact (in contrast to force-close, where alarms are removed from the system)"
+    summary = """
+        terminate app, service and process, but leave the schedules(=alarms) intact
+        (in contrast to force-close, where alarms are removed from the system)
+        """.trimIndent().replace("\n", " ").trim(),
 ) {
     OABX.activity?.let { ActivityCompat.finishAffinity(it) }
     System.exit(0)
