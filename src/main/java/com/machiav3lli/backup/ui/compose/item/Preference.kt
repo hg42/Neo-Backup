@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.ICON_SIZE_SMALL
+import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.ifThen
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.EnumPref
@@ -64,6 +65,8 @@ fun BasePreference(
     val base = index.toFloat() / groupSize
     val rank = (index + 1f) / groupSize
 
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
+
     ListItem(
         modifier = modifier
             .fillMaxWidth()
@@ -83,7 +86,7 @@ fun BasePreference(
                 clickable(enabled = isEnabled, onClick = onClick!!)
             },
         colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = surfaceColor,
         ),
         leadingContent = icon,
         headlineContent = {
@@ -104,7 +107,7 @@ fun BasePreference(
                 if (summary != null) {
                     Text(
                         text = summary,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -112,7 +115,7 @@ fun BasePreference(
                     val summaryText = stringResource(id = summaryId)
                     Text(
                         text = summaryText,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }

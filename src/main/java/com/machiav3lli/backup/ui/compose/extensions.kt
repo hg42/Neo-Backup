@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
@@ -361,3 +362,11 @@ fun BalancedWrapRow(
         }
     )
 }
+
+@Composable
+fun Color.flatten(factor: Float = 0.5f, surface: Color = MaterialTheme.colorScheme.surface) = Color(
+    red = (red * (1f-factor) + surface.red*factor).coerceIn(0f, 1f),
+    green = (green * (1f-factor) + surface.green*factor).coerceIn(0f, 1f),
+    blue = (blue * (1f-factor) + surface.blue*factor).coerceIn(0f, 1f),
+    alpha = alpha
+)
