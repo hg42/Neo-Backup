@@ -30,11 +30,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.ICON_SIZE_SMALL
+import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.R
+import com.machiav3lli.backup.preferences.pref_suCommand
 import com.machiav3lli.backup.ui.compose.flatten
+import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.FolderNotch
 import com.machiav3lli.backup.ui.compose.ifThen
+import com.machiav3lli.backup.ui.compose.theme.ColorExtDATA
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.EnumPref
 import com.machiav3lli.backup.ui.item.IntPref
@@ -175,7 +182,13 @@ fun StringPreference(
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        summary = pref.value,
+        summary = pref.summary,
+        bottomWidget = {
+            Text(
+                text = pref.value,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         icon = {
             pref.icon?.let { icon ->
                 PrefIcon(
@@ -192,20 +205,38 @@ fun StringPreference(
     )
 }
 
+@Preview
+@Composable
+fun StringPreferencePreview() {
+
+    OABX.fakeContext = LocalContext.current.applicationContext
+
+    val pref_pathBackupFolder = StringPref(
+        key = "user.pathBackupFolder",
+        titleId = R.string.prefs_pathbackupfolder,
+        icon = Phosphor.FolderNotch,
+        iconTint = ColorExtDATA,
+        defaultValue = "path/to/backup/folder",
+    )
+
+    StringPreference(
+        pref = pref_pathBackupFolder,
+    )
+}
+
 @Composable
 fun StringEditPreference(
     modifier: Modifier = Modifier,
     pref: StringPref,
     index: Int = 0,
     groupSize: Int = 1,
-    onClick: (() -> Unit) = {},
 ) {
     BasePreference(
         modifier = modifier,
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        summary = pref.value,
+        summary = pref.summary,
         icon = {
             pref.icon?.let { icon ->
                 PrefIcon(
@@ -218,12 +249,20 @@ fun StringEditPreference(
         },
         index = index,
         groupSize = groupSize,
-        onClick = onClick,
         bottomWidget = {
-            TextInput(pref.value) {
+            TextInput(pref.value, editOnClick = true) {
                 pref.value = it
             }
         }
+    )
+}
+
+@Preview
+@Composable
+fun StringEditPreferencePreview() {
+    OABX.fakeContext = LocalContext.current.applicationContext
+    StringEditPreference(
+        pref = pref_suCommand
     )
 }
 

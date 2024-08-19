@@ -66,9 +66,7 @@ fun PrefsBuilder(
             pref = pref,
             index = index,
             groupSize = size,
-        ) {
-            onDialogPref(pref)
-        }
+        )
 
         is StringPref   -> StringPreference(
             pref = pref,

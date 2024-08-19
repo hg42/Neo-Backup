@@ -50,6 +50,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -93,8 +96,11 @@ import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
@@ -119,50 +125,96 @@ fun TextInput(
     text: TextFieldValue,
     modifier: Modifier = Modifier,
     placeholder: String = "",
-    trailingIcon: @Composable () -> Unit = {},
+    trailingIcon: (@Composable () -> Unit)? = null,
+    editOnClick: Boolean = false,
     submitEachChange: Boolean = false,
     onSubmit: (TextFieldValue) -> Unit = {},
 ) {
     val input = remember { mutableStateOf(text) }
-    //val focusManager = LocalFocusManager.current
-    //val textFieldFocusRequester = remember { FocusRequester() }
+    var editing by remember { mutableStateOf(! editOnClick) }
+    val focusRequester = remember { FocusRequester() }
 
-    //LaunchedEffect(textFieldFocusRequester) {
-    //    delay(100)
-    //    textFieldFocusRequester.requestFocus()
-    //}
-
-    fun submit() {
-        //focusManager.clearFocus()
+    fun submit(final: Boolean = true) {
         onSubmit(input.value)
+        if (editOnClick && final)
+            editing = false
     }
 
-    OutlinedTextField(
-        modifier = modifier
-            .testTag("input"),
-        //.focusRequester(textFieldFocusRequester)
-        value = input.value,
-        placeholder = { Text(text = placeholder, color = Color.Gray) },
-        singleLine = true,
-        trailingIcon = trailingIcon,
-        keyboardActions = KeyboardActions(
-            onDone = {
-                submit()
-            }
-        ),
-        keyboardOptions = KeyboardOptions(
-            autoCorrect = false
-        ),
-        onValueChange = {
-            if (it.text.contains("\n")) {
-                input.value = it.copy(text = it.text.replace("\n", ""))
-                submit()
-            } else
-                input.value = it
-                if (submitEachChange)
+    if (editing) {
+
+        OutlinedTextField(
+            modifier = modifier
+                .testTag("input")
+                .focusRequester(focusRequester)
+                .onFocusChanged { focusState ->
+                    if (editOnClick)
+                        editing = focusState.isFocused
+                },
+            value = input.value,
+            placeholder = { Text(text = placeholder, color = Color.Gray) },
+            singleLine = true,
+            trailingIcon = trailingIcon ?: {
+                Icon(
+                    imageVector = Phosphor.Check,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .clickable {
+                            submit()
+                        }
+                )
+            },
+            keyboardActions = KeyboardActions(
+                onDone = {
                     submit()
+                }
+            ),
+            keyboardOptions = KeyboardOptions(
+                autoCorrect = false
+            ),
+            onValueChange = {
+                if (it.text.contains("\n")) {
+                    input.value = it.copy(text = it.text.replace("\n", ""))
+                    if (editOnClick)
+                        editing = false
+                    submit()
+                } else
+                    input.value = it
+                if (submitEachChange)
+                    submit(false)
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
         }
-    )
+
+    } else {
+
+        val fieldPadding = 16.dp
+
+        Row {
+            Text(
+                text = text.text,
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .clickable {
+                        editing = true
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(vertical = fieldPadding)
+                    .clickable {
+                        editing = true
+                    },
+                imageVector = Phosphor.Pencil,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.flatten()
+            )
+        }
+
+    }
 }
 
 @Composable
@@ -171,6 +223,7 @@ fun TextInput(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     trailingIcon: @Composable () -> Unit = {},
+    editOnClick: Boolean = false,
     submitEachChange: Boolean = false,
     onSubmit: (String) -> Unit = {},
 ) {
@@ -180,13 +233,24 @@ fun TextInput(
         modifier = modifier,
         placeholder = placeholder,
         trailingIcon = trailingIcon,
+        editOnClick = editOnClick,
         submitEachChange = submitEachChange,
     ) {
         onSubmit(it.text)
     }
 }
 
+@Preview
+@Composable
+fun TextInputPreview() {
 
+    var text by remember { mutableStateOf("input text") }
+
+    Column {
+        TextInput(text = text, editOnClick = false) { text = it }
+        TextInput(text = text, editOnClick = true) { text = it }
+    }
+}
 
 
 var devToolsTab = mutableStateOf("")
