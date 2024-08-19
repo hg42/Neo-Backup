@@ -89,9 +89,7 @@ fun BasePreference(
                     else MaterialTheme.shapes.extraSmall.bottomEnd
                 )
             )
-            .ifThen(onClick != null) {
-                clickable(enabled = isEnabled, onClick = onClick!!)
-            },
+            .clickable(enabled = isEnabled, onClick = onClick ?: {}),
         colors = ListItemDefaults.colors(
             containerColor = surfaceColor,
         ),
