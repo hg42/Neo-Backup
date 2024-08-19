@@ -57,10 +57,13 @@ if [[ ! -e $marker || $(cat $marker) != $head ]]; then
     git clone $startdir . &&
         echo $head >$marker
 
-    ./gradlew --no-daemon --no-build-cache --no-configuration-cache :assemble$Variant ||
-        exit 1
-
   fi
+fi
+
+cd $basedir
+if [[ $(pwd) == $basedir ]]; then
+  ./gradlew --no-daemon --no-build-cache --no-configuration-cache :assemble$Variant ||
+      exit 1
 fi
 
 for apk in $outdir/*.apk(N); do
