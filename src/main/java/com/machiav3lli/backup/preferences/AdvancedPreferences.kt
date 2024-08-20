@@ -26,14 +26,18 @@ import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isRelease
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
+import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
+import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Hash
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldStar
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.recycler.BusyBackground
@@ -50,6 +54,10 @@ import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.sortFilterModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -67,7 +75,10 @@ fun DevPrefGroups() {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         PrefsGroupCollapsed(prefs = devUserOptions, heading = "advanced users (those who know)")
-        PrefsGroupCollapsed(prefs = devAltOptions, heading = "alternatives (to compare two variants)")
+        PrefsGroupCollapsed(
+            prefs = devAltOptions,
+            heading = "alternatives (to compare two variants)"
+        )
         PrefsGroupCollapsed(prefs = devLogOptions, heading = "logging")
         PrefsGroupCollapsed(prefs = devTraceOptions, heading = "tracing")
         PrefsGroupCollapsed(prefs = devFileOptions, heading = "file handling")
@@ -141,25 +152,45 @@ else
 
 //---------------------------------------- developer settings - advanced users
 
+val suCommand_summary get() = """
+        the command used to elevate the shell to a 'root' shell (in our sense),
+        the whole command must be a shell, reading commands from stdin and executing them,
+        there are also builtin fallback commands
+        """.trimIndent().replace("\n", " ").trim() +
+        "\nsuCommand: $suCommand"
+
+val suCommand_default = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'"
+
 val pref_suCommand = StringEditPref(
     key = "dev-adv.suCommand",
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
-    summary = """
-        the command used to elevate the shell to a 'root' shell (in our sense),
-        the whole command must be a shell, reading commands from stdin and executing them
-        in an elevated environment to be able to access the system and app data and execute some
-        system commands like pm, if it fails there are also fallback commands
-        (the default is one of them, also a simple su, see log for which one was used)
-        """.trimIndent().replace("\n", " ").trim(),
-    defaultValue = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
-    onChanged = {
-        val pref = it as StringEditPref
-        pref.iconTint = if (validateSuCommand(pref.value))
+    summary = suCommand_summary,
+    icon = Phosphor.Hash,
+    iconTint = Color.Gray,
+    defaultValue = suCommand_default,
+) {
+    val pref = it as StringEditPref
+    if (pref.value == "")
+        pref.value = suCommand_default
+    if (pref.value != suCommand) {
+        if (!validateSuCommand(pref.value)) {
+            findSuCommand()
+            traceDebug { "findSuCommand: suCommand = $suCommand" }
+        }
+        pref.iconTint = if (pref.value == suCommand) {
             Color.Green
-        else
+        } else {
             Color.Red
+        }
     }
-)
+    CoroutineScope(Dispatchers.Main).launch {
+        delay(1000)
+        pref.summary = suCommand_summary
+        traceDebug  { "summary: ${pref.summary}" }
+        traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
+        pref.dirty.value = true
+    }
+}
 
 val pref_libsuUseRootShell = BooleanPref(
     key = "dev-adv.libsuUseRootShell",

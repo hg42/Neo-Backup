@@ -1,6 +1,7 @@
 package com.machiav3lli.backup.ui.compose.item
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +9,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +21,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -28,18 +32,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.machiav3lli.backup.ICON_SIZE_MEDIUM
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.preferences.pref_suCommand
+import com.machiav3lli.backup.traceCompose
+import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FolderNotch
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Hash
 import com.machiav3lli.backup.ui.compose.ifThen
 import com.machiav3lli.backup.ui.compose.theme.ColorExtDATA
 import com.machiav3lli.backup.ui.item.BooleanPref
@@ -48,8 +56,42 @@ import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.ui.item.ListPref
 import com.machiav3lli.backup.ui.item.PasswordPref
 import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.ui.item.StringEditPref
 import com.machiav3lli.backup.ui.item.StringPref
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+
+@Composable
+fun PrefIcon(
+    icon: ImageVector?,
+    titleId: Int,
+    tint: Color? = null,
+) {
+    val title = if (titleId < 0) null else stringResource(id = titleId)
+    traceCompose { "PrefIcon: $title ${icon?.name} $tint" }
+
+    if (icon != null)
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            modifier = Modifier.size(ICON_SIZE_MEDIUM),   //TODO BUTTON_ICON_SIZE?
+            tint = tint ?: MaterialTheme.colorScheme.onSurface
+        )
+    else
+        Spacer(modifier = Modifier.requiredWidth(ICON_SIZE_MEDIUM + 4.dp))
+}
+
+@Composable
+fun PrefIcon(
+    pref: Pref,
+) {
+    val p by remember(pref.icon, pref.iconTint) { mutableStateOf(pref) }
+    PrefIcon(
+        icon = p.icon,
+        titleId = p.titleId,
+        tint = p.iconTint
+    )
+}
 
 @Composable
 fun BasePreference(
@@ -60,7 +102,6 @@ fun BasePreference(
     @StringRes summaryId: Int = -1,
     index: Int = 0,
     groupSize: Int = 1,
-    icon: (@Composable () -> Unit)? = null,
     endWidget: (@Composable (isEnabled: Boolean) -> Unit)? = null,
     bottomWidget: (@Composable (isEnabled: Boolean) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
@@ -69,10 +110,21 @@ fun BasePreference(
         mutableStateOf(pref.enableIf?.invoke() ?: true)
     }
 
+    val dirty by remember { pref.dirty }
+
     val base = index.toFloat() / groupSize
     val rank = (index + 1f) / groupSize
 
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val surfaceDirty = MaterialTheme.colorScheme.surfaceContainerLow
+
+    LaunchedEffect(dirty) {
+        delay(500)
+        traceDebug { "pref: $dirty ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (basepref launch)" }
+        pref.dirty.value = false
+    }
+
+    traceCompose { "BasePreference: $dirty ${pref.key} -> ${pref.icon?.name} ${pref.iconTint}" }
 
     ListItem(
         modifier = modifier
@@ -91,9 +143,9 @@ fun BasePreference(
             )
             .clickable(enabled = isEnabled, onClick = onClick ?: {}),
         colors = ListItemDefaults.colors(
-            containerColor = surfaceColor,
+            containerColor = if (dirty) surfaceDirty else surfaceColor,
         ),
-        leadingContent = icon,
+        leadingContent = { PrefIcon(pref) },
         headlineContent = {
             Text(
                 text = if (titleId != -1) stringResource(id = titleId) else pref.key,
@@ -111,7 +163,7 @@ fun BasePreference(
             ) {
                 if (summary != null) {
                     Text(
-                        text = summary,
+                        text = summary ?: "",
                         color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -151,16 +203,6 @@ fun LaunchPreference(
         summary = summary,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        icon = {
-            pref.icon?.let { icon ->
-                PrefIcon(
-                    icon = icon,
-                    text = stringResource(id = pref.titleId),
-                )
-            } ?: run {
-                Spacer(modifier = Modifier.requiredWidth(36.dp))
-            }
-        },
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -175,6 +217,7 @@ fun StringPreference(
     groupSize: Int = 1,
     onClick: (() -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
     BasePreference(
         modifier = modifier,
         pref = pref,
@@ -186,16 +229,6 @@ fun StringPreference(
                 text = pref.value,
                 style = MaterialTheme.typography.bodyMedium,
             )
-        },
-        icon = {
-            pref.icon?.let { icon ->
-                PrefIcon(
-                    icon = icon,
-                    text = stringResource(id = pref.titleId),
-                )
-            } ?: run {
-                Spacer(modifier = Modifier.requiredWidth(36.dp))
-            }
         },
         index = index,
         groupSize = groupSize,
@@ -229,26 +262,26 @@ fun StringEditPreference(
     index: Int = 0,
     groupSize: Int = 1,
 ) {
+    val dirty by remember { pref.dirty }
+    traceCompose { "StringEditPreference: $pref" }
     BasePreference(
         modifier = modifier,
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = pref.summary,
-        icon = {
-            pref.icon?.let { icon ->
-                PrefIcon(
-                    icon = icon,
-                    text = stringResource(id = pref.titleId),
-                )
-            } ?: run {
-                Spacer(modifier = Modifier.requiredWidth(36.dp))
-            }
-        },
         index = index,
         groupSize = groupSize,
         bottomWidget = {
-            TextInput(pref.value, editOnClick = true) {
+            TextInput(
+                pref.value,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .ifThen(dirty) {
+                        background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    },
+                editOnClick = true
+            ) {
                 pref.value = it
             }
         }
@@ -259,9 +292,35 @@ fun StringEditPreference(
 @Composable
 fun StringEditPreferencePreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
-    StringEditPreference(
-        pref = pref_suCommand
+
+    val pref_suCommand = StringEditPref(
+        key = "user.suCommand",
+        icon = Phosphor.Hash,
+        iconTint = Color.Gray,
+        defaultValue = "su --mount-master",
     )
+
+    val pref by remember { mutableStateOf(pref_suCommand) }
+
+    Column {
+        Row {
+            ActionButton(text = "red") {
+                pref.iconTint = Color.Red
+            }
+            ActionButton(text = "green") {
+                pref.iconTint = Color.Green
+            }
+            ActionButton(text = "test") {
+                pref.value = "test"
+            }
+            ActionButton(text = "test2") {
+                pref.value = "test2"
+            }
+        }
+        StringEditPreference(
+            pref = pref
+        )
+    }
 }
 
 @Composable
@@ -272,23 +331,13 @@ fun PasswordPreference(
     groupSize: Int = 1,
     onClick: (() -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
     BasePreference(
         modifier = modifier,
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = if (pref.value.isNotEmpty()) "*********" else "- - - - -",
-        icon = {
-            pref.icon?.let { icon ->
-                PrefIcon(
-                    icon = icon,
-                    text = stringResource(id = pref.titleId),
-                    tint = if (pref.value.isNotEmpty()) Color.Green else Color.Red,
-                )
-            } ?: run {
-                Spacer(modifier = Modifier.requiredWidth(36.dp))
-            }
-        },
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -303,19 +352,13 @@ fun EnumPreference(
     groupSize: Int = 1,
     onClick: (() -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
     BasePreference(
         modifier = modifier,
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = pref.entries[pref.value]?.let { stringResource(id = it) },
-        icon = {
-            if (pref.icon != null) PrefIcon(
-                icon = pref.icon,
-                text = stringResource(id = pref.titleId),
-            )
-            else Spacer(modifier = Modifier.requiredWidth(36.dp))
-        },
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -330,19 +373,13 @@ fun ListPreference(
     groupSize: Int = 1,
     onClick: (() -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
     BasePreference(
         modifier = modifier,
         pref = pref,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = pref.entries[pref.value],
-        icon = {
-            if (pref.icon != null) PrefIcon(
-                icon = pref.icon,
-                text = stringResource(id = pref.titleId),
-            )
-            else Spacer(modifier = Modifier.requiredWidth(36.dp))
-        },
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -357,7 +394,8 @@ fun SwitchPreference(
     groupSize: Int = 1,
     onCheckedChange: ((Boolean) -> Unit) = {},
 ) {
-    val context = LocalContext.current
+    val dirty by remember { pref.dirty }
+
     var checked by remember(pref.value) { mutableStateOf(pref.value) }  //TODO hg42 remove remember ???
     val check = { value: Boolean ->
         pref.value = value
@@ -370,13 +408,6 @@ fun SwitchPreference(
         summary = pref.summary,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        icon = {
-            if (pref.icon != null) PrefIcon(
-                icon = pref.icon,
-                text = stringResource(id = pref.titleId),
-            )
-            else Spacer(modifier = Modifier.requiredWidth(36.dp))
-        },
         index = index,
         groupSize = groupSize,
         onClick = {
@@ -406,6 +437,8 @@ fun CheckboxPreference(
     groupSize: Int = 1,
     onCheckedChange: ((Boolean) -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
+
     var checked by remember(pref.value) { mutableStateOf(pref.value) }  //TODO hg42 remove remember ???
     val check = { value: Boolean ->
         pref.value = value
@@ -418,13 +451,6 @@ fun CheckboxPreference(
         summary = pref.summary,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        icon = {
-            if (pref.icon != null) PrefIcon(
-                icon = pref.icon,
-                text = stringResource(id = pref.titleId),
-            )
-            else Spacer(modifier = Modifier.requiredWidth(36.dp))
-        },
         index = index,
         groupSize = groupSize,
         onClick = {
@@ -471,6 +497,8 @@ fun SeekBarPreference(
     groupSize: Int = 1,
     onValueChange: ((Int) -> Unit) = {},
 ) {
+    val dirty by remember { pref.dirty }
+
     var sliderPosition by remember {    //TODO hg42 remove remember ???
         mutableIntStateOf(
             pref.entries.indexOfFirst { it >= pref.value }.let {
@@ -499,13 +527,6 @@ fun SeekBarPreference(
         summary = pref.summary,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        icon = {
-            if (pref.icon != null) PrefIcon(
-                icon = pref.icon,
-                text = stringResource(id = pref.titleId),
-            )
-            else Spacer(modifier = Modifier.requiredWidth(36.dp))
-        },
         index = index,
         groupSize = groupSize,
         bottomWidget = { isEnabled ->

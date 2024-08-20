@@ -10,10 +10,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.preferences.publicPreferences
+import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.tracePrefs
 import com.machiav3lli.backup.utils.getDefaultSharedPreferences
 import com.machiav3lli.backup.utils.getPrivateSharedPrefs
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -22,7 +24,7 @@ open class Pref(
     val private: Boolean = false,
     val defaultValue: Any? = null,
     @StringRes val titleId: Int,
-    val summary: String? = null,
+    var summary: String? = null,
     @StringRes val summaryId: Int,
     val icon: ImageVector? = null,
     var iconTint: Color?,
@@ -30,23 +32,47 @@ open class Pref(
     val onChanged: ((Pref) -> Unit)? = null,
     var group: String = "",
 ) {
+    var dirty = mutableStateOf(false)
+
+    init {
+        try {
+            val (g, k) = key.split(".", limit = 2)
+            if (k.isNotEmpty()) {
+                group = g
+                key = k
+            }
+        } catch (e: Throwable) {
+            // ignore
+        }
+        //Timber.d("add pref $group - $key")
+
+        prefGroups.getOrPut(group) { mutableListOf() }.add(this)
+    }
+
+    override fun toString(): String = ""
+
     companion object {
 
         val prefGroups: MutableMap<String, MutableList<Pref>> = mutableMapOf()
         val prefs get() = prefGroups.values.flatten()
-        var lockedActions = 0
+        var prefTransactionRunning = 0
 
-        val prefChangeListeners = mutableStateMapOf<Pref, (pref: Pref) -> Unit>()  //TODO not necessary currently, but may be useful in future, empty map doesn't hurt
+        val prefChangeListeners = mutableStateMapOf<Pref, (pref: Pref) -> Unit>()
         private fun onPrefChange(name: String) {
             prefChangeListeners.forEach { (pref, listener) ->
                 listener(pref)
             }
             prefs.find { it.key == name }?.let { pref ->
+                pref.dirty.value = true
                 pref.onChanged?.let { onChanged ->
-                    MainScope().launch {
-                        while (lockedActions > 0)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        while (prefTransactionRunning > 0)
                             delay(500)
+                        tracePrefs { "pref changed: ${pref.dirty} ${pref.key} -> ${pref}" }
                         onChanged(pref)
+                        //delay(200)
+                        traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (onchanged)" }
+                        pref.dirty.value = true
                     }
                 }
             }
@@ -207,7 +233,7 @@ open class Pref(
             val prefs = fromSimpleFormat(serialized)
             //OABX.fromSerialized<Map<String, Any>>(serialized)
 
-            synchronized(Pref) { lockedActions++ }
+            synchronized(Pref) { prefTransactionRunning++ }
             prefs.forEach { (key, value) ->
                 when (value) {
                     is String  -> setPrefString(key, value)
@@ -215,26 +241,9 @@ open class Pref(
                     is Boolean -> setPrefFlag(key, value)
                 }
             }
-            synchronized(Pref) { lockedActions-- }
+            synchronized(Pref) { prefTransactionRunning-- }
         }
     }
-
-    init {
-        try {
-            val (g, k) = key.split(".", limit = 2)
-            if (k.isNotEmpty()) {
-                group = g
-                key = k
-            }
-        } catch (e: Throwable) {
-            // ignore
-        }
-        //Timber.d("add pref $group - $key")
-
-        prefGroups.getOrPut(group) { mutableListOf() }.add(this)
-    }
-
-    override fun toString(): String = ""
 }
 
 // keep all other Pref classes final, because they are used in when clauses
@@ -352,7 +361,7 @@ open class StringPref(
             setPrefString(key, value, private)
         }
 
-    override fun toString(): String = value.toString()
+    override fun toString(): String = value
 }
 
 class StringEditPref(

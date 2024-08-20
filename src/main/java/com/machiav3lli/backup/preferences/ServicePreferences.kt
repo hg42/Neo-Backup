@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BuildConfig
@@ -149,7 +150,10 @@ val pref_password = PasswordPref(
     icon = Phosphor.Password,
     iconTint = ColorUpdated,
     defaultValue = "",
-)
+) {
+    val pref = it as PasswordPref
+    pref.iconTint = if (pref.value.isNotEmpty()) Color.Green else Color.Red
+}
 
 val kill_password = PasswordPref(   // make sure password is never saved in non-encrypted prefs
     key = "kill.password",

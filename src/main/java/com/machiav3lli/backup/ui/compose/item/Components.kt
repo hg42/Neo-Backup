@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -152,8 +153,6 @@ import com.machiav3lli.backup.ui.compose.theme.ColorSpecial
 import com.machiav3lli.backup.ui.compose.theme.ColorSystem
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
 import com.machiav3lli.backup.ui.compose.theme.ColorUser
-import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
-import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import kotlinx.coroutines.delay
 import kotlin.math.max
 
@@ -171,20 +170,6 @@ fun ButtonIcon(
         colorFilter = ColorFilter.tint(tint),
     )
     //endNanoTimer("btnIcon")
-}
-
-@Composable
-fun PrefIcon(
-    icon: ImageVector,
-    text: String,
-    tint: Color? = null,
-) {
-    Icon(
-        imageVector = icon,
-        contentDescription = text,
-        modifier = Modifier.size(ICON_SIZE_MEDIUM),   //TODO BUTTON_ICON_SIZE?
-        tint = tint ?: MaterialTheme.colorScheme.onSurface
-    )
 }
 
 @Composable

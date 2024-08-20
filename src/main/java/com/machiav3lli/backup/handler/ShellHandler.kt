@@ -22,10 +22,13 @@ import android.os.Build
 import androidx.core.text.isDigitsOnly
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addErrorCommand
+import com.machiav3lli.backup.OABX.Companion.assets
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.ShellHandler.Companion.splitCommand
 import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInfo
+import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
+import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.baseInfo
 import com.machiav3lli.backup.preferences.pref_libsuTimeout
 import com.machiav3lli.backup.preferences.pref_libsuUseRootShell
@@ -165,8 +168,7 @@ class ShellHandler {
 
     init {
         Shell.enableVerboseLogging = isDebug
-        initLibSU()
-        needFreshShell(startup = true)
+        initPrivilegedShell()
 
         baseInfo().forEach { Timber.i(it) }
 
@@ -742,51 +744,9 @@ class ShellHandler {
             return result
         }
 
-        fun checkCommand(command: String, check: (String) -> Boolean): Boolean {
-            try {
-                val result = fastCmd(command)
-                if (check(result))
-                    return true
-                else {
-                    Timber.i("check failed: $command")
-                }
-            } catch (e: Throwable) {
-                logException(e, what = "check failed: $command")
-            }
-            return false
-        }
+        val checkRootScript get() = InternalShellScriptPlugin.findScript("checkroot").toString()
 
-        fun checkRootFileAccess(): Boolean {
-            return checkCommand("echo \$ANDROID_DATA/user/${profileId}/*") {
-                it.trim().isNotEmpty()
-            }
-                    && checkCommand("echo \$ANDROID_DATA/app/*") {
-                it.trim().isNotEmpty()
-            }
-                    && checkCommand("echo \$ANDROID_ASSETS/*") {
-                it.trim().isNotEmpty()
-            }
-        }
-
-        fun checkRootPermissions(): Boolean {
-            return checkCommand("id -u") { it.toInt() == 0 }
-        }
-
-        fun checkRootEquivalent() = checkRootFileAccess() && checkRootPermissions()
-
-        var hasRootFileAccess: Boolean? = null
-            get() {
-                if (field == null)
-                    field = checkRootFileAccess()
-                return field ?: false
-            }
-
-        var hasRootPermissions: Boolean? = null
-            get() {
-                if (field == null)
-                    field = checkRootPermissions()
-                return field ?: false
-            }
+        fun checkRootEquivalent() = runAsRoot("sh '$checkRootScript'").isSuccess
 
         var isLikeRoot: Boolean? = null
             get() {
@@ -797,12 +757,13 @@ class ShellHandler {
 
         class ShellInit : Shell.Initializer() {
             override fun onInit(context: Context, shell: Shell): Boolean {
-                val result = shell.newJob()
-                    .add(suCommand)
+                var command = if (suCommand == "") "su" else suCommand
+                var result = shell.newJob()
+                    .add(command)
                     .to(mutableListOf<String>(), mutableListOf<String>())
                     .exec()
                 if (result.isSuccess) {
-                    Timber.i("suCommand = $suCommand")
+                    Timber.i("suCommand = $suCommand => ok")
                     return true
                 }
                 Timber.w(
@@ -818,82 +779,108 @@ class ShellHandler {
                             ""
                     }"
                 )
+                // fallback
+                command = "sh"
+                result = shell.newJob()
+                    .add(command)
+                    .to(mutableListOf<String>(), mutableListOf<String>())
+                    .exec()
+                if (result.isSuccess) {
+                    Timber.i("fallback shell '$command' => ok")
+                    return true
+                }
                 return false
             }
         }
 
+        fun initLibSU() {
+            val builder = Shell.Builder.create()
+                .setTimeout(pref_libsuTimeout.value.toLong())
+                .setInitializers(ShellInit::class.java)
+            if (!pref_libsuUseRootShell.value)
+            // we add our own suCommand to elevate privileges, so start with a simple shell
+                builder.setFlags(Shell.FLAG_NON_ROOT_SHELL)
+            // could be used instead of toybox, but busybox does not provide all we need
+            //.setInitializers(BusyBoxInstaller::class.java)
+            Shell.setDefaultBuilder(builder)
+        }
+
         fun tryGainAccessCommand(): Boolean {
             try {
-                val builder = Shell.Builder.create()
-                    .setTimeout(pref_libsuTimeout.value.toLong())
-                    .setInitializers(ShellInit::class.java)
-                if (!pref_libsuUseRootShell.value)
-                    builder.setFlags(Shell.FLAG_NON_ROOT_SHELL)    // we add our own suCommands
-                //.setInitializers(BusyBoxInstaller::class.java)
-                Shell.setDefaultBuilder(builder)
-                needFreshShell(true)
+                needFreshShell()
                 if (checkRootEquivalent())
                     return true
             } catch (e: Throwable) {
-                logException(e, what = "$ $suCommand")
+                logException(e, what = "suCommand: $suCommand")
             }
-            Shell.getCachedShell()?.let {
-                if (it.isAlive)
-                    it.waitAndClose(0L, TimeUnit.SECONDS)
-            }
+            releaseShell(trace = false)
             return false
         }
 
         fun validateSuCommand(command: String): Boolean {
-            val old = suCommand
             try {
                 Timber.i("validateSuCommand: $command")
                 suCommand = command
                 if (tryGainAccessCommand()) {
                     return true
                 }
-            } catch(e: Throwable) {
-                logException(e, what = "$ $suCommand")
+            } catch (e: Throwable) {
+                logException(e, what = "suCommand: $suCommand")
             }
-            suCommand = old
             return false
         }
 
-        fun initLibSU() {
-            for (command in listOfNotNull(
-                if (pref_suCommand.value != "") pref_suCommand.value else null,
+        fun findSuCommand(command: String? = null): String {
+            for (tryCommand in listOfNotNull(
+                if (command == "") null else command,
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
                 "su",
                 "/system/bin/su",
                 "sh"
             )) {
-                if (validateSuCommand(command))
-                    return
+                if (validateSuCommand(tryCommand))
+                    return suCommand
             }
-            //suCommand = ""  // setDefaultBuilder would be missing here
+            // fallback to simple libsu
+            suCommand = ""
+            return suCommand
         }
 
-        fun needFreshShell(
-            startup: Boolean = false,
-        ): Shell {
-            val shellBefore = Shell.getCachedShell()
-            if (shellBefore != null && shellBefore.isAlive) {
-                if (startup)
-                    Timber.e("ERROR: previous cached shell found, terminating it ($shellBefore)")
-                else
-                    traceDebug { "previous cached shell found, trying to terminate it ($shellBefore)" }
-                shellBefore.waitAndClose(0L, TimeUnit.SECONDS)
+        fun initPrivilegedShell() {
+            initLibSU()
+            findSuCommand(pref_suCommand.value)
+        }
+
+        fun releaseShell(trace: Boolean = true): Shell? {
+            return try {
+                val shell = Shell.getCachedShell()
+                if (shell != null
+                //&& shell.isAlive
+                ) {
+                    traceDebug { "previous cached shell found, trying to terminate it ($shell)" }
+                    shell.waitAndClose(0L, TimeUnit.SECONDS)
+                }
+                return shell
+            } catch (e: Throwable) {
+                logException(e, what = "releaseShell")
+                null
             }
-            //TODO hg42 ??? Shell.cmd("true").exec() // find out why it was here? it crashes now
-            val shellAfter = Shell.getShell()
-            if (shellBefore != null) {
-                if (shellAfter === shellBefore)
-                    Timber.e("ERROR: shell not refreshed! ($shellBefore vs $shellAfter)")
-                else
-                    traceDebug { "new shell created ($shellAfter)" }
+        }
+
+        fun needFreshShell() {
+            try {
+                val shellBefore = releaseShell()
+                val shellAfter = Shell.getShell()
+                if (shellBefore != null) {
+                    if (shellAfter === shellBefore)
+                        Timber.e("ERROR: shell not refreshed! ($shellBefore vs $shellAfter)")
+                    else
+                        traceDebug { "new shell created ($shellAfter)" }
+                }
+            } catch (e: Throwable) {
+                logException(e, what = "needFreshShell")
             }
-            return shellAfter
         }
 
         @Throws(ShellCommandFailedException::class)

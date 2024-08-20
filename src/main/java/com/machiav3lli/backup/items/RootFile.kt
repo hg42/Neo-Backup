@@ -463,19 +463,19 @@ class RootFile internal constructor(file: File) : File(file.absolutePath) {
         //private fun cmdBool(c: String): Boolean = ShellHandler.runAsRoot(c).code == 0
 
         fun open(pathname: String): File {
-            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(pathname) else File(pathname)
+            return if (ShellHandler.isLikeRoot ?: false) RootFile(pathname) else File(pathname)
         }
 
         fun open(parent: String?, child: String): File {
-            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(parent, child) else File(parent, child)
+            return if (ShellHandler.isLikeRoot ?: false) RootFile(parent, child) else File(parent, child)
         }
 
         fun open(parent: File?, child: String): File {
-            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(parent, child) else File(parent, child)
+            return if (ShellHandler.isLikeRoot ?: false) RootFile(parent, child) else File(parent, child)
         }
 
         fun open(uri: URI): File {
-            return if (ShellHandler.hasRootFileAccess ?: false) RootFile(uri) else File(uri)   //TODO hg42 ???
+            return if (ShellHandler.isLikeRoot ?: false) RootFile(uri) else File(uri)   //TODO hg42 ???
         }
     }
 }

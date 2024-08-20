@@ -130,7 +130,7 @@ fun TextInput(
     submitEachChange: Boolean = false,
     onSubmit: (TextFieldValue) -> Unit = {},
 ) {
-    val input = remember { mutableStateOf(text) }
+    val input = remember(text) { mutableStateOf(text) }
     var editing by remember { mutableStateOf(! editOnClick) }
     val focusRequester = remember { FocusRequester() }
 
@@ -227,7 +227,8 @@ fun TextInput(
     submitEachChange: Boolean = false,
     onSubmit: (String) -> Unit = {},
 ) {
-    val textFieldValue by remember(text) { mutableStateOf(TextFieldValue(text)) }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(text)) }
+
     TextInput(
         text = textFieldValue,
         modifier = modifier,
@@ -236,6 +237,7 @@ fun TextInput(
         editOnClick = editOnClick,
         submitEachChange = submitEachChange,
     ) {
+        textFieldValue = it
         onSubmit(it.text)
     }
 }
@@ -304,7 +306,7 @@ fun DevLogTab() {
 fun DevSettingsTab() {
 
     val scroll = rememberScrollState(0)
-    var search by remember { mutableStateOf("") }
+    var search by remember { mutableStateOf(TextFieldValue("")) }
 
     Column {
         TextInput(
@@ -314,7 +316,7 @@ fun DevSettingsTab() {
                 .padding(0.dp),
             placeholder = "search",
             trailingIcon = {
-                if (search.isEmpty())
+                if (search.text.isEmpty())
                     Icon(
                         imageVector = Phosphor.MagnifyingGlass,
                         contentDescription = "search",
@@ -328,11 +330,15 @@ fun DevSettingsTab() {
                         //tint = tint,
                         modifier = Modifier
                             .size(ICON_SIZE_SMALL)
-                            .clickable { search = "" }
+                            .clickable {
+                                search = TextFieldValue("")     // keep on it's own line for better breakpoints
+                            }
                     )
             },
             submitEachChange = true,
-            onSubmit = { search = it }
+            onSubmit = {
+                search = it                     // keep in it's own line for better breakpoints
+            }
         )
 
         Column(
@@ -340,14 +346,14 @@ fun DevSettingsTab() {
                 .verticalScroll(scroll)
                 .weight(1f)
         ) {
-            if (search.isEmpty())
+            if (search.text.isEmpty())
                 DevPrefGroups()
             else
                 PrefsGroup(
                     prefs =
                     Pref.prefGroups.values.flatten()
                         .filter {
-                            it.key.contains(search, ignoreCase = true)
+                            it.key.contains(search.text, ignoreCase = true)
                                     && it.group !in listOf("persist", "kill")
                         }.toPersistentList()
                 )
