@@ -67,7 +67,7 @@ abstract class Plugin(val name: String, var file: File) {
 
         // add new plugin classes here, necessary to have all classes initialized
 
-        val pluginCompanions = mutableListOf<PluginCompanion>(
+        val pluginCompanions get() = mutableListOf<PluginCompanion>(
             SpecialFilesPlugin.Companion,
             InternalRegexPlugin.Companion,
             InternalShellScriptPlugin.Companion,
@@ -147,7 +147,9 @@ abstract class Plugin(val name: String, var file: File) {
 
         fun scan() {    // must be omnipotent
 
-            pluginCompanions.forEach { it.register() }
+            pluginCompanions.forEach {
+                it.register()
+            }
 
             synchronized(Plugin) {
                 scanned = false
