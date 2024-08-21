@@ -19,6 +19,9 @@ package com.machiav3lli.backup.handler
 
 import android.content.Context
 import android.os.Build
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.text.isDigitsOnly
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addErrorCommand
@@ -669,8 +672,7 @@ class ShellHandler {
                 "su command run to gain root    = $suCommand",
             )
 
-        var suCommand: String = "su"
-            private set
+        var suCommand by mutableStateOf("")
 
         val profileId: String get() = ShellCommands.currentProfile.toString()
 
@@ -748,10 +750,14 @@ class ShellHandler {
 
         fun checkRootEquivalent() = runAsRoot("sh '$checkRootScript'").isSuccess
 
+        var checkedCommand: String = ""
+
         var isLikeRoot: Boolean? = null
             get() {
-                if (field == null)
+                if (field == null || suCommand != checkedCommand) {
                     field = checkRootEquivalent()
+                    checkedCommand = suCommand
+                }
                 return field ?: false
             }
 
