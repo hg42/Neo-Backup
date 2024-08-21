@@ -34,7 +34,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -434,7 +433,6 @@ fun InnerBackground(
 fun BusyBackgroundPreview() {
     OABX.fakeContext = LocalContext.current
 
-    val force = remember { mutableStateOf(false) }
     val busy by remember { OABX.busy }
     val count by remember { OABX.busyCountDown }
     val level by remember { OABX.busyLevel }
@@ -442,9 +440,6 @@ fun BusyBackgroundPreview() {
 
     Column {
         Row {
-            ActionChip(text = "force", positive = force.value) {
-                force.value = !force.value
-            }
             RefreshButton {
                 OABX.hitBusy(5000)
             }
@@ -457,20 +452,18 @@ fun BusyBackgroundPreview() {
         }
         BusyBackground(
             modifier = Modifier
-                .fillMaxSize(),
-            busy = if (force.value) force else null
+                .fillMaxSize()
         ) {
             Text(
                 """
-                force:  ${force.value}
-                busy:   ${busy}
-                count:  ${count}
-                level:  ${level}
-
-                we are
-                very busy
-                today
-            """.trimIndent(),
+                    busy:   ${busy}
+                    count:  ${count}
+                    level:  ${level}
+    
+                    we are
+                    very busy
+                    today
+                """.trimIndent(),
                 fontSize = 24.sp,
                 modifier = Modifier
                     .fillMaxSize()
