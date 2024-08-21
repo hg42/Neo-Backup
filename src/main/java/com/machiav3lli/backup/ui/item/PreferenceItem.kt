@@ -1,6 +1,7 @@
 package com.machiav3lli.backup.ui.item
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,14 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.preferences.publicPreferences
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.tracePrefs
+import com.machiav3lli.backup.ui.compose.item.BooleanPreference
+import com.machiav3lli.backup.ui.compose.item.EnumPreference
+import com.machiav3lli.backup.ui.compose.item.IntPreference
+import com.machiav3lli.backup.ui.compose.item.LaunchPreference
+import com.machiav3lli.backup.ui.compose.item.ListPreference
+import com.machiav3lli.backup.ui.compose.item.PasswordPreference
+import com.machiav3lli.backup.ui.compose.item.StringEditPreference
+import com.machiav3lli.backup.ui.compose.item.StringPreference
 import com.machiav3lli.backup.utils.getDefaultSharedPreferences
 import com.machiav3lli.backup.utils.getPrivateSharedPrefs
 import kotlinx.coroutines.CoroutineScope
@@ -19,13 +28,44 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// hg42:
+
+// I guess, the purpose of PrefBuilder is to separate preferences from their UI
+// though a builder with when() is not a clean object oriented solution
+// (actually when() is always an indicator for imperative programming)
+// e.g. it could not be extended by a loaded class or a plugin etc. and it binds all PrefItems and PrefUIs together
+// PrefItems are not really abstract, e.g. icon is not symbolic
+// so adding the UI here doesn't hurt much and is more practical
+// it would allow to put the different PrefItem classes into separate entities (files, modules, plugins)
+
+// I know it could be more abstracted, to allow different "Views" of the PrefItems
+// (View in the abstract sense, e.g. UI, Serializer, ...)
+// - we have a namespace (Serializer, UI, ...) and type name (Int, String, Launch, ...)
+// - the View would know the Pref, but not vice versa
+// - the View would need to register itself to the namespace object (builder, factory)
+//   or to the Pref object with the namespace as key
+// - as an alternative, the connection between View and Pref could be established
+//   by naming conventions e.g. IntPref -> IntPrefUI, IntPrefSerializer, ...
+//   the name cxould be    used to access a plugin etc.
+
+// for now it's done the wrong way, but object oriented
+
+typealias PrefUI = @Composable (pref: Pref, onDialogPref: (Pref) -> Unit, index: Int, groupSize: Int) -> Unit
+
+// dirty is used to force recomposition when value, summary, icon, tint change
+// dirty as a state would trigger recomposition, but only where dirty is used,
+// so the dirty parameter in the composables ensures that it triggers all levels
+// the alternative would be to use a state for value, summary, icon, tint
+// but this would mean, that much more needs to be checked for recomposition
+
 open class Pref(
     var key: String,
     val private: Boolean = false,
     val defaultValue: Any? = null,
     @StringRes val titleId: Int,
-    var summary: String? = null,
     @StringRes val summaryId: Int,
+    var summary: String? = null,
+    val UI: PrefUI? = null,
     val icon: ImageVector? = null,
     var iconTint: Color?,
     val enableIf: (() -> Boolean)? = null,
@@ -71,7 +111,7 @@ open class Pref(
                         tracePrefs { "pref changed: ${pref.dirty} ${pref.key} -> ${pref}" }
                         onChanged(pref)
                         //delay(200)
-                        traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (onchanged)" }
+                        traceDebug { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (onchanged)" }
                         pref.dirty.value = true
                     }
                 }
@@ -256,6 +296,7 @@ class BooleanPref(
     @StringRes summaryId: Int = -1,
     @StringRes titleId: Int = -1,
     summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -265,8 +306,11 @@ class BooleanPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        BooleanPreference(pref = pref as BooleanPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -292,8 +336,9 @@ class IntPref(
     private: Boolean = false,
     defaultValue: Int,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     val entries: List<Int>,
@@ -304,8 +349,11 @@ class IntPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        IntPreference(pref = pref as IntPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -331,8 +379,9 @@ open class StringPref(
     private: Boolean = false,
     defaultValue: String,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -342,8 +391,13 @@ open class StringPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        StringPreference(pref = pref as StringPref, index = index, groupSize = groupSize) {
+            onDialogUI(pref)
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -369,8 +423,9 @@ class StringEditPref(
     private: Boolean = true,
     defaultValue: String,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -380,8 +435,11 @@ class StringEditPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        StringEditPreference(pref = pref as StringEditPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -394,8 +452,9 @@ class PasswordPref(
     private: Boolean = true,
     defaultValue: String,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -405,8 +464,11 @@ class PasswordPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -419,8 +481,9 @@ class ListPref(
     private: Boolean = false,
     defaultValue: String,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     val entries: Map<String, String>,
@@ -431,8 +494,13 @@ class ListPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        ListPreference(pref = pref as ListPref, index = index, groupSize = groupSize) {
+            onDialogUI(pref)
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -445,8 +513,9 @@ class EnumPref(
     private: Boolean = false,
     defaultValue: Int,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     val entries: Map<Int, Int>,
@@ -457,8 +526,13 @@ class EnumPref(
     private = private,
     defaultValue = defaultValue,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        EnumPreference(pref = pref as EnumPref, index = index, groupSize = groupSize) {
+            onDialogUI(pref)
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -484,8 +558,9 @@ class LinkPref(
     key: String,
     private: Boolean = false,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -495,8 +570,9 @@ class LinkPref(
     private = private,
     defaultValue = null,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI,
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -508,8 +584,9 @@ class LaunchPref(
     key: String,
     private: Boolean = false,
     @StringRes titleId: Int = -1,
-    summary: String? = null,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     enableIf: (() -> Boolean)? = null,
@@ -520,8 +597,17 @@ class LaunchPref(
     private = private,
     defaultValue = null,
     titleId = titleId,
-    summary = summary,
     summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        LaunchPreference(
+            pref = pref as LaunchPref,
+            index = index,
+            groupSize = groupSize,
+            summary = pref.summary,
+            onClick = pref.onClick
+        )
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,

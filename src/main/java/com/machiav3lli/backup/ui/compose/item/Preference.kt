@@ -1,7 +1,6 @@
 package com.machiav3lli.backup.ui.compose.item
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +60,8 @@ import com.machiav3lli.backup.ui.item.StringPref
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
+const val UNDEFINED_VALUE = "---"
+
 @Composable
 fun PrefIcon(
     icon: ImageVector?,
@@ -97,9 +98,11 @@ fun PrefIcon(
 fun BasePreference(
     modifier: Modifier = Modifier,
     pref: Pref,
-    summary: String? = null,
+    dirty: Boolean = pref.dirty.value,
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    valueShown: String? = null,
     index: Int = 0,
     groupSize: Int = 1,
     endWidget: (@Composable (isEnabled: Boolean) -> Unit)? = null,
@@ -109,8 +112,6 @@ fun BasePreference(
     val isEnabled by remember(pref.enableIf?.invoke() ?: true) {
         mutableStateOf(pref.enableIf?.invoke() ?: true)
     }
-
-    val dirty by remember { pref.dirty }
 
     val base = index.toFloat() / groupSize
     val rank = (index + 1f) / groupSize
@@ -161,18 +162,25 @@ fun BasePreference(
                         alpha(0.3f)
                     }
             ) {
-                if (summary != null) {
-                    Text(
-                        text = summary ?: "",
-                        color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
                 if (summaryId != -1) {
                     val summaryText = stringResource(id = summaryId)
                     Text(
                         text = summaryText,
                         color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                summary?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                valueShown?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -192,6 +200,7 @@ fun BasePreference(
 fun LaunchPreference(
     modifier: Modifier = Modifier,
     pref: Pref,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
     summary: String? = null,
@@ -200,9 +209,10 @@ fun LaunchPreference(
     BasePreference(
         modifier = modifier,
         pref = pref,
-        summary = summary,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
+        summary = summary,
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -213,23 +223,19 @@ fun LaunchPreference(
 fun StringPreference(
     modifier: Modifier = Modifier,
     pref: StringPref,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
     onClick: (() -> Unit) = {},
 ) {
-    val dirty by remember { pref.dirty }
     BasePreference(
         modifier = modifier,
         pref = pref,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = pref.summary,
-        bottomWidget = {
-            Text(
-                text = pref.value,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        },
+        valueShown = pref.value,
         index = index,
         groupSize = groupSize,
         onClick = onClick,
@@ -257,16 +263,17 @@ fun StringPreferencePreview() {
 
 @Composable
 fun StringEditPreference(
-    modifier: Modifier = Modifier,
     pref: StringPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
 ) {
-    val dirty by remember { pref.dirty }
     traceCompose { "StringEditPreference: $pref" }
     BasePreference(
         modifier = modifier,
         pref = pref,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
         summary = pref.summary,
@@ -275,16 +282,12 @@ fun StringEditPreference(
         bottomWidget = {
             TextInput(
                 pref.value,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .ifThen(dirty) {
-                        background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    },
+                modifier = Modifier.fillMaxWidth(),
                 editOnClick = true
             ) {
                 pref.value = it
             }
-        }
+        },
     )
 }
 
@@ -325,77 +328,85 @@ fun StringEditPreferencePreview() {
 
 @Composable
 fun PasswordPreference(
-    modifier: Modifier = Modifier,
     pref: PasswordPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onClick: (() -> Unit) = {},
+    onClick: () -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
+    val valueShown = if (pref.value.isNotEmpty()) "*********" else UNDEFINED_VALUE
     BasePreference(
         modifier = modifier,
         pref = pref,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        summary = if (pref.value.isNotEmpty()) "*********" else "- - - - -",
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
+        valueShown = valueShown,
         onClick = onClick,
     )
 }
 
 @Composable
 fun EnumPreference(
-    modifier: Modifier = Modifier,
     pref: EnumPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onClick: (() -> Unit) = {},
+    onClick: () -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
+    val valueShown = pref.entries[pref.value]?.let { stringResource(id = it) } ?: UNDEFINED_VALUE
     BasePreference(
         modifier = modifier,
         pref = pref,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        summary = pref.entries[pref.value]?.let { stringResource(id = it) },
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
+        valueShown = valueShown,
         onClick = onClick,
     )
 }
 
 @Composable
 fun ListPreference(
-    modifier: Modifier = Modifier,
     pref: ListPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onClick: (() -> Unit) = {},
+    onClick: () -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
+    val valueShown = pref.entries[pref.value] ?: UNDEFINED_VALUE
     BasePreference(
         modifier = modifier,
         pref = pref,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
-        summary = pref.entries[pref.value],
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
+        valueShown = valueShown,
         onClick = onClick,
     )
 }
 
 @Composable
 fun SwitchPreference(
-    modifier: Modifier = Modifier,
     pref: BooleanPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onCheckedChange: ((Boolean) -> Unit) = {},
+    onCheckedChange: (Boolean) -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
-
     var checked by remember(pref.value) { mutableStateOf(pref.value) }  //TODO hg42 remove remember ???
     val check = { value: Boolean ->
         pref.value = value
@@ -405,9 +416,10 @@ fun SwitchPreference(
     BasePreference(
         modifier = modifier,
         pref = pref,
-        summary = pref.summary,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
         onClick = {
@@ -431,14 +443,13 @@ fun SwitchPreference(
 
 @Composable
 fun CheckboxPreference(
-    modifier: Modifier = Modifier,
     pref: BooleanPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onCheckedChange: ((Boolean) -> Unit) = {},
+    onCheckedChange: (Boolean) -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
-
     var checked by remember(pref.value) { mutableStateOf(pref.value) }  //TODO hg42 remove remember ???
     val check = { value: Boolean ->
         pref.value = value
@@ -448,9 +459,10 @@ fun CheckboxPreference(
     BasePreference(
         modifier = modifier,
         pref = pref,
-        summary = pref.summary,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
         onClick = {
@@ -474,15 +486,17 @@ fun CheckboxPreference(
 
 @Composable
 fun BooleanPreference(
-    modifier: Modifier = Modifier,
     pref: BooleanPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onCheckedChange: ((Boolean) -> Unit) = {},
+    onCheckedChange: (Boolean) -> Unit = {},
 ) {
     SwitchPreference(
-        modifier = modifier,
         pref = pref,
+        modifier = modifier,
+        dirty = dirty,
         index = index,
         groupSize = groupSize,
         onCheckedChange = onCheckedChange,
@@ -491,14 +505,13 @@ fun BooleanPreference(
 
 @Composable
 fun SeekBarPreference(
-    modifier: Modifier = Modifier,
     pref: IntPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onValueChange: ((Int) -> Unit) = {},
+    onValueChange: (Int) -> Unit = {},
 ) {
-    val dirty by remember { pref.dirty }
-
     var sliderPosition by remember {    //TODO hg42 remove remember ???
         mutableIntStateOf(
             pref.entries.indexOfFirst { it >= pref.value }.let {
@@ -524,9 +537,10 @@ fun SeekBarPreference(
     BasePreference(
         modifier = modifier,
         pref = pref,
-        summary = pref.summary,
+        dirty = dirty,
         titleId = pref.titleId,
         summaryId = pref.summaryId,
+        summary = pref.summary,
         index = index,
         groupSize = groupSize,
         bottomWidget = { isEnabled ->
@@ -555,15 +569,17 @@ fun SeekBarPreference(
 
 @Composable
 fun IntPreference(
-    modifier: Modifier = Modifier,
     pref: IntPref,
+    modifier: Modifier = Modifier,
+    dirty: Boolean = pref.dirty.value,
     index: Int = 0,
     groupSize: Int = 1,
-    onValueChange: ((Int) -> Unit) = {},
+    onValueChange: (Int) -> Unit = {},
 ) {
     SeekBarPreference(
-        modifier = modifier,
         pref = pref,
+        modifier = modifier,
+        dirty = dirty,
         index = index,
         groupSize = groupSize,
         onValueChange = onValueChange,
