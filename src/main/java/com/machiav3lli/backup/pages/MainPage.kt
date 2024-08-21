@@ -67,6 +67,7 @@ import com.machiav3lli.backup.ui.compose.item.ExpandableSearchAction
 import com.machiav3lli.backup.ui.compose.item.RefreshButton
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.ui.navigation.PagerNavBar
 import com.machiav3lli.backup.ui.navigation.SlidePager
@@ -131,125 +132,128 @@ fun MainPage(
             OABX.main?.viewModel?.searchQuery?.value ?: ""
         )
     }
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 0.dp,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        sheetContent = {
-            SortFilterSheet(
-                onDismiss = {
-                    scope.launch {
-                        scaffoldState.bottomSheetState.partialExpand()
-                    }
-                },
-            )
-        }
-    ) {
-        val pagerState = rememberPagerState(pageCount = { pages.size })
-        val currentPage by remember { derivedStateOf { pages[pagerState.currentPage] } }
-        val openBlocklist = rememberSaveable { mutableStateOf(false) }
-        val searchExpanded = remember {
-            mutableStateOf(false)
-        }
 
-        Scaffold(
+    FullScreenBackground {
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 0.dp,
             containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            topBar = {
-                Column {
-                    TopBar(
-                        title = stringResource(id = currentPage.title)
-                    ) {
-                        when (currentPage.destination) {
-                            NavItem.Scheduler.destination -> {
-                                RoundButton(
-                                    icon = Phosphor.Prohibit,
-                                    description = stringResource(id = R.string.sched_blocklist)
-                                ) { openBlocklist.value = true }
-                                RoundButton(
-                                    description = stringResource(id = R.string.prefs_title),
-                                    icon = Phosphor.GearSix
-                                ) { navController.navigate(NavItem.Prefs.destination) }
-                            }
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            sheetContent = {
+                SortFilterSheet(
+                    onDismiss = {
+                        scope.launch {
+                            scaffoldState.bottomSheetState.partialExpand()
+                        }
+                    },
+                )
+            }
+        ) {
+            val pagerState = rememberPagerState(pageCount = { pages.size })
+            val currentPage by remember { derivedStateOf { pages[pagerState.currentPage] } }
+            val openBlocklist = rememberSaveable { mutableStateOf(false) }
+            val searchExpanded = remember {
+                mutableStateOf(false)
+            }
 
-                            else                          -> {
-                                ExpandableSearchAction(
-                                    expanded = searchExpanded,
-                                    query = query,
-                                    onQueryChanged = { newQuery ->
-                                        //if (newQuery != query)  // empty string doesn't work...
-                                        query = newQuery
-                                        OABX.main?.viewModel?.searchQuery?.value = query
-                                    },
-                                    onClose = {
-                                        query = ""
-                                        OABX.main?.viewModel?.searchQuery?.value = ""
-                                    }
-                                )
-                                AnimatedVisibility(!searchExpanded.value) {
-                                    RefreshButton { OABX.main?.refreshPackagesAndBackups() }
-                                }
-                                AnimatedVisibility(!searchExpanded.value) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                topBar = {
+                    Column {
+                        TopBar(
+                            title = stringResource(id = currentPage.title)
+                        ) {
+                            when (currentPage.destination) {
+                                NavItem.Scheduler.destination -> {
+                                    RoundButton(
+                                        icon = Phosphor.Prohibit,
+                                        description = stringResource(id = R.string.sched_blocklist)
+                                    ) { openBlocklist.value = true }
                                     RoundButton(
                                         description = stringResource(id = R.string.prefs_title),
                                         icon = Phosphor.GearSix
                                     ) { navController.navigate(NavItem.Prefs.destination) }
                                 }
+
+                                else                          -> {
+                                    ExpandableSearchAction(
+                                        expanded = searchExpanded,
+                                        query = query,
+                                        onQueryChanged = { newQuery ->
+                                            //if (newQuery != query)  // empty string doesn't work...
+                                            query = newQuery
+                                            OABX.main?.viewModel?.searchQuery?.value = query
+                                        },
+                                        onClose = {
+                                            query = ""
+                                            OABX.main?.viewModel?.searchQuery?.value = ""
+                                        }
+                                    )
+                                    AnimatedVisibility(!searchExpanded.value) {
+                                        RefreshButton { OABX.main?.refreshPackagesAndBackups() }
+                                    }
+                                    AnimatedVisibility(!searchExpanded.value) {
+                                        RoundButton(
+                                            description = stringResource(id = R.string.prefs_title),
+                                            icon = Phosphor.GearSix
+                                        ) { navController.navigate(NavItem.Prefs.destination) }
+                                    }
+                                }
                             }
                         }
-                    }
-                    AnimatedVisibility(currentPage.destination != NavItem.Scheduler.destination) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ActionChip(
-                                modifier = Modifier.weight(1f),
-                                icon = Phosphor.Prohibit,
-                                text = stringResource(id = R.string.sched_blocklist),
-                                positive = false,
-                                fullWidth = true,
+                        AnimatedVisibility(currentPage.destination != NavItem.Scheduler.destination) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                openBlocklist.value = true
-                            }
-                            ActionChip(
-                                modifier = Modifier.weight(1f),
-                                icon = Phosphor.FunnelSimple,
-                                text = stringResource(id = R.string.sort_and_filter),
-                                positive = true,
-                                fullWidth = true,
-                            ) {
-                                scope.launch {
-                                    scaffoldState.bottomSheetState.expand()
+                                ActionChip(
+                                    modifier = Modifier.weight(1f),
+                                    icon = Phosphor.Prohibit,
+                                    text = stringResource(id = R.string.sched_blocklist),
+                                    positive = false,
+                                    fullWidth = true,
+                                ) {
+                                    openBlocklist.value = true
+                                }
+                                ActionChip(
+                                    modifier = Modifier.weight(1f),
+                                    icon = Phosphor.FunnelSimple,
+                                    text = stringResource(id = R.string.sort_and_filter),
+                                    positive = true,
+                                    fullWidth = true,
+                                ) {
+                                    scope.launch {
+                                        scaffoldState.bottomSheetState.expand()
+                                    }
                                 }
                             }
                         }
                     }
+                },
+                bottomBar = {
+                    PagerNavBar(pageItems = pages, pagerState = pagerState)
                 }
-            },
-            bottomBar = {
-                PagerNavBar(pageItems = pages, pagerState = pagerState)
+            ) { paddingValues ->
+                SlidePager(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .blockBorder()
+                        .fillMaxSize(),
+                    pagerState = pagerState,
+                    pageItems = pages,
+                )
             }
-        ) { paddingValues ->
-            SlidePager(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .blockBorder()
-                    .fillMaxSize(),
-                pagerState = pagerState,
-                pageItems = pages,
-            )
-        }
 
-        if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
-            GlobalBlockListDialogUI(
-                currentBlocklist = OABX.main?.viewModel?.getBlocklist()?.toSet()
-                    ?: emptySet(),
-                openDialogCustom = openBlocklist,
-            ) { newSet ->
-                OABX.main?.viewModel?.setBlocklist(newSet)
+            if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
+                GlobalBlockListDialogUI(
+                    currentBlocklist = OABX.main?.viewModel?.getBlocklist()?.toSet()
+                        ?: emptySet(),
+                    openDialogCustom = openBlocklist,
+                ) { newSet ->
+                    OABX.main?.viewModel?.setBlocklist(newSet)
+                }
             }
         }
     }

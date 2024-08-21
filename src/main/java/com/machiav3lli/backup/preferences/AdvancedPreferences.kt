@@ -41,6 +41,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.Hash
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldStar
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.recycler.BusyBackground
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
 import com.machiav3lli.backup.ui.compose.theme.ColorSpecial
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
@@ -95,7 +96,7 @@ fun AdvancedPrefsPage() {
 
     val prefs = Pref.prefGroups["adv"]?.toPersistentList() ?: persistentListOf()
 
-    BusyBackground(
+    InnerBackground(
         modifier = Modifier.fillMaxSize()
     ) {
         LazyColumn(
@@ -374,6 +375,12 @@ val pref_paranoidHousekeeping = BooleanPref(
 val pref_ignoreLockedInHousekeeping = BooleanPref(
     key = "dev-alt.ignoreLockedInHousekeeping",
     summary = "keep the configured number of unlocked backups, instead of also counting locked backups",
+    defaultValue = false
+)
+
+val pref_fullScreenBackground = BooleanPref(
+    key = "dev-alt.fullScreenBackground",
+    summary = "extend background (laser, version) to fullscreen",
     defaultValue = false
 )
 

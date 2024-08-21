@@ -37,7 +37,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldCheckered
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldStar
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TagSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Textbox
-import com.machiav3lli.backup.ui.compose.recycler.BusyBackground
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.theme.ColorAPK
 import com.machiav3lli.backup.ui.compose.theme.ColorData
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
@@ -62,9 +62,7 @@ fun ServicePrefsPage() {
     val openDialog = remember { mutableStateOf(false) }
     var dialogsPref by remember { mutableStateOf<Pref?>(null) }
 
-    BusyBackground(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    InnerBackground(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(8.dp),

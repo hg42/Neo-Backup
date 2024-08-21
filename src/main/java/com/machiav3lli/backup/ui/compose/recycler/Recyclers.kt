@@ -42,7 +42,7 @@ fun HomePackageRecycler(
     productsList.forEach {
         selection.putIfAbsent(it.packageName, false)
     }
-    BusyBackground(modifier) {
+    InnerBackground(modifier) {
         VerticalItemList(
             list = productsList,
             itemKey = { it.packageName }
@@ -84,7 +84,7 @@ fun BatchPackageRecycler(
     onBackupDataClick: (String, Boolean, Int) -> Unit = { _: String, _: Boolean, _: Int -> },
     onClick: (Package, Boolean, Boolean) -> Unit = { _: Package, _: Boolean, _: Boolean -> },
 ) {
-    BusyBackground(modifier) {
+    InnerBackground(modifier) {
         VerticalItemList(
             list = productsList,
             itemKey = { it.packageName }
@@ -128,7 +128,7 @@ fun ScheduleRecycler(
     onClick: (Schedule) -> Unit = {},
     onCheckChanged: (Schedule, Boolean) -> Unit = { _: Schedule, _: Boolean -> },
 ) {
-    BusyBackground(modifier) {
+    InnerBackground(modifier) {
         VerticalItemList(
             list = productsList
         ) {
@@ -144,7 +144,7 @@ fun ExportedScheduleRecycler(
     onImport: (Schedule) -> Unit = {},
     onDelete: (StorageFile) -> Unit = {},
 ) {
-    BusyBackground(modifier) {
+    InnerBackground(modifier) {
         VerticalItemList(
             list = productsList
         ) {
@@ -160,7 +160,7 @@ fun LogRecycler(
     onShare: (Log) -> Unit = {},
     onDelete: (Log) -> Unit = {},
 ) {
-    BusyBackground(modifier) {
+    InnerBackground(modifier) {
         VerticalItemList(
             list = productsList
         ) {

@@ -55,6 +55,7 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.preferences.pref_busyFadeTime
 import com.machiav3lli.backup.preferences.pref_busyLaserBackground
 import com.machiav3lli.backup.preferences.pref_busyTurnTime
+import com.machiav3lli.backup.preferences.pref_fullScreenBackground
 import com.machiav3lli.backup.preferences.pref_versionOpacity
 import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.RefreshButton
@@ -404,6 +405,28 @@ fun BusyBackground(
                     .wrapContentSize(Alignment.TopCenter)
             )
     }
+}
+
+@Composable
+fun FullScreenBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    if (pref_fullScreenBackground.value)
+        BusyBackground(modifier = modifier, content = content)
+    else
+        content()
+}
+
+@Composable
+fun InnerBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    if (pref_fullScreenBackground.value)
+        content()
+    else
+        BusyBackground(modifier = modifier, content = content)
 }
 
 @Preview
