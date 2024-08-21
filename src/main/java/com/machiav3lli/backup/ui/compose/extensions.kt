@@ -363,10 +363,13 @@ fun BalancedWrapRow(
     )
 }
 
-@Composable
-fun Color.flatten(factor: Float = 0.5f, surface: Color = MaterialTheme.colorScheme.surface) = Color(
-    red = (red * (1f-factor) + surface.red*factor).coerceIn(0f, 1f),
-    green = (green * (1f-factor) + surface.green*factor).coerceIn(0f, 1f),
-    blue = (blue * (1f-factor) + surface.blue*factor).coerceIn(0f, 1f),
+fun Color.mix(with: Color, factor: Float = 0.5f) = Color(
+    red = (red * (1f-factor) + with.red*factor).coerceIn(0f, 1f),
+    green = (green * (1f-factor) + with.green*factor).coerceIn(0f, 1f),
+    blue = (blue * (1f-factor) + with.blue*factor).coerceIn(0f, 1f),
     alpha = alpha
 )
+
+@Composable
+fun Color.flatten(factor: Float = 0.5f, surface: Color = MaterialTheme.colorScheme.surface) =
+    mix(surface, factor)
