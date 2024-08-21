@@ -40,22 +40,21 @@ fun MainNavHost(
         startDestination = if (persist_beenWelcomed.value) NavItem.Permissions.destination
         else NavItem.Welcome.destination
     ) {
-        slideInComposable(NavItem.Lock.destination) {
+        slideInComposable(route = NavItem.Lock.destination) {
             LockPage { OABX.main?.resumeMain() }
         }
-        slideInComposable(NavItem.Welcome.destination) {
+        slideInComposable(route = NavItem.Welcome.destination) {
             WelcomePage()
         }
         slideInComposable(route = NavItem.Permissions.destination) {
             PermissionsPage()
         }
-        slideInComposable(NavItem.Main.destination) {
+        slideInComposable(route = NavItem.Main.destination) {
             MainPage(
                 navController = navController
             )
         }
-        slideInComposable(
-            "${NavItem.Prefs.destination}?page={page}",
+        slideInComposable(route = "${NavItem.Prefs.destination}?page={page}",
             args = listOf(
                 navArgument("page") {
                     type = NavType.IntType

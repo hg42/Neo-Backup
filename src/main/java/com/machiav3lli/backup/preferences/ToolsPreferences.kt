@@ -70,7 +70,6 @@ fun ToolsPrefsPage() {
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
-
         InnerBackground(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -103,12 +102,14 @@ fun ToolsPrefsPage() {
                                     )
 
                                     pref_schedulesExportImport -> neoActivity.moveTo(NavItem.Exports.destination)
+
                                     pref_saveAppsList -> context.onClickSaveAppsList(
                                         snackbarHostState,
                                         coroutineScope
                                     )
 
                                     pref_logViewer -> neoActivity.moveTo(NavItem.Logs.destination)
+
                                     pref_terminal -> neoActivity.moveTo(NavItem.Terminal.destination)
                                 }
                             }
