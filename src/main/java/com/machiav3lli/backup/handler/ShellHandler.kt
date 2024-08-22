@@ -748,7 +748,7 @@ class ShellHandler {
 
         val checkRootScript get() = InternalShellScriptPlugin.findScript("checkroot").toString()
 
-        fun checkRootEquivalent() = runAsRoot("sh '$checkRootScript'").isSuccess
+        fun checkRootEquivalent() = runAsRoot("sh '$checkRootScript'", throwFail = false).isSuccess
 
         var checkedCommand: String = ""
 

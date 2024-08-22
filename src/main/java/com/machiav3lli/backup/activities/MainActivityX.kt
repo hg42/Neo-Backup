@@ -18,10 +18,8 @@
 package com.machiav3lli.backup.activities
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
-import android.os.Looper
 import android.os.PowerManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -32,6 +30,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -52,23 +51,24 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
 import com.machiav3lli.backup.OABX.Companion.startup
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.RESCUE_NAV
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.DialogKey
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.pages.RootMissing
 import com.machiav3lli.backup.pages.SplashPage
-import com.machiav3lli.backup.pref_catchUncaughtException
-import com.machiav3lli.backup.pref_uncaughtExceptionsJumpToPreferences
 import com.machiav3lli.backup.preferences.persist_beenWelcomed
 import com.machiav3lli.backup.preferences.persist_skippedEncryptionCounter
 import com.machiav3lli.backup.preferences.pref_appTheme
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.ui.compose.ObservedEffect
+import com.machiav3lli.backup.ui.compose.item.DevTools
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
@@ -79,12 +79,12 @@ import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
 import com.machiav3lli.backup.utils.altModeToMode
-import com.machiav3lli.backup.utils.isLikeRoot
 import com.machiav3lli.backup.utils.isBiometricLockAvailable
 import com.machiav3lli.backup.utils.isBiometricLockEnabled
 import com.machiav3lli.backup.utils.isDarkTheme
 import com.machiav3lli.backup.utils.isDeviceLockEnabled
 import com.machiav3lli.backup.utils.isEncryptionEnabled
+import com.machiav3lli.backup.utils.isLikeRoot
 import com.machiav3lli.backup.viewmodels.BatchViewModel
 import com.machiav3lli.backup.viewmodels.ExportsViewModel
 import com.machiav3lli.backup.viewmodels.LogViewModel
@@ -94,14 +94,24 @@ import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
-import kotlin.system.exitProcess
+
+
+@Composable
+fun Rescue() {
+    AppTheme {
+        val expanded = remember { mutableStateOf(true) }
+        DevTools(expanded = expanded)
+    }
+}
 
 class MainActivityX : BaseActivity() {
 
     private val mScope: CoroutineScope = MainScope()
-    private lateinit var navController: NavHostController
+    lateinit var navController: NavHostController
     private lateinit var powerManager: PowerManager
 
     private lateinit var openDialog: MutableState<Boolean>
@@ -135,12 +145,12 @@ class MainActivityX : BaseActivity() {
         var freshStart = (savedInstanceState == null)   //TODO use some lifecycle method?
 
         Timber.w(
-            listOf(
-                if (freshStart) "fresh start" else "",
+            listOfNotNull(
+                if (freshStart) "fresh start" else null,
                 if (mainChanged && (!freshStart || (OABX.mainSaved != null)))
                     "main changed (was ${classAndId(OABX.mainSaved)})"
                 else
-                    "",
+                    null,
             ).joinToString(", ")
         )
 
@@ -154,36 +164,37 @@ class MainActivityX : BaseActivity() {
             }"
         )
 
+        //TODO wech begin ??? or is this necessary with resume or similar?
+
+        //TODO here or in MainPage? MainPage seems to be weird at least for each recomposition
         OABX.appsSuspendedChecked = false
 
-        if (pref_catchUncaughtException.value) {
-            Thread.setDefaultUncaughtExceptionHandler { _, e ->
-                try {
-                    Timber.i("\n\n" + "=".repeat(60))
-                    LogsHandler.unexpectedException(e)
-                    LogsHandler.logErrors("uncaught: ${e.message}")
-                    if (pref_uncaughtExceptionsJumpToPreferences.value) {
-                        startActivity(
-                            Intent.makeRestartActivityTask(
-                                ComponentName(this, MainActivityX::class.java)
-                            )
-                        )
-                    }
-                    object : Thread() {
-                        override fun run() {
-                            Looper.prepare()
-                            Looper.loop()
-                        }
-                    }.start()
-                } catch (_: Throwable) {
-                    // ignore
-                } finally {
-                    exitProcess(2)
-                }
-            }
-        }
+        //if (pref_catchUncaughtException.value) {               //TODO wech ???
+        //    Thread.setDefaultUncaughtExceptionHandler { _, e ->
+        //        try {
+        //            Timber.i("\n\n" + "=".repeat(60))
+        //            LogsHandler.unexpectedException(e)
+        //            LogsHandler.logErrors("uncaught: ${e.message}")
+        //            if (pref_uncaughtExceptionsJumpToPreferences.value) {
+        //                context.restartApp(RESCUE_NAV)
+        //            }
+        //            object : Thread() {
+        //                override fun run() {
+        //                    Looper.prepare()
+        //                    Looper.loop()
+        //                }
+        //            }.start()
+        //        } catch (_: Throwable) {
+        //            // ignore
+        //        } finally {
+        //            exitProcess(2)
+        //        }
+        //    }
+        //}
 
-        Shell.getShell()
+        Shell.getShell()    //TODO hg42 ???
+
+        //TODO wech end ???
 
         setContent {
             AppTheme {
@@ -191,6 +202,9 @@ class MainActivityX : BaseActivity() {
             }
             navController = rememberNavController()
         }
+
+        if (doIntent(intent, "beforeContent"))
+            return
 
         if (!isLikeRoot()) {
             setContent {
@@ -204,6 +218,9 @@ class MainActivityX : BaseActivity() {
         powerManager = this.getSystemService(POWER_SERVICE) as PowerManager
 
         setContent {
+
+            navController = rememberNavController()
+
             DisposableEffect(pref_appTheme.value) {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
@@ -219,7 +236,6 @@ class MainActivityX : BaseActivity() {
             }
 
             AppTheme {
-                navController = rememberNavController()
                 openDialog = remember { mutableStateOf(false) }
                 dialogKey = remember { mutableStateOf(null) }
                 val openBlocklist = remember { mutableStateOf(false) }
@@ -231,7 +247,8 @@ class MainActivityX : BaseActivity() {
                             traceBold { "******************** freshStart && Main ********************" }
                             mScope.launch(Dispatchers.IO) {
                                 runCatching { findBackups() }
-                                startup = false     // ensure backups are no more reported as empty
+                                startup =
+                                    false     // ensure backups are no more reported as empty
                                 runCatching { updateAppTables() }
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
@@ -298,10 +315,15 @@ class MainActivityX : BaseActivity() {
                     }
                 }
             }
-        }
 
-        if (doIntent(intent))
-            return
+            LaunchedEffect(true) {
+                withTimeoutOrNull(5000) {
+                    while (navController.graph.nodes.size() < 2)
+                        delay(100)
+                }
+                doIntent(intent, "afterContent")
+            }
+        }
     }
 
     override fun onResume() {
@@ -317,20 +339,51 @@ class MainActivityX : BaseActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        doIntent(intent)
+        doIntent(intent, "newIntent")
         super.onNewIntent(intent)
     }
 
-    fun doIntent(intent: Intent?): Boolean {
+    private fun doIntent(intent: Intent?, at: String): Boolean {
         if (intent == null) return false
         val command = intent.action
-        Timber.i("Main: command $command")
-        when (command) {
-            null                         -> {}
-            "android.intent.action.MAIN" -> {}
-            else                         -> {
-                addInfoLogText("Main: command '$command'")
+        val data = intent.data
+        Timber.i("Main: command $command -> $data")
+        when (at) {
+
+            "beforeContent"             -> {
+                when (command) {
+                    null                         -> {}
+
+                    "android.intent.action.MAIN" -> {
+                        if (data == null) return false
+                        when (data.toString()) {
+                            RESCUE_NAV -> {
+                                setContent {
+                                    Rescue()
+                                }
+                                return true
+                            }
+                        }
+                    }
+
+                    else                         -> {}
+                }
             }
+
+            "afterContent", "newIntent" -> {
+                when (command) {
+                    null                         -> {}
+                    "android.intent.action.MAIN" -> {
+                        if (data == null) return false
+                        moveTo(data.toString())
+                    }
+
+                    else                         -> {
+                        addInfoLogText("Main: command '$command'")
+                    }
+                }
+            }
+
         }
         return false
     }
@@ -374,8 +427,14 @@ class MainActivityX : BaseActivity() {
     }
 
     fun moveTo(destination: String) {
-        persist_beenWelcomed.value = destination != NavItem.Welcome.destination
-        navController.navigate(destination)
+        try {
+            persist_beenWelcomed.value = destination != NavItem.Welcome.destination
+            navController.navigate(destination)
+        } catch (e: IllegalArgumentException) {
+            Timber.e("cannot navigate to '$destination'")
+        } catch (e: Throwable) {
+            unexpectedException(e)
+        }
     }
 
     fun whileShowingSnackBar(message: String, todo: () -> Unit) {

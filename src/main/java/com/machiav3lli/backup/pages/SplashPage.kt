@@ -34,11 +34,14 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.preferences.extendedInfo
 import com.machiav3lli.backup.preferences.textLogShare
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.GearSix
 import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShareNetwork
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
+import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.restartApp
 import kotlin.system.exitProcess
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -114,6 +117,15 @@ fun RootMissing(activity: Activity? = null) {
                 modifier = Modifier
             ) {
                 textLogShare(extendedInfo(), temporary = true)
+            }
+            Spacer(modifier = Modifier.height(80.dp))
+            ElevatedActionButton(
+                text = stringResource(id = R.string.prefs_title),
+                icon = Phosphor.GearSix,
+                fullWidth = true,
+                modifier = Modifier
+            ) {
+                OABX.context.restartApp(NavItem.Prefs.destination)
             }
             Spacer(modifier = Modifier.height(80.dp))
             ElevatedActionButton(

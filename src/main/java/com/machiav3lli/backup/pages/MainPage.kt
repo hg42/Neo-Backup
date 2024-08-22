@@ -17,9 +17,6 @@
  */
 package com.machiav3lli.backup.pages
 
-import android.content.ComponentName
-import android.content.Intent
-import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -50,12 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
-import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.pref_catchUncaughtException
-import com.machiav3lli.backup.pref_uncaughtExceptionsJumpToPreferences
 import com.machiav3lli.backup.sheets.SortFilterSheet
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -71,11 +64,8 @@ import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.ui.navigation.PagerNavBar
 import com.machiav3lli.backup.ui.navigation.SlidePager
-import com.topjohnwu.superuser.Shell
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
-import timber.log.Timber
-import kotlin.system.exitProcess
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -92,36 +82,40 @@ fun MainPage(
     )
     val scaffoldState = rememberBottomSheetScaffoldState()
 
-    OABX.appsSuspendedChecked = false
+    //TODO wech begin ??? or is this necessary with resume or similar?
+    //TODO would this not need SideEffect or LaunchEffect? what about life cycles?
 
-    if (pref_catchUncaughtException.value) {
-        Thread.setDefaultUncaughtExceptionHandler { _, e ->
-            try {
-                Timber.i("\n\n" + "=".repeat(60))
-                LogsHandler.unexpectedException(e)
-                LogsHandler.logErrors("uncaught: ${e.message}")
-                if (pref_uncaughtExceptionsJumpToPreferences.value) {
-                    context.startActivity(
-                        Intent.makeRestartActivityTask(
-                            ComponentName(OABX.context, MainActivityX::class.java)
-                        )
-                    )
-                }
-                object : Thread() {
-                    override fun run() {
-                        Looper.prepare()
-                        Looper.loop()
-                    }
-                }.start()
-            } catch (_: Throwable) {
-                // ignore
-            } finally {
-                exitProcess(2)
-            }
-        }
-    }
+    //TODO why check again if this is recomposed?
+    //OABX.appsSuspendedChecked = false
 
-    Shell.getShell()
+    //TODO isn't it enough to set this in OABX? (hg42: I added it there now)
+    //if (pref_catchUncaughtException.value) {
+    //    Thread.setDefaultUncaughtExceptionHandler { _, e ->
+    //        try {
+    //            Timber.i("\n\n" + "=".repeat(60))
+    //            LogsHandler.unexpectedException(e)
+    //            LogsHandler.logErrors("uncaught: ${e.message}")
+    //            if (pref_uncaughtExceptionsJumpToPreferences.value) {
+    //                context.restartApp(RESCUE_NAV)
+    //            }
+    //            object : Thread() {
+    //                override fun run() {
+    //                    Looper.prepare()
+    //                    Looper.loop()
+    //                }
+    //            }.start()
+    //        } catch (_: Throwable) {
+    //            // ignore
+    //        } finally {
+    //            exitProcess(2)
+    //        }
+    //    }
+    //}
+
+    //Shell.getShell()
+
+    //TODO wech end ???
+
 
     BackHandler {
         OABX.main?.finishAffinity()

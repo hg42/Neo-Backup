@@ -422,10 +422,7 @@ fun InnerBackground(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    if (pref_fullScreenBackground.value)
-        content()
-    else
-        BusyBackground(modifier = modifier, content = content)
+    BusyBackground(modifier = modifier, content = content)
 }
 
 @Preview
