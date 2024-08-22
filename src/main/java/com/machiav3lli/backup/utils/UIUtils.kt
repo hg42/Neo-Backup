@@ -24,6 +24,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.net.Uri
 import android.os.LocaleList
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
@@ -275,15 +276,19 @@ val secondaryColor
         else -> ArcticCyan
     }
 
-fun Context.restartApp() {
+fun Context.restartApp(data: String? = null) {
     Timber.w(
-        "restarting application"
+        "restarting application${
+            data?.let { " at $data" } ?: { "" } 
+        }"
     )
-    startActivity(
-        Intent.makeRestartActivityTask(
-            ComponentName(this, MainActivityX::class.java)
-        )
+    val intent = Intent.makeRestartActivityTask(
+        ComponentName(this, MainActivityX::class.java)
     )
+    if (data != null)
+        intent.setData(Uri.parse(data))
+
+    startActivity(intent)
 }
 
 var recreateActivitiesJob: Job? = null
