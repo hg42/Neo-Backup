@@ -6,6 +6,7 @@ import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +67,7 @@ import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.endBusy
+import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.PREFS_BACKUP_FILE
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
@@ -89,8 +91,8 @@ import com.machiav3lli.backup.pref_maxLogLines
 import com.machiav3lli.backup.pref_trace
 import com.machiav3lli.backup.preferences.DevPrefGroups
 import com.machiav3lli.backup.preferences.LogsPage
+import com.machiav3lli.backup.preferences.Terminal
 import com.machiav3lli.backup.preferences.TerminalButton
-import com.machiav3lli.backup.preferences.TerminalPage
 import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
@@ -102,6 +104,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesFromSerialized
@@ -131,7 +134,7 @@ fun TextInput(
     onSubmit: (TextFieldValue) -> Unit = {},
 ) {
     val input = remember(text) { mutableStateOf(text) }
-    var editing by remember { mutableStateOf(! editOnClick) }
+    var editing by remember { mutableStateOf(!editOnClick) }
     val focusRequester = remember { FocusRequester() }
 
     fun submit(final: Boolean = true) {
@@ -263,7 +266,7 @@ val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
     "log" to { DevLogTab() },
     "infolog" to { DevInfoLogTab() },
     "tools" to { DevToolsTab() },
-    "term" to { TerminalPage() },
+    "term" to { DevTerminalTab() },
     "devsett" to { DevSettingsTab() },
     "plugins" to { DevPluginsTab() },
 ) + if (isDebug) listOf<Pair<String, @Composable () -> Any>>(
@@ -331,7 +334,8 @@ fun DevSettingsTab() {
                         modifier = Modifier
                             .size(ICON_SIZE_SMALL)
                             .clickable {
-                                search = TextFieldValue("")     // keep on it's own line for better breakpoints
+                                search =
+                                    TextFieldValue("")     // keep on it's own line for better breakpoints
                             }
                     )
             },
@@ -373,7 +377,7 @@ fun DevDialog(
         Surface(
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             dialogUI()
         }
@@ -526,9 +530,9 @@ fun PluginItem(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.outlinedCardColors(
             containerColor = if (plugin.isBuiltin)
-                MaterialTheme.colorScheme.surfaceContainerHighest
+                MaterialTheme.colorScheme.surfaceContainer
             else
-                MaterialTheme.colorScheme.surfaceContainerLow
+                MaterialTheme.colorScheme.surfaceContainerHighest
         ),
         modifier = Modifier.clickable {
             onEdit(plugin)
@@ -648,9 +652,13 @@ fun PluginsPagePreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
     Plugin.setPlugins(
-        "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
-        "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
-        "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),
+        listOf(
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files",
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files",
+            "/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files",
+        ).mapIndexed { index, path ->
+            "test_files$index" to SpecialFilesPlugin(File(path))
+        }.toMap()
     )
 
     PluginsPage()
@@ -861,6 +869,12 @@ val pref_openBackupDir = LaunchPref(
 }
 
 @Composable
+fun DevTerminalTab() {
+
+    Terminal()
+}
+
+@Composable
 fun DevToolsTab() {
 
     val scroll = rememberScrollState(0)
@@ -954,90 +968,94 @@ fun DevTools(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Row(modifier = Modifier
-                //.wrapContentSize()
-                .padding(8.dp, 4.dp, 8.dp, 0.dp)
-                .combinedClickable(
-                    onClick = { expanded.value = false },
-                    onLongClick = { tab = "" }
-                )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .wrapContentHeight()
-                ) {
-                    TitleOrInfoLog(
-                        title = "DevTools",
-                        showInfo = showInfo,
-                        tempShowInfo = tempShowInfo,
-                        modifier = Modifier
-                            .wrapContentHeight()
-                            .combinedClickable(
-                                onClick = {
-                                    OABX.showInfoLog = OABX.showInfoLog.not()
-                                    if (OABX.showInfoLog.not())
-                                        tempShowInfo.value = false
-                                },
-                                onLongClick = {
-                                }
-                            )
-                    )
-                }
-                //Text(text = tab, modifier = Modifier)
-                RefreshButton(hideIfNotBusy = true)
-                TerminalButton(
-                    "          close          "
-                ) {
-                    expanded.value = false
-                }
-            }
+        InnerBackground {
 
-            @Composable
-            fun TabButton(name: String) {
-                TerminalButton(
-                    text = name,
-                    important = (tab == name),
-                ) {
-                    if (tab != name)
-                        tab = name
-                    else {
-                        tab = ""
-                        MainScope().launch {
-                            yield()
-                            tab = name
-                        }
-                    }
-                }
-            }
-
-            FlowRow(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 8.dp,
-                        top = 0.dp,
-                        end = 8.dp,
-                        bottom = 4.dp
-                    )
+                    .fillMaxSize()
+            ) {
+                Row(modifier = Modifier
+                    //.wrapContentSize()
+                    .padding(8.dp, 4.dp, 8.dp, 0.dp)
                     .combinedClickable(
                         onClick = { expanded.value = false },
                         onLongClick = { tab = "" }
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                devToolsTabs.forEach {
-                    TabButton(it.first)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentHeight()
+                            .background(Color.Transparent)
+                    ) {
+                        TitleOrInfoLog(
+                            title = "DevTools",
+                            showInfo = showInfo,
+                            tempShowInfo = tempShowInfo,
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .combinedClickable(
+                                    onClick = {
+                                        OABX.showInfoLog = OABX.showInfoLog.not()
+                                        if (OABX.showInfoLog.not())
+                                            tempShowInfo.value = false
+                                    },
+                                    onLongClick = {
+                                    }
+                                )
+                        )
+                    }
+                    //Text(text = tab, modifier = Modifier)
+                    RefreshButton(hideIfNotBusy = true)
+                    TerminalButton(
+                        "          close          "
+                    ) {
+                        expanded.value = false
+                    }
                 }
-            }
 
-            devToolsTabs.find { it.first == tab }?.let {
-                it.second()
+                @Composable
+                fun TabButton(name: String) {
+                    TerminalButton(
+                        text = name,
+                        important = (tab == name),
+                    ) {
+                        if (tab != name)
+                            tab = name
+                        else {
+                            tab = ""
+                            MainScope().launch {
+                                yield()
+                                tab = name
+                            }
+                        }
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = 8.dp,
+                            top = 0.dp,
+                            end = 8.dp,
+                            bottom = 4.dp
+                        )
+                        .combinedClickable(
+                            onClick = { expanded.value = false },
+                            onLongClick = { tab = "" }
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    devToolsTabs.forEach {
+                        TabButton(it.first)
+                    }
+                }
+
+                devToolsTabs.find { it.first == tab }?.let {
+                    it.second()
+                }
             }
         }
     }
@@ -1051,9 +1069,13 @@ fun DevToolsPreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
     Plugin.setPlugins(
-        "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
-        "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
-        "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),
+        listOf(
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files",
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files",
+            "/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files",
+        ).mapIndexed { index, path ->
+            "test_files$index" to SpecialFilesPlugin(File(path))
+        }.toMap()
     )
 
     val expanded = remember { mutableStateOf(true) }
@@ -1071,6 +1093,9 @@ fun DevToolsPreview() {
             TerminalButton("count") {
                 count++
                 OABX.addInfoLogText("line $count")
+            }
+            TerminalButton("busy") {
+                hitBusy(5000)
             }
         }
         if (expanded.value)

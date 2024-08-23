@@ -30,6 +30,8 @@ import androidx.compose.ui.res.stringResource
 import com.machiav3lli.backup.items.Log
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.item.TopBar
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.recycler.LogRecycler
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.viewmodels.LogViewModel
@@ -38,21 +40,31 @@ import com.machiav3lli.backup.viewmodels.LogViewModel
 @Composable
 fun LogsPage(viewModel: LogViewModel) {
 
+    FullScreenBackground {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopBar(title = stringResource(id = NavItem.Logs.title))
+            }
+        ) { paddingValues ->
+
+            Logs(viewModel, modifier = Modifier.padding(paddingValues))
+        }
+    }
+}
+
+@Composable
+fun Logs(viewModel: LogViewModel, modifier: Modifier) {
+
     val logs = remember(viewModel) { viewModel.logsList }
 
     LaunchedEffect(viewModel) {
         viewModel.refreshList()
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopBar(title = stringResource(id = NavItem.Logs.title))
-        }
-    ) { paddingValues ->
+    InnerBackground(modifier = modifier.fillMaxSize()) {
         LogRecycler(
             modifier = Modifier
-                .padding(paddingValues)
                 .blockBorder()
                 .fillMaxSize(),
             productsList = logs.sortedByDescending(Log::logDate),

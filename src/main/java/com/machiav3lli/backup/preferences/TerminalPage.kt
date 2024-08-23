@@ -68,6 +68,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -114,6 +115,7 @@ import com.machiav3lli.backup.ui.compose.isAtBottom
 import com.machiav3lli.backup.ui.compose.isAtTop
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
 import com.machiav3lli.backup.utils.TraceUtils.listNanoTiming
@@ -247,31 +249,39 @@ fun accessTest() =
                 "--- when not using libsu (for streaming in backup/restore)",
                 "uses: echo command | $suCommand"
             ) +
-            accessTest1("system app",
+            accessTest1(
+                "system app",
                 "\$ANDROID_ASSETS", "packages (system app)"
             ) +
-            accessTest1("user app",
+            accessTest1(
+                "user app",
                 "\$ANDROID_DATA/app", "packages (user app)"
             ) +
-            accessTest1("data",
+            accessTest1(
+                "data",
                 "\$ANDROID_DATA/user/${ShellCommands.currentProfile}", "packages (data)"
             ) +
-            accessTest1("dedata",
+            accessTest1(
+                "dedata",
                 "\$ANDROID_DATA/user_de/${ShellCommands.currentProfile}", "packages (dedata)"
             ) +
-            accessTest1("external",
+            accessTest1(
+                "external",
                 getAndroidFolder("data")?.path ?: "\$EXTERNAL_STORAGE/Android/data",
                 "packages (external)"
             ) +
-            accessTest1("obb",
+            accessTest1(
+                "obb",
                 getAndroidFolder("obb")?.path ?: "\$EXTERNAL_STORAGE/Android/obb",
                 "packages (obb)"
             ) +
-            accessTest1("media",
+            accessTest1(
+                "media",
                 getAndroidFolder("media")?.path ?: "\$EXTERNAL_STORAGE/Android/media",
                 "packages (media)"
             ) +
-            accessTest1("misc",
+            accessTest1(
+                "misc",
                 "\$ANDROID_DATA/misc", "misc data"
             )
 
@@ -471,7 +481,7 @@ fun TerminalText(
                 .ifThen(limitLines == 0) { fillMaxHeight() }
                 //.ifThen(!wrap) { horizontalScroll(hscroll) }
                 .padding(0.dp)
-                .background(color = Color(0.2f, 0.2f, 0.3f))
+                .background(color = Color(0.2f, 0.2f, 0.3f, alpha = 0.9f))
         ) {
             SelectionContainer(
                 modifier = Modifier
@@ -526,7 +536,7 @@ fun TerminalText(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -615,7 +625,29 @@ fun TerminalText(
 @Composable
 fun TerminalPage(
     modifier: Modifier = Modifier,
-    title: String? = null
+    title: String? = null,
+) {
+    FullScreenBackground {
+
+        Scaffold(
+            modifier = modifier,
+            containerColor = Color.Transparent,
+            topBar = {
+                if (title != null)
+                    TopBar(title = title)
+            }
+        ) { paddingValues ->
+
+            Terminal(modifier = modifier.padding(paddingValues))
+        }
+    }
+}
+
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun Terminal(
+    modifier: Modifier = Modifier,
 ) {
     val output = remember { mutableStateListOf<String>() }
     var command by remember { mutableStateOf("") }
@@ -663,104 +695,101 @@ fun TerminalPage(
         }
     }
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        topBar = {
-            if (title != null)
-                TopBar(title = title)
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-        ) {
-            OutlinedTextField(modifier = Modifier
-                .padding(padding)
-                .fillMaxWidth(),
-                //.focusRequester(shellFocusRequester),
-                value = command,
-                singleLine = false,
-                placeholder = { Text(text = "shell command", color = Color.Gray) },
-                trailingIcon = {
-                    Row {
-                        if (command.isNotEmpty())
-                            RoundButton(icon = Phosphor.X) {
-                                command = ""
-                            }
-                        RoundButton(icon = Phosphor.Play) {
-                            command.removeSuffix("\n")
-                            run(command)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        OutlinedTextField(modifier = Modifier
+            .padding(padding)
+            .fillMaxWidth(),
+            //.focusRequester(shellFocusRequester),
+            value = command,
+            singleLine = false,
+            placeholder = { Text(text = "shell command", color = Color.Gray) },
+            trailingIcon = {
+                Row {
+                    if (command.isNotEmpty())
+                        RoundButton(icon = Phosphor.X) {
                             command = ""
                         }
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    autoCorrect = false,
-                    imeAction = ImeAction.Go
-                ),
-                keyboardActions = KeyboardActions(
-                    onGo = {
+                    RoundButton(icon = Phosphor.Play) {
                         command.removeSuffix("\n")
                         run(command)
                         command = ""
                     }
-                ),
-                onValueChange = {
-                    //if (it.endsWith("\n")) {
-                    //    run(command)
-                    //    command = ""
-                    //} else
-                    command = it
                 }
+            },
+            keyboardOptions = KeyboardOptions(
+                autoCorrect = false,
+                imeAction = ImeAction.Go
+            ),
+            keyboardActions = KeyboardActions(
+                onGo = {
+                    command.removeSuffix("\n")
+                    run(command)
+                    command = ""
+                }
+            ),
+            onValueChange = {
+                //if (it.endsWith("\n")) {
+                //    run(command)
+                //    command = ""
+                //} else
+                command = it
+            }
+        )
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TerminalButton(
+                "SUPPORT",
+                important = true
+            ) { launch { supportInfoLogShare() } }
+            TerminalButton(
+                "share",
+                important = true
+            ) { launch { textLogShare(output) } }
+            TerminalButton("clear", important = true) { output.clear() }
+            TerminalButton("log/int") { produce { logInt() } }
+            TerminalButton("log/app") { produce { logApp() } }
+            TerminalButton("log/rel") { produce { logRel() } }
+            TerminalButton("log/all") { produce { logSys() } }
+            TerminalButton("info") { produce { extendedInfo() } }
+            TerminalButton("prefs") { produce { dumpPrefs() } }
+            TerminalButton("env") { produce { dumpEnv() } }
+            TerminalButton("alarms") { produce { dumpAlarms() } }
+            TerminalButton("timing") { produce { dumpTiming() } }
+            TerminalButton("threads") { produce { threadsInfo() } }
+            TerminalButton("access") { produce { accessTest() } }
+            TerminalButton("dbpkg") { produce { dumpDbAppInfo() } }
+            TerminalButton("dbsch") { produce { dumpDbSchedule() } }
+            TerminalButton("errInfo") { produce { lastErrorPkg() + lastErrorCommand() } }
+            TerminalButton("err->cmd") {
+                command =
+                    if (OABX.lastErrorCommands.isNotEmpty())
+                        OABX.lastErrorCommands.first()
+                    else
+                        "no error command"
+            }
+            TerminalButton("findBackups") { OABX.context.findBackups(forceTrace = true) }
+        }
+        Box(
+            modifier = Modifier
+                .background(color = Color.Transparent)
+                .padding(4.dp)
+                .blockBorder()
+                .weight(1f)
+        ) {
+            TerminalText(
+                modifier = Modifier.fillMaxWidth(),
+                text = output,
+                limitLines = 0,
+                scrollOnAdd = true
             )
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(padding),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                TerminalButton("SUPPORT", important = true) { launch { supportInfoLogShare() } }
-                TerminalButton("share", important = true) { launch { textLogShare(output) } }
-                TerminalButton("clear", important = true) { output.clear() }
-                TerminalButton("log/int") { produce { logInt() } }
-                TerminalButton("log/app") { produce { logApp() } }
-                TerminalButton("log/rel") { produce { logRel() } }
-                TerminalButton("log/all") { produce { logSys() } }
-                TerminalButton("info") { produce { extendedInfo() } }
-                TerminalButton("prefs") { produce { dumpPrefs() } }
-                TerminalButton("env") { produce { dumpEnv() } }
-                TerminalButton("alarms") { produce { dumpAlarms() } }
-                TerminalButton("timing") { produce { dumpTiming() } }
-                TerminalButton("threads") { produce { threadsInfo() } }
-                TerminalButton("access") { produce { accessTest() } }
-                TerminalButton("dbpkg") { produce { dumpDbAppInfo() } }
-                TerminalButton("dbsch") { produce { dumpDbSchedule() } }
-                TerminalButton("errInfo") { produce { lastErrorPkg() + lastErrorCommand() } }
-                TerminalButton("err->cmd") {
-                    command =
-                        if (OABX.lastErrorCommands.isNotEmpty())
-                            OABX.lastErrorCommands.first()
-                        else
-                            "no error command"
-                }
-                TerminalButton("findBackups") { OABX.context.findBackups(forceTrace = true) }
-            }
-            Box(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .blockBorder()
-                    .weight(1f)
-            ) {
-                TerminalText(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = output,
-                    limitLines = 0,
-                    scrollOnAdd = true
-                )
-            }
         }
     }
 }

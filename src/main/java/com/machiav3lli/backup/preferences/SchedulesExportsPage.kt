@@ -37,37 +37,51 @@ import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.ExportedScheduleRecycler
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.viewmodels.ExportsViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ExportsPage(viewModel: ExportsViewModel) {
+fun SchedulesExportsPage(viewModel: ExportsViewModel) {
+
+    FullScreenBackground {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            floatingActionButton = {
+                ExtendedFloatingActionButton(onClick = viewModel::exportSchedules) {
+                    Icon(
+                        imageVector = Phosphor.CalendarPlus,
+                        contentDescription = stringResource(id = R.string.dialog_export_schedules)
+                    )
+                    Text(text = stringResource(id = R.string.dialog_export_schedules))
+                }
+            },
+            topBar = {
+                TopBar(title = stringResource(id = NavItem.Exports.title))
+            }
+        ) { paddingValues ->
+
+            SchedulesExports(viewModel, modifier = Modifier.padding(paddingValues))
+        }
+    }
+}
+
+@Composable
+fun SchedulesExports(viewModel: ExportsViewModel, modifier: Modifier = Modifier) {
+
     val exports by viewModel.exportsList.collectAsState()
 
     SideEffect {
         viewModel.refreshList()
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = viewModel::exportSchedules) {
-                Icon(
-                    imageVector = Phosphor.CalendarPlus,
-                    contentDescription = stringResource(id = R.string.dialog_export_schedules)
-                )
-                Text(text = stringResource(id = R.string.dialog_export_schedules))
-            }
-        },
-        topBar = {
-            TopBar(title = stringResource(id = NavItem.Exports.title))
-        }
-    ) { paddingValues ->
+    InnerBackground(modifier = Modifier.fillMaxSize()) {
+
         ExportedScheduleRecycler(
-            modifier = Modifier
-                .padding(paddingValues)
+            modifier = modifier
                 .blockBorder()
                 .fillMaxSize(),
             productsList = exports,

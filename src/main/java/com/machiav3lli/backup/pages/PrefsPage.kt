@@ -44,6 +44,7 @@ import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Info
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.ui.navigation.PagerNavBar
 import com.machiav3lli.backup.ui.navigation.SlidePager
@@ -75,46 +76,49 @@ fun PrefsPage(
         navController.navigateUp()
     }
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 0.dp,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        sheetContent = {
-            HelpSheet {
-                scope.launch {
-                    scaffoldState.bottomSheetState.partialExpand()
-                }
-            }
-        }
-    ) {
-        Scaffold(
+    FullScreenBackground {
+
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 0.dp,
             containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            topBar = {
-                TopBar(title = stringResource(id = currentPage.title)) {
-                    RoundButton(
-                        icon = Phosphor.Info,
-                        description = stringResource(id = R.string.help),
-                    ) {
-                        scope.launch {
-                            scaffoldState.bottomSheetState.expand()
-                        }
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            sheetContent = {
+                HelpSheet {
+                    scope.launch {
+                        scaffoldState.bottomSheetState.partialExpand()
                     }
                 }
-            },
-            bottomBar = {
-                PagerNavBar(pageItems = pages, pagerState = pagerState)
             }
-        ) { paddingValues ->
-            SlidePager(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .blockBorder(),
-                pagerState = pagerState,
-                pageItems = pages,
-            )
+        ) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                topBar = {
+                    TopBar(title = stringResource(id = currentPage.title)) {
+                        RoundButton(
+                            icon = Phosphor.Info,
+                            description = stringResource(id = R.string.help),
+                        ) {
+                            scope.launch {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        }
+                    }
+                },
+                bottomBar = {
+                    PagerNavBar(pageItems = pages, pagerState = pagerState)
+                }
+            ) { paddingValues ->
+                SlidePager(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .blockBorder(),
+                    pagerState = pagerState,
+                    pageItems = pages,
+                )
+            }
         }
     }
 }

@@ -110,7 +110,8 @@ abstract class Plugin(val name: String, var file: File) {
 
         private var plugins = mutableMapOf<String, Plugin>()
 
-        fun setPlugins(vararg args: Pair<String, Plugin>) { plugins = mutableMapOf(*args) }
+        fun setPlugins(pluginMap: Map<String, Plugin>) { plugins = pluginMap.toMutableMap() }
+        fun setPlugins(vararg args: Pair<String, Plugin>) { setPlugins(*args) }
 
         fun get(name: String) = plugins.get(name)
 

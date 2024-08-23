@@ -33,7 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -321,8 +321,11 @@ fun BusyBackgroundAnimated(
             modifier = Modifier
                 .fillMaxSize()
         ) {
+            fun currentAngle(): Float =
+                System.currentTimeMillis() % turnTime * 360f / turnTime
             //var angle by rememberSaveable { mutableStateOf(70f) }
-            var angle by rememberSaveable { mutableFloatStateOf(System.currentTimeMillis() % turnTime * 360f / turnTime) }
+            //var angle by rememberSaveable { mutableFloatStateOf(calcAngle()) }
+            var angle by rememberSaveable { mutableStateOf(currentAngle()) }
             LaunchedEffect(true) {
                 withContext(Dispatchers.IO) {
                     animate(
@@ -331,7 +334,6 @@ fun BusyBackgroundAnimated(
                         animationSpec = infiniteRepeatable(
                             animation = tween(turnTime * rounds, easing = LinearEasing),
                             repeatMode = RepeatMode.Restart
-                            //repeatMode = RepeatMode.Reverse
                         )
                     ) { value, _ -> angle = value }
                 }
@@ -393,6 +395,22 @@ fun BusyBackground(
             BusyBackgroundAnimated(busy = isBusy, content = content)
         else
             BusyBackgroundColor(busy = isBusy, content = content)
+    }
+}
+
+@Composable
+fun FullScreenBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        if (pref_fullScreenBackground.value)
+            BusyBackground(modifier = modifier, content = content)
+        else
+            content()
 
         if (pref_versionOpacity.value > 0)
             Text(
@@ -407,17 +425,6 @@ fun BusyBackground(
 }
 
 @Composable
-fun FullScreenBackground(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    if (pref_fullScreenBackground.value)
-        BusyBackground(modifier = modifier, content = content)
-    else
-        content()
-}
-
-@Composable
 fun InnerBackground(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -428,7 +435,7 @@ fun InnerBackground(
 @Preview
 @Composable
 fun BusyBackgroundPreview() {
-    OABX.fakeContext = LocalContext.current
+    OABX.fakeContext = LocalContext.current.applicationContext
 
     val busy by remember { OABX.busy }
     val count by remember { OABX.busyCountDown }
