@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -32,16 +31,18 @@ import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.preferences.extendedInfo
+import com.machiav3lli.backup.preferences.pref_suCommand
 import com.machiav3lli.backup.preferences.textLogShare
+import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
-import com.machiav3lli.backup.ui.compose.icons.phosphor.GearSix
+import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShareNetwork
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
-import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.restartApp
+import kotlinx.collections.immutable.persistentListOf
 import kotlin.system.exitProcess
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -56,14 +57,14 @@ fun SplashPage() {
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(0.6f))
+            Spacer(modifier = Modifier.weight(2f))
             Image(
                 modifier = Modifier
-                    .fillMaxSize(0.5f),
+                    .fillMaxSize(0.7f),
                 painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = stringResource(id = R.string.app_name)
             )
-            Spacer(modifier = Modifier.weight(0.4f))
+            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = listOf(
                     BuildConfig.APPLICATION_ID,
@@ -73,6 +74,7 @@ fun SplashPage() {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface
             )
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -97,19 +99,19 @@ fun RootMissing(activity: Activity? = null) {
                 color = Color.Red,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.root_is_mandatory),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.see_faq),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.weight(1f))
             ElevatedActionButton(
                 text = "try to share a support log",
                 icon = Phosphor.ShareNetwork,
@@ -118,16 +120,7 @@ fun RootMissing(activity: Activity? = null) {
             ) {
                 textLogShare(extendedInfo(), temporary = true)
             }
-            Spacer(modifier = Modifier.height(80.dp))
-            ElevatedActionButton(
-                text = stringResource(id = R.string.prefs_title),
-                icon = Phosphor.GearSix,
-                fullWidth = true,
-                modifier = Modifier
-            ) {
-                OABX.context.restartApp(NavItem.Prefs.destination)
-            }
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.weight(1f))
             ElevatedActionButton(
                 text = stringResource(id = R.string.dialogOK),
                 icon = Phosphor.Warning,
@@ -136,6 +129,19 @@ fun RootMissing(activity: Activity? = null) {
             ) {
                 activity?.finishAffinity()
                 exitProcess(0)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            PrefsGroup(prefs = persistentListOf(
+                pref_suCommand,
+            ))
+            Spacer(modifier = Modifier.weight(1f))
+            ElevatedActionButton(
+                text = "Retry",
+                icon = Phosphor.ArrowsClockwise,
+                fullWidth = true,
+                modifier = Modifier
+            ) {
+                OABX.context.restartApp()
             }
         }
     }
