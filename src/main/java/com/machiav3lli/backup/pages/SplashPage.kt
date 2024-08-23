@@ -177,7 +177,6 @@ fun LockPage(launchMain: () -> Unit) {
 private fun SplashPreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
     SplashPage()
-    OABX.fakeContext = null
 }
 
 @Preview
@@ -185,5 +184,4 @@ private fun SplashPreview() {
 private fun NoRootPreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
     RootMissing()
-    OABX.fakeContext = null
 }
