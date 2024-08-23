@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Looper
 import android.os.PowerManager
 import android.os.Process
 import android.util.Log
@@ -284,12 +285,12 @@ class OABX : Application() {
                     if (pref_uncaughtExceptionsJumpToPreferences.value) {
                         context.restartApp(RESCUE_NAV)
                     }
-                    //object : Thread() {
-                    //    override fun run() {
-                    //        Looper.prepare()
-                    //        Looper.loop()
-                    //    }
-                    //}.start()
+                    object : Thread() {
+                        override fun run() {
+                            Looper.prepare()
+                            Looper.loop()
+                        }
+                    }.start()
                 } catch (_: Throwable) {
                     // ignore
                 } finally {
