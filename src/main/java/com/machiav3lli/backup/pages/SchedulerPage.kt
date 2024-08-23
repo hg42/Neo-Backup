@@ -18,6 +18,7 @@
 package com.machiav3lli.backup.pages
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffold
@@ -79,6 +80,13 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
         contentColor = MaterialTheme.colorScheme.onBackground,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         sheetContent = {
+
+            BackHandler {
+                scope.launch {
+                    scaffoldState.bottomSheetState.hide()
+                }
+            }
+
             ScheduleSheet(
                 viewModel = scheduleSheetVM,
                 scheduleId = scheduleSheetId.longValue,
