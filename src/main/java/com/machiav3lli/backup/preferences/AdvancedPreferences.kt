@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -178,6 +179,9 @@ fun SuCommandPreference(
         index = index,
         groupSize = groupSize,
         bottomWidget = {
+            LaunchedEffect(true) {
+                pref.onChanged?.invoke(pref)
+            }
             if (pref.value != suCommand) {
                 Text(
                     "=> $suCommand",
@@ -249,14 +253,14 @@ val pref_suCommand = SuCommandPref(
             findSuCommand()
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
-        pref.iconTint = if (isLikeRoot == true) {
-            if (pref.value == suCommand)
-                Color.Green
-            else
-                Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
-        } else {
-            Color.Red
-        }
+    }
+    pref.iconTint = if (isLikeRoot == true) {
+        if (pref.value == suCommand)
+            Color.Green
+        else
+            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+    } else {
+        Color.Red
     }
     pref.summary = suCommand_summary
     traceDebug  { "summary: ${pref.summary}" }
