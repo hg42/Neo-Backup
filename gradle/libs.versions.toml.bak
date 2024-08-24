@@ -1,0 +1,307 @@
+####################################################################################################
+[versions]
+#---------------------------------------------------------------------------------------------------
+
+kotlin = "1.8.21"
+kotlinSerialization = "1.5.1"
+
+composeCompiler = "1.4.7"
+composeBom = "2023.04.01"
+compose = "1.4.2"
+#composeBom = "2023.04.00"
+#compose = "1.4.1"
+#composeBom = "2023.03.00"
+#compose = "1.4.0"
+#composeBom = "2023.01.00"
+#compose = "1.3.3"
+#composeBom = "2022.12.00"
+#compose = "1.3.2"
+#composeBom = "2022.11.00"
+#compose = "1.3.1"
+navigation = "2.6.0-rc01"
+material3 = "1.2.0-alpha01"
+material = "1.9.0"
+preference = "1.2.0"
+accompanist = "0.31.2-alpha"
+coil = "2.3.0"
+
+room = "2.5.1"
+libsu = "5.0.5"
+timber = "5.0.1"
+
+#iconics = "5.3.4"
+
+androidxTest = "1.5.0"
+androidxTestExt = "1.1.5"
+
+androidGradle = "8.0.2"
+
+#---------------------------------------------------------------------------------------------------
+
+# for testing mostly from (but edited):
+# https://github.com/RedMadRobot/gradle-version-catalogs/blob/main/versions-stack/libs.versions.toml
+
+kotlinx-datetime = "0.4.0"
+kotlinx-collections-immutable = "0.3.5"
+dokka = "1.8.10"
+
+# UI Tools
+epoxy = "5.1.2"
+groupie = "2.10.1"
+insetter = "0.6.1"
+
+# Multithreading
+kotlinx-coroutines = "1.6.4"
+reactivex-rxjava2 = "2.2.21"
+reactivex-rxjava3 = "3.1.6"
+
+# Network & Serialization
+moshi = "1.14.0" # https://github.com/square/moshi/blob/master/CHANGELOG.md
+okhttp = "4.10.0" # https://github.com/square/okhttp/blob/master/CHANGELOG.md
+retrofit = "2.9.0" # https://github.com/square/retrofit/blob/master/CHANGELOG.md
+retrofit-converter-kotlinxSerialization = "0.8.0"
+
+# Security
+tink = "1.7.0"
+
+# DI
+dagger = "2.45"
+javax-inject = "1"
+
+# Test
+junit = "5.9.2"
+junit-platform = "1.9.2"
+junit4 = "4.13.2"
+kotest = "5.6.0"
+mockk = "1.13.5"
+
+# Debug Tools
+leakcanary = "2.10"
+
+# Annotations procesing
+ksp = "1.8.20-1.0.11"
+
+# Firebase Services
+# https://firebase.google.com/support/release-notes/android
+firebase-analytics = "21.2.2"
+firebase-bom = "31.5.0"
+firebase-config = "21.3.0"
+firebase-crashlytics = "18.3.6"
+firebase-crashlytics-gradle = "2.9.4"
+firebase-messaging = "23.1.2"
+gms-googleServices = "4.3.15"
+
+# Gradle plugins
+gradle-android-cacheFix = "2.7.1"
+detekt = "1.22.0"
+detekt-rules-compose = "1.2.2"
+doctorPlugin = "0.8.1"
+kotlinx-binaryCompatibilityValidator = "0.13.0"
+owasp-dependencycheck = "8.2.1"
+versionsPlugin = "0.46.0"
+
+
+
+####################################################################################################
+[plugins]
+#---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+
+# for testing mostly from (but edited):
+# https://github.com/RedMadRobot/gradle-version-catalogs/blob/main/versions-stack/libs.versions.toml
+
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+kotlin-scripting = { id = "org.jetbrains.kotlin.plugin.scripting", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+
+
+
+####################################################################################################
+[libraries]
+#---------------------------------------------------------------------------------------------------
+
+# compose
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "compose" }
+compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
+compose-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "compose" }
+material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+preference = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
+
+# libsu
+libsu = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsu" }
+libsu-io = { module = "com.github.topjohnwu.libsu:io", version.ref = "libsu" }
+
+# etc
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+
+#---------------------------------------------------------------------------------------------------
+
+
+
+# for testing mostly from (but edited):
+# https://github.com/RedMadRobot/gradle-version-catalogs/blob/main/versions-stack/libs.versions.toml
+
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-gradlePlugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
+kotlin-scripting-dependencies = { module = "org.jetbrains.kotlin:kotlin-scripting-dependencies", version.ref = "kotlin" }
+kotlin-scripting-dependencies-maven = { module = "org.jetbrains.kotlin:kotlin-scripting-dependencies-maven", version.ref = "kotlin" }
+kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
+kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-stdlib-common = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlin" }
+kotlin-stdlib-jdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-annotations-common = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common", version.ref = "kotlin" }
+kotlin-test-common = { module = "org.jetbrains.kotlin:kotlin-test-common", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+kotlin-test-testng = { module = "org.jetbrains.kotlin:kotlin-test-testng", version.ref = "kotlin" }
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+
+# Multithreading
+kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-javafx = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-javafx", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-jdk9 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk9", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-playServices = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-rx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx2", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-rx3 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx3", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version.ref = "reactivex-rxjava2" }
+rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version.ref = "reactivex-rxjava3" }
+
+# Test
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-migrationsupport = { module = "org.junit.jupiter:junit-jupiter-migrationsupport", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+junit-platform-runner = { module = "org.junit.platform:junit-platform-runner", version.ref = "junit-platform" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+kotest-assertions-api = { module = "io.kotest:kotest-assertions-api", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-assertions-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotest" }
+kotest-bom = { module = "io.kotest:kotest-bom", version.ref = "kotest" }
+kotest-extensions = { module = "io.kotest:kotest-extensions", version.ref = "kotest" }
+kotest-extensions-blockhound = { module = "io.kotest:kotest-extensions-blockhound", version.ref = "kotest" }
+kotest-extensions-htmlreporter = { module = "io.kotest:kotest-extensions-htmlreporter", version.ref = "kotest" }
+kotest-extensions-http = { module = "io.kotest:kotest-extensions-http", version.ref = "kotest" }
+kotest-extensions-junit5 = { module = "io.kotest:kotest-extensions-junit5", version.ref = "kotest" }
+kotest-extensions-junitxml = { module = "io.kotest:kotest-extensions-junitxml", version.ref = "kotest" }
+kotest-extensions-now = { module = "io.kotest:kotest-extensions-now", version.ref = "kotest" }
+kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
+kotest-framework-concurrency = { module = "io.kotest:kotest-framework-concurrency", version.ref = "kotest" }
+kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-framework-discovery = { module = "io.kotest:kotest-framework-discovery", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotest-property-lifecycle = { module = "io.kotest:kotest-property-lifecycle", version.ref = "kotest" }
+kotest-runner-junit4 = { module = "io.kotest:kotest-runner-junit4", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockk-agent-android = { module = "io.mockk:mockk-agent-android", version.ref = "mockk" }
+mockk-agent-api = { module = "io.mockk:mockk-agent-api", version.ref = "mockk" }
+mockk-agent-jvm = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockk" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
+
+# Debug Tools
+leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
+
+# UI Tools
+accompanist-adaptive = { module = "com.google.accompanist:accompanist-adaptive", version.ref = "accompanist" }
+accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanist" }
+accompanist-flowlayout = { module = "com.google.accompanist:accompanist-flowlayout", version.ref = "accompanist" }
+accompanist-navigation-animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanist" }
+accompanist-navigation-material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
+accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanist" } # Deprecated
+accompanist-pager-indicators = { module = "com.google.accompanist:accompanist-pager-indicators", version.ref = "accompanist" } # Deprecated
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" } # Deprecated
+accompanist-placeholder = { module = "com.google.accompanist:accompanist-placeholder", version.ref = "accompanist" }
+accompanist-placeholder-material = { module = "com.google.accompanist:accompanist-placeholder-material", version.ref = "accompanist" }
+accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" } # Deprecated
+accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
+accompanist-testharness = { module = "com.google.accompanist:accompanist-testharness", version.ref = "accompanist" }
+accompanist-themeadapter-appcompat = { module = "com.google.accompanist:accompanist-themeadapter-appcompat", version.ref = "accompanist" }
+accompanist-themeadapter-core = { module = "com.google.accompanist:accompanist-themeadapter-core", version.ref = "accompanist" }
+accompanist-themeadapter-material = { module = "com.google.accompanist:accompanist-themeadapter-material", version.ref = "accompanist" }
+accompanist-themeadapter-material3 = { module = "com.google.accompanist:accompanist-themeadapter-material3", version.ref = "accompanist" }
+accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanist" }
+coil = { module = "io.coil-kt:coil", version.ref = "coil" }
+coil-base = { module = "io.coil-kt:coil-base", version.ref = "coil" }
+coil-bom = { module = "io.coil-kt:coil-bom", version.ref = "coil" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+coil-compose-base = { module = "io.coil-kt:coil-compose-base", version.ref = "coil" }
+coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coil" }
+coil-svg = { module = "io.coil-kt:coil-svg", version.ref = "coil" }
+coil-test = { module = "io.coil-kt:coil-test", version.ref = "coil" }
+coil-video = { module = "io.coil-kt:coil-video", version.ref = "coil" }
+epoxy = { module = "com.airbnb.android:epoxy", version.ref = "epoxy" }
+epoxy-annotations = { module = "com.airbnb.android:epoxy-annotations", version.ref = "epoxy" }
+epoxy-compose = { module = "com.airbnb.android:epoxy-compose", version.ref = "epoxy" }
+epoxy-paging3 = { module = "com.airbnb.android:epoxy-paging3", version.ref = "epoxy" }
+epoxy-processor = { module = "com.airbnb.android:epoxy-processor", version.ref = "epoxy" }
+groupie = { module = "com.github.lisawray.groupie:groupie", version.ref = "groupie" }
+insetter = { module = "dev.chrisbanes.insetter:insetter", version.ref = "insetter" }
+
+
+
+
+####################################################################################################
+[bundles]
+#---------------------------------------------------------------------------------------------------
+
+ui = [
+    "compose-bom",
+    #"compose-runtime",
+    #"compose-ui",
+    #"compose-foundation",
+    #"compose-runtime-livedata",
+    "compose-ui-tooling",   #TODO hg42 it seems to be in the bom, but isn't picked up?
+    "navigation",
+    "coil-compose",
+    "material",
+    "material3",
+    "preference",
+]
+
+accompanist = [
+    "accompanist-flowlayout",
+    "accompanist-systemuicontroller",
+    "accompanist-navigation-animation",
+    "accompanist-pager",
+    "accompanist-permissions",
+]
+
+libsu = [
+    "libsu",
+    "libsu-io",
+]
+
+#---------------------------------------------------------------------------------------------------
