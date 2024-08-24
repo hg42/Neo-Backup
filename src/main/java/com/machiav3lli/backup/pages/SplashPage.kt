@@ -17,6 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,19 +32,16 @@ import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.preferences.extendedInfo
-import com.machiav3lli.backup.preferences.pref_suCommand
-import com.machiav3lli.backup.preferences.textLogShare
-import com.machiav3lli.backup.preferences.ui.PrefsGroup
+import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
+import com.machiav3lli.backup.ui.compose.icons.phosphor.GearSix
 import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
-import com.machiav3lli.backup.ui.compose.icons.phosphor.ShareNetwork
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
+import com.machiav3lli.backup.ui.compose.item.DevTools
 import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.restartApp
-import kotlinx.collections.immutable.persistentListOf
 import kotlin.system.exitProcess
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -86,6 +85,8 @@ fun RootMissing(activity: Activity? = null) {
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
+        val showDevTools = remember { mutableStateOf(false) }
+
         Column(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
@@ -113,15 +114,6 @@ fun RootMissing(activity: Activity? = null) {
             )
             Spacer(modifier = Modifier.weight(1f))
             ElevatedActionButton(
-                text = "try to share a support log",
-                icon = Phosphor.ShareNetwork,
-                fullWidth = true,
-                modifier = Modifier
-            ) {
-                textLogShare(extendedInfo(), temporary = true)
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            ElevatedActionButton(
                 text = stringResource(id = R.string.dialogOK),
                 icon = Phosphor.Warning,
                 fullWidth = true,
@@ -131,9 +123,14 @@ fun RootMissing(activity: Activity? = null) {
                 exitProcess(0)
             }
             Spacer(modifier = Modifier.weight(1f))
-            PrefsGroup(prefs = persistentListOf(
-                pref_suCommand,
-            ))
+            ElevatedActionButton(
+                text = stringResource(id = R.string.prefs_title),
+                icon = Phosphor.GearSix,
+                fullWidth = true,
+                modifier = Modifier
+            ) {
+                showDevTools.value = true
+            }
             Spacer(modifier = Modifier.weight(1f))
             ElevatedActionButton(
                 text = "Retry",
@@ -143,6 +140,16 @@ fun RootMissing(activity: Activity? = null) {
             ) {
                 OABX.context.restartApp()
             }
+            if (showDevTools.value) {
+                BaseDialog(openDialogCustom = showDevTools) {
+                    DevTools(
+                        expanded = showDevTools,
+                        goto = "devsett",
+                        search = "suCommand"
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
