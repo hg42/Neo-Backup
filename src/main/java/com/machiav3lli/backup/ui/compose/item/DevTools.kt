@@ -450,7 +450,8 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
     }
 
     fun delete() {
-        editPlugin?.delete()
+        if (editPlugin?.isBuiltin == false)
+            editPlugin?.delete()
         onSubmit(null)
     }
 
