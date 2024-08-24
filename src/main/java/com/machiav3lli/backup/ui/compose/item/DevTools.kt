@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -200,6 +201,7 @@ fun TextInput(
                 text = text.text,
                 modifier = Modifier
                     .padding(fieldPadding)
+                    .weight(1f)
                     .clickable {
                         editing = true
                     },
@@ -207,7 +209,8 @@ fun TextInput(
             )
             Icon(
                 modifier = Modifier
-                    .padding(vertical = fieldPadding)
+                    //.padding(vertical = fieldPadding, horizontal = 4.dp)
+                    .align(Alignment.CenterVertically)
                     .clickable {
                         editing = true
                     },
@@ -215,6 +218,7 @@ fun TextInput(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface.flatten()
             )
+            Spacer(modifier = Modifier.width(fieldPadding))
         }
 
     }
@@ -250,10 +254,12 @@ fun TextInput(
 fun TextInputPreview() {
 
     var text by remember { mutableStateOf("input text") }
+    var longtext by remember { mutableStateOf("input text which is too long for the space and causes wrapping which oushes the icon out") }
 
     Column {
         TextInput(text = text, editOnClick = false) { text = it }
         TextInput(text = text, editOnClick = true) { text = it }
+        TextInput(text = longtext, editOnClick = true) { text = it }
     }
 }
 
