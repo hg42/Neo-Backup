@@ -265,6 +265,7 @@ fun TextInputPreview() {
 
 
 var devToolsTab = mutableStateOf("")
+val devToolsSearch = mutableStateOf(TextFieldValue(""))
 
 val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
     "SUPPORT" to { DevSupportTab() },
@@ -314,8 +315,8 @@ fun DevLogTab() {
 @Composable
 fun DevSettingsTab() {
 
+    var search by devToolsSearch
     val scroll = rememberScrollState(0)
-    var search by remember { mutableStateOf(TextFieldValue("")) }
 
     Column {
         TextInput(
@@ -957,13 +958,22 @@ fun DevSupportTab() {
 @Composable
 fun DevTools(
     expanded: MutableState<Boolean>,
+    goto: String? = null,
+    search: String? = null,
 ) {
+    var tab by devToolsTab
+
     LaunchedEffect(true) {
+        goto?.let {
+            devToolsTab.value = goto
+        }
+        search?.let {
+            devToolsSearch.value = TextFieldValue(search)
+        }
         if (devToolsTab.value.isEmpty())
             devToolsTab.value = "devsett"
     }
 
-    var tab by devToolsTab
     val tempShowInfo = remember { mutableStateOf(false) }
     val showInfo = OABX.showInfoLog || tempShowInfo.value
 
