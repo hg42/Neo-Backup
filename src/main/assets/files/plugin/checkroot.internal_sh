@@ -9,7 +9,7 @@ for dir in                \
     "$ANDROID_ASSETS/"    \
 ; do
   count=$(ls $dir | wc -l)
-  if [[ $count -gt 1 ]]; then
+  if [[ $count -gt 0 ]]; then
     echo "checkroot: access to $dir -> $count -> OK"
   else
     echo "checkroot: NO access to $dir -> $count"
