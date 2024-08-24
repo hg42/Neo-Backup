@@ -98,8 +98,6 @@ import com.machiav3lli.backup.handler.maxThreads
 import com.machiav3lli.backup.handler.usedThreadsByName
 import com.machiav3lli.backup.items.Log
 import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.items.UndeterminedStorageFile
-import com.machiav3lli.backup.items.uriFromFile
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowDown
@@ -126,6 +124,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.time.LocalDateTime
 
 
@@ -337,29 +336,33 @@ fun textLog(lines: List<String>): StorageFile? {
 
 fun textLogShare(lines: List<String>, temporary: Boolean = false) {
     if (lines.isNotEmpty()) {
-        runCatching {
-            val text = lines.joinToString("\n")
-            if (temporary) {
-                val now = LocalDateTime.now()
-                uriFromFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)).let { uri ->
-                    UndeterminedStorageFile(
-                        StorageFile.fromUri(uri),
-                        "${BACKUP_DATE_TIME_FORMATTER.format(now)}.log.txt"
-                    ).let { file ->
-                        file.writeText(text)?.let {
-                            SystemUtils.share(
-                                it,
-                                asFile = true
-                            )
-                        }
-                    }
-                }
-            } else {
+
+        val text = lines.joinToString("\n")
+        if (!temporary) {
+            runCatching {
                 LogsHandler.writeToLogFile(text)?.let { file ->
                     share(Log(file), asFile = true)
                 }
+                return
+            }
+            // in error cases fall through to saving as a temporary file
+        }
+
+        val now = LocalDateTime.now()
+        val fileName = "${BACKUP_DATE_TIME_FORMATTER.format(now)}.log.txt"
+
+        runCatching {
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).let { dir ->
+                File(dir, fileName).let { file ->
+                    file.writeText(text)
+                    SystemUtils.share(
+                        StorageFile(file),
+                        asFile = true
+                    )
+                }
             }
         }.onFailure {
+            //TODO hg42 we could try even more here
             logException(it)
         }
     }
