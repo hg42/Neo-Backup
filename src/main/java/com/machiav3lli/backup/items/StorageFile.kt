@@ -171,7 +171,8 @@ fun uriFromFile(file: File): Uri =
 // TODO hg42   or having a second implementation for some objects (that may be added later)
 
 class FileDuplicationException(message: String) : IOException(message)
-class FileDuplicationHandlingException(message: String, cause: Throwable) : IOException(message, cause)
+class FileDuplicationHandlingException(message: String, cause: Throwable) :
+    IOException(message, cause)
 
 open class StorageFile {
 
@@ -285,9 +286,10 @@ open class StorageFile {
             parent ?: run {
                 uri?.let { uri ->
                     if (this.name == null)
-                        this.name = uri.lastPathSegment //TODO hg42 ???  / vs %2F , is the last segment the name?
+                        this.name =
+                            uri.lastPathSegment //TODO hg42 ???  / vs %2F , is the last segment the name?
                     try {
-                        val last = name!!
+                        val last = this.name!!
                         Timber.i("SAF: last=$last uri=$uri")
                         if (last.startsWith('/')) {
                             val checkFile = RootFile(last)
@@ -297,8 +299,9 @@ open class StorageFile {
                             } else
                                 throw Exception("cannot use RootFile shadow at $last")
                         } else {
-                            var (storage, subPath) = last.split(":")
-                            val user = ShellCommands.currentProfile
+                            var (storage, subPath) = last.split(":", limit = 2)
+                            //val user = ShellCommands.currentProfile
+                            val user = uri.authority?.split("@", limit = 2)?.first() ?: ShellCommands.currentProfile
                             if (storage == "primary")
                                 storage = "emulated/$user"
                             file = getShadowPath(
@@ -752,6 +755,7 @@ open class StorageFile {
         return when {
             isFile      ->
                 delete()
+
             isDirectory ->
                 try {
                     val contents = listFiles()
@@ -769,6 +773,7 @@ open class StorageFile {
                     logException(e, path, backTrace = false)
                     false
                 }
+
             else        ->
                 false
         }
@@ -809,7 +814,12 @@ open class StorageFile {
             }
         }
 
-        fun createDocument(context: Context, uri: Uri, mimeType: String, displayName: String): Uri? {
+        fun createDocument(
+            context: Context,
+            uri: Uri,
+            mimeType: String,
+            displayName: String,
+        ): Uri? {
             return try {
                 DocumentsContract.createDocument(
                     context.contentResolver,
@@ -947,7 +957,7 @@ class UndeterminedStorageFile(val parent: StorageFile, val subPath: String) {
     fun findFile(): StorageFile? {
         var dir: StorageFile? = parent
         val components = subPath.split('/').toMutableList()
-        while(dir != null && components.size > 1) {
+        while (dir != null && components.size > 1) {
             val component = components.removeFirst()
             dir = dir.findFile(component)
         }
@@ -961,7 +971,7 @@ class UndeterminedStorageFile(val parent: StorageFile, val subPath: String) {
     fun createFile(): StorageFile {
         var dir = parent
         val components = subPath.split('/').toMutableList()
-        while(components.size > 1) {
+        while (components.size > 1) {
             val component = components.removeFirst()
             dir = dir.createDirectory(component)
         }
