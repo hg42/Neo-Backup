@@ -153,8 +153,6 @@ val buildLabel by extra {
     currentBranch
         .replace(Regex("^feature-"), "F-")
         .replace(Regex("^PR-"), "P-")
-        .replace(Regex("^fix-"), "I-")
-        .replace(Regex("^work$"), "W")
         .replace(Regex("^wip$"), "W")
         .replace(Regex("^temp$"), "T")
         .replace(Regex("^experimental$"), "X")
