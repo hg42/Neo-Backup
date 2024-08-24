@@ -467,7 +467,9 @@ class PasswordPref(
     summaryId = summaryId,
     summary = summary,
     UI = UI ?: { pref, onDialogUI, index, groupSize ->
-        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize)
+        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize) {
+            onDialogUI(pref)
+        }
     },
     icon = icon,
     iconTint = iconTint,
