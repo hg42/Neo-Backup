@@ -62,7 +62,6 @@ import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.pages.RootMissing
-import com.machiav3lli.backup.pages.SplashPage
 import com.machiav3lli.backup.preferences.persist_beenWelcomed
 import com.machiav3lli.backup.preferences.persist_skippedEncryptionCounter
 import com.machiav3lli.backup.preferences.pref_appTheme
@@ -195,12 +194,13 @@ class MainActivityX : BaseActivity() {
 
         //TODO wech end ???
 
-        setContent {
-            AppTheme {
-                SplashPage()
-            }
-            navController = rememberNavController()
-        }
+        // does not works at all
+        //setContent {
+        //    AppTheme {
+        //        SplashPage()
+        //    }
+        //    navController = rememberNavController()
+        //}
 
         if (doIntent(intent, "beforeContent"))
             return

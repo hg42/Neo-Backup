@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,22 +50,23 @@ import kotlin.system.exitProcess
 @Composable
 fun SplashPage() {
     Scaffold(
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(2f))
+            Spacer(modifier = Modifier.weight(1f))
             Image(
                 modifier = Modifier
-                    .fillMaxSize(0.7f),
+                    .fillMaxWidth(1f)
+                    .weight(1f)
+                    .border(color = Color.Yellow, width = 1.dp),
                 painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = stringResource(id = R.string.app_name)
             )
-            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = listOf(
                     BuildConfig.APPLICATION_ID,
@@ -72,7 +74,8 @@ fun SplashPage() {
                     SystemUtils.applicationIssuer?.let { "signed by $it" } ?: "",
                 ).joinToString("\n"),
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleMedium,
             )
             Spacer(modifier = Modifier.weight(1f))
         }
