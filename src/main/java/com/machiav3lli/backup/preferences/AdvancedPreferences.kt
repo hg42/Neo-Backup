@@ -40,7 +40,6 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
-import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
@@ -168,7 +167,7 @@ fun SuCommandPreference(
     index: Int = 0,
     groupSize: Int = 1,
 ) {
-    traceCompose { "SuCommandPreference: $pref" }
+    //traceCompose { "SuCommandPreference: $pref" }
     BasePreference(
         modifier = modifier,
         pref = pref,

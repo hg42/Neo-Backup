@@ -41,7 +41,6 @@ import com.machiav3lli.backup.ICON_SIZE_MEDIUM
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -69,7 +68,7 @@ fun PrefIcon(
     tint: Color? = null,
 ) {
     val title = if (titleId < 0) null else stringResource(id = titleId)
-    traceCompose { "PrefIcon: $title ${icon?.name} $tint" }
+    //traceCompose { "PrefIcon: $title ${icon?.name} $tint" }
 
     if (icon != null)
         Icon(
@@ -125,7 +124,7 @@ fun BasePreference(
         pref.dirty.value = false
     }
 
-    traceCompose { "BasePreference: $dirty ${pref.key} -> ${pref.icon?.name} ${pref.iconTint}" }
+    //traceCompose { "BasePreference: $dirty ${pref.key} -> ${pref.icon?.name} ${pref.iconTint}" }
 
     ListItem(
         modifier = modifier
@@ -269,7 +268,7 @@ fun StringEditPreference(
     index: Int = 0,
     groupSize: Int = 1,
 ) {
-    traceCompose { "StringEditPreference: $pref" }
+    //traceCompose { "StringEditPreference: $pref" }
     BasePreference(
         modifier = modifier,
         pref = pref,
