@@ -83,7 +83,7 @@ abstract class Plugin(val name: String, var file: File) {
             pluginCompanion: PluginCompanion,
             extensions: List<String>,
         ): Boolean {
-            tracePlugin { ("register ${pluginCompanion.name()} type: $type, extensions: $extensions") }
+            tracePlugin { "register ${pluginCompanion.name()} type: $type, extensions: $extensions" }
             pluginTypes[type] = pluginCompanion
             pluginExtension[type] = extensions.first()
             extensions.forEach {
