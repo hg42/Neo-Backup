@@ -505,9 +505,10 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                     submit()
                 }
             }
-            TerminalButton("Delete") {
-                delete()
-            }
+            if (editPlugin?.isBuiltin == false)
+                TerminalButton("Delete") {
+                    delete()
+                }
             TerminalButton("Cancel") {
                 cancel()
             }
