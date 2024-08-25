@@ -25,13 +25,11 @@ import androidx.compose.runtime.setValue
 import androidx.core.text.isDigitsOnly
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addErrorCommand
-import com.machiav3lli.backup.OABX.Companion.assets
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.ShellHandler.Companion.splitCommand
 import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInfo
 import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
-import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.baseInfo
 import com.machiav3lli.backup.preferences.pref_libsuTimeout
 import com.machiav3lli.backup.preferences.pref_libsuUseRootShell
@@ -41,7 +39,6 @@ import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
-import com.topjohnwu.superuser.ShellUtils.fastCmd
 import com.topjohnwu.superuser.io.SuRandomAccessFile
 import de.voize.semver4k.Semver
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +59,24 @@ import java.util.concurrent.TimeUnit
 const val verKnown = "0.8.0 - 0.8.7"
 const val verBugDotDotDirHang = "0.8.3 - 0.8.6"
 const val verBugDotDotDirExtract = "0.8.0 - 0.8.0"  //TODO hg42 more versions?
+
+class FakeShellResult(
+    var aCode: Int,
+    val aOut: MutableList<String> = mutableListOf(),
+    val aErr: MutableList<String> = mutableListOf(),
+) : Shell.Result() {
+    override fun getOut(): MutableList<String> {
+        return aOut
+    }
+
+    override fun getErr(): MutableList<String> {
+        return aErr
+    }
+
+    override fun getCode(): Int {
+        return aCode
+    }
+}
 
 class ShellHandler {
 
@@ -308,7 +323,8 @@ class ShellHandler {
     class ShellCommandFailedException(
         @field:Transient val shellResult: Shell.Result,
         val command: String,
-    ) : Exception()
+        cause: Throwable? = null,
+    ) : Exception(cause)
 
     class UnexpectedCommandResult(message: String, val shellResult: Shell.Result?) :
         Exception(message)
@@ -902,15 +918,22 @@ class ShellHandler {
             // Shell.Config.setFlags(Shell.FLAG_REDIRECT_STDERR);
             // stderr is used for logging, so it's better not to call an application that does that
             // and keeps quiet
-            Timber.d("Running Command: $command")
-            val stdout: List<String> = arrayListOf()
-            val stderr: List<String> = arrayListOf()
-            val result = Shell.cmd(command).to(stdout, stderr).exec()
-            Timber.d("Command(s) $command ended with ${result.code}")
-            if (!result.isSuccess) {
+            var result: Shell.Result = FakeShellResult(-1)
+            try {
+                Timber.d("Running Command: $command")
+                val stdout: List<String> = arrayListOf()
+                val stderr: List<String> = arrayListOf()
+                result = Shell.cmd(command).to(stdout, stderr).exec()
+                Timber.d("Command(s) $command ended with ${result.code}")
+                if (!result.isSuccess) {
+                    addErrorCommand(command)
+                    if (throwFail)
+                        throw ShellCommandFailedException(result, command)
+                }
+            } catch (e: Throwable) {
                 addErrorCommand(command)
                 if (throwFail)
-                    throw ShellCommandFailedException(result, command)
+                    throw ShellCommandFailedException(result, command = command, cause = e)
             }
             return result
         }
@@ -928,31 +951,36 @@ class ShellHandler {
 
             return runBlocking(Dispatchers.IO) {
 
-                val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
+                runCatching {
 
-                val shellIn = process.outputStream
-                //val shellOut = process.inputStream
-                val shellErr = process.errorStream
+                    val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
 
-                val errAsync = async(Dispatchers.IO) {
-                    shellErr.readBytes().decodeToString()
+                    val shellIn = process.outputStream
+                    //val shellOut = process.inputStream
+                    val shellErr = process.errorStream
+
+                    val errAsync = async(Dispatchers.IO) {
+                        shellErr.readBytes().decodeToString()
+                    }
+
+                    shellIn.write("$command\n".encodeToByteArray())
+
+                    inStream.copyTo(shellIn, 65536)
+                    shellIn.close()
+
+                    val err = errAsync.await()
+                    withContext(Dispatchers.IO) { process.waitFor(10, TimeUnit.SECONDS) }
+                    if (process.isAlive)
+                        process.destroyForcibly()
+                    val code = process.exitValue()
+
+                    if (code != 0)
+                        addErrorCommand(command)
+
+                    (code to err)
+                }.getOrElse {
+                    (-1 to (it.message ?: "unknown error"))
                 }
-
-                shellIn.write("$command\n".encodeToByteArray())
-
-                inStream.copyTo(shellIn, 65536)
-                shellIn.close()
-
-                val err = errAsync.await()
-                withContext(Dispatchers.IO) { process.waitFor(10, TimeUnit.SECONDS) }
-                if (process.isAlive)
-                    process.destroyForcibly()
-                val code = process.exitValue()
-
-                if (code != 0)
-                    addErrorCommand(command)
-
-                (code to err)
             }
         }
 
@@ -964,34 +992,38 @@ class ShellHandler {
 
             return runBlocking(Dispatchers.IO) {
 
-                val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
+                runCatching {
 
-                val shellIn = process.outputStream
-                val shellOut = process.inputStream
-                val shellErr = process.errorStream
+                    val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
 
-                val errAsync = async(Dispatchers.IO) {
-                    shellErr.readBytes().decodeToString()
+                    val shellIn = process.outputStream
+                    val shellOut = process.inputStream
+                    val shellErr = process.errorStream
+
+                    val errAsync = async(Dispatchers.IO) {
+                        shellErr.readBytes().decodeToString()
+                    }
+
+                    shellIn.write(command.encodeToByteArray())
+                    shellIn.close()
+
+                    shellOut.copyTo(outStream, 65536)
+                    outStream.flush()
+
+                    val err = errAsync.await()
+                    withContext(Dispatchers.IO) {
+                        process.waitFor(10, TimeUnit.SECONDS)
+                    }
+                    if (process.isAlive)
+                        process.destroyForcibly()
+                    val code = process.exitValue()
+                    if (code != 0)
+                        addErrorCommand(command)
+
+                    (code to err)
+                }.getOrElse {
+                    (-1 to (it.message ?: "unknown error"))
                 }
-
-                shellIn.write(command.encodeToByteArray())
-                shellIn.close()
-
-                shellOut.copyTo(outStream, 65536)
-                outStream.flush()
-
-                val err = errAsync.await()
-                withContext(Dispatchers.IO) {
-                    process.waitFor(10, TimeUnit.SECONDS)
-                }
-                if (process.isAlive)
-                    process.destroyForcibly()
-                val code = process.exitValue()
-
-                if (code != 0)
-                    addErrorCommand(command)
-
-                (code to err)
             }
         }
 
