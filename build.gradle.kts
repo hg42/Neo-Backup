@@ -15,7 +15,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import com.android.build.gradle.internal.api.BaseVariantImpl
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
@@ -25,21 +30,207 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+data class InfoFromGit(
+    val lastTag: String?,
+    val lastTagDateTime: LocalDateTime?,
+    val lastTagMajor: Int?,
+    val lastTagMinor: Int?,
+    val lastTagPatch: Int?,
+    val currentBranch: String,
+    val headHash: String,
+)
+
+fun getInfoFromGit(): InfoFromGit {
+    val tagPattern = "(\\d+)\\.(\\d+)\\.(\\d+)"
+    val tagProcess = ProcessBuilder(
+        "git",
+        "log",
+        "--tags",
+        "--simplify-by-decoration",
+        "--pretty=format:%ai %d",
+        "--date=iso"
+    )
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+
+    val tagResult = tagProcess.inputStream.bufferedReader().use { it.readText() }
+    tagProcess.waitFor(10, TimeUnit.SECONDS)
+
+    val regex = Regex(tagPattern)
+    val matchResult = regex.find(tagResult)
+
+    var lastTag: String? = null
+    var lastTagDateTime: LocalDateTime? = null
+    var lastTagMajor: Int? = null
+    var lastTagMinor: Int? = null
+    var lastTagPatch: Int? = null
+
+    if (matchResult != null) {
+        val tagLine = tagResult.lines().first { it.contains(matchResult.value) }
+        val dateTime = tagLine.split(" ")[0] + "T" + tagLine.split(" ")[1]
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
+
+        val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
+
+        lastTag = matchResult.value
+        lastTagMajor = major
+        lastTagMinor = minor
+        lastTagPatch = patch
+    }
+
+    // Aktuellen Branch ermitteln
+    val branchProcess = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val currentBranch = branchProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    branchProcess.waitFor(10, TimeUnit.SECONDS)
+
+    // Hash des HEADs ermitteln
+    val hashProcess = ProcessBuilder("git", "rev-parse", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val headHash = hashProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    hashProcess.waitFor(10, TimeUnit.SECONDS)
+
+    return InfoFromGit(
+        lastTag = lastTag,
+        lastTagDateTime = lastTagDateTime,
+        lastTagMajor = lastTagMajor,
+        lastTagMinor = lastTagMinor,
+        lastTagPatch = lastTagPatch,
+        currentBranch = currentBranch,
+        headHash = headHash.take(8)
+    )
+}
+
+val gitInfo = getInfoFromGit()
+
+val lastTag = gitInfo.lastTag
+val lastTagDateTime = gitInfo.lastTagDateTime
+val lastTagMajor = gitInfo.lastTagMajor
+val lastTagMinor = gitInfo.lastTagMinor
+val lastTagPatch = gitInfo.lastTagPatch
+val currentBranch = gitInfo.currentBranch
+val headHash = gitInfo.headHash
+
+
+// extract base version from last git tag
+val major by extra(lastTagMajor)
+val minor by extra(lastTagMinor)
+val revision by extra(lastTagPatch)
+
+//val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+//
+//val gitDetails = versionDetails()
+////println("gitDetails: $gitDetails")
+//val gitCommit = gitDetails.gitHash.take(8)
+////val gitTag = gitDetails.lastTag
+//val gitDistance = gitDetails.commitDistance
+//val gitHash = gitDetails.gitHash
+//// gitHashFull // full 40-character Git commit hash
+//val gitBranch = gitDetails.branchName // is null if the repository in detached HEAD mode
+//var gitDirty = !gitDetails.isCleanTag
+
+//val refTime = java.util.GregorianCalendar(2020, 0, 1).time!! // Date
+//val startTime = java.util.Date()
+//val seconds = ((startTime.time - refTime.time) / 1000); println("seconds:     $seconds")
+val refTime =
+    lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
+val startTime = LocalDateTime.now(); println("startTime:   $startTime")
+val seconds =
+    startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC); println("seconds:     $seconds")
+val minutes = seconds / 60; println("minutes:     $minutes")
+val fiveminutes = seconds / 60 / 5; println("fiveminutes: $fiveminutes")
+val tenminutes = seconds / 60 / 10; println("tenminutes:  $tenminutes")
+val hours = seconds / 60 / 60; println("hours:       $hours")
+
+val buildTime by extra { startTime.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) }
+//var buildNumber by extra(buildTime.substring(1..6))
+val buildNumber: String by extra { minutes.toString() }
+//var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
+val buildLabel by extra {
+    currentBranch
+        .replace(Regex("^feature-"), "F-")
+        .replace(Regex("^PR-"), "P-")
+        .replace(Regex("^wip$"), "W")
+        .replace(Regex("^temp$"), "T")
+        .replace(Regex("^experimental$"), "X")
+}
+val buildNumber5 = buildNumber.padStart(5, '0')
+val buildNumber4 = buildNumber5.dropLast(1)
+val buildNumber3 = buildNumber5.dropLast(2)
+val buildVersionCodeFromVersion = (
+        "${
+            major
+        }${
+            minor.toString().padStart(2, '0')
+        }${
+            revision.toString().padStart(2, '0')
+        }${
+            buildNumber3
+        }"
+        )
+val buildVersionCodeFromTime = buildTime.dropLast(12 - 9)
+val buildVersionCode by extra { buildVersionCodeFromTime.toInt() }
+val buildVersion by extra { "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildTime}--${buildLabel}" }
+
+println(
+    """
+version build:
+    buildVersion:       $buildVersion
+    buildVersionCode:   $buildVersionCode
+    startTime:          $startTime
+    buildTime:          $buildTime
+    basedOnTag:         $lastTag
+        time:               $lastTagDateTime
+        commit:             $headHash
+        branch:             $currentBranch
+"""
+)
+
+
+//System.exit(0)
+
+val neobackup_keystore: String by rootProject.extra
+val neobackup_keystorepass: String by rootProject.extra
+val neobackup_keypass: String by rootProject.extra
+
 android {
     namespace = "com.machiav3lli.backup"
+
+    signingConfigs {
+        create("hg42test") {
+            storeFile = file(neobackup_keystore)
+            storePassword = neobackup_keystorepass
+            keyPassword = neobackup_keypass
+            keyAlias = "cert"
+        }
+    }
+
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8318
-        versionName = "8.3.8"
-        buildConfigField("int", "MAJOR", "8")
-        buildConfigField("int", "MINOR", "3")
 
-        testApplicationId = "$applicationId.tests"
+        versionCode = buildVersionCode
+        versionName = buildVersion
+        buildConfigField("int", "MAJOR", "$major")
+        buildConfigField("int", "MINOR", "$minor")
+
+        // Tests
+        testApplicationId = "${applicationId}.tests"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        //testInstrumentationRunner = "androidx.test.runner.AndroidJUnit5Runner"
+        //testInstrumentationRunner = "androidx.test.runner.AndroidJUnitPlatformRunner"
+        //testInstrumentationRunner = "androidx.test.ext.junit.runners.AndroidJUnit5"
+
+        // The following argument makes the Android Test Orchestrator run its
+        // "pm clear" command after each test invocation. This command ensures
+        // that the app's state is completely cleared between tests.
+        // testInstrumentationRunnerArguments.put("clearPackageData", "true")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -50,14 +241,40 @@ android {
                 }
             }
         }
+
+        println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
 
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "Neo_Backup_${variant.name}_${variant.versionName}.apk"
+    fun <T : BaseVariantImpl> T.setOutputFileName() {
+        outputs.all {
+            (this as? BaseVariantOutputImpl)?.let {
+                it.outputFileName =
+                    "nb-${
+                        buildVersion.replace(
+                            "--",
+                            "--" +
+                                    it.name
+                                        .replace(Regex(".*Test"), "TEST")
+                                        .replace("debug", "DEBUG")
+                                        //.replace("hg42", "")
+                                        .replace("release", "rel")
+                                        //.replace("pumpkin", "")
+                                        //.replace("pumprel", "rel")
+                                        .replace(Regex("""--+"""), """-""")
+                                        .replace(Regex("""-+$"""), """""")
+                                        .uppercase()
+                                    + "--"
+                        ).replace("----", "--")
+                    }.apk"
+                println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+            }
         }
-        true
+    }
+    testVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+    }
+    applicationVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
     }
 
     buildTypes {
@@ -66,11 +283,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            //versionNameSuffix = "-alpha01"
             isMinifyEnabled = true
-        }
-        named("debug") {
-            applicationIdSuffix = ".debug"
-            isMinifyEnabled = false
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
         create("neo") {
             applicationIdSuffix = ".neo"
@@ -79,6 +296,38 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        named("debug") {
+            applicationIdSuffix = ".hg42.debug"
+            versionNameSuffix = "-debug"
+            isMinifyEnabled = false
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
+        }
+        create("pumpkin") {
+            applicationIdSuffix = ".hg42"
+            versionNameSuffix = ""
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
+        }
+        create("pumprel") {
+            applicationIdSuffix = ".hg42.rel"
+            versionNameSuffix = "-rel"
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
     }
     buildFeatures {
@@ -93,6 +342,18 @@ android {
         kotlinOptions {
             jvmTarget = compileOptions.sourceCompatibility.toString()
             freeCompilerArgs = listOf("-Xjvm-default=all")
+
+            if (project.findProperty("enableComposeCompilerReports") == "true") {
+                val metricsDir =
+                    "${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
+                println("--- enableComposeCompilerReports -> $metricsDir")
+                freeCompilerArgs += listOf(
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$metricsDir",
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$metricsDir",
+                )
+            }
         }
     }
     lint {
@@ -110,7 +371,7 @@ android {
                 "/kotlin/**.kotlin_metadata",
                 "/META-INF/**.kotlin_module",
                 "/META-INF/**.pro",
-                "/META-INF/**.version",     // comment out to enable layout inspector
+                //"/META-INF/**.version",     // comment out to enable layout inspector
                 "/META-INF/LICENSE-notice.md",
                 "/META-INF/LICENSE.md"
             )
@@ -118,10 +379,16 @@ android {
     }
 }
 
+//androidComponents {
+//    onVariants(selector().withBuildType("release")) {
+//        it.packaging.resources.excludes.add("META-INF/**")
+//    }
+//}
+
 dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.ksp)
-    implementation(libs.kotlin.reflect)
+    // not yet necessary: implementation(libs.kotlin.reflect)
 
     // Koin
     implementation(libs.koin.android)
@@ -150,6 +417,8 @@ dependencies {
     implementation(libs.semver)
     implementation(libs.libsu.core)
     implementation(libs.libsu.io)
+    // hg42
+    //implementation("de.voize:semver4k:$vSemVer")
 
     // UI
     implementation(libs.material)

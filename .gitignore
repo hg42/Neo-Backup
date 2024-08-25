@@ -7,7 +7,7 @@
 .kotlin
 build/
 local.properties
-src/main/jniLibs/
+/src/main/jniLibs/
 release/
 neo/
 *.salive
