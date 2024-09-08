@@ -96,8 +96,11 @@ try:
     password  = sys.argv[1].encode('utf-8')
     directory = sys.argv[2]
 except:
-    print("usage: ", sys.argv[0], "PASSWORD", "ROOTDIRECTORY")
+    print("usage: ", sys.argv[0], "PASSWORD", "BACKUPDIRECTORY")
     exit(1)
+
+print("password: ", password.decode('utf-8'))
+print("directory:", directory)
 
 for folder, dirs, files in os.walk(directory):
     for file in files:
