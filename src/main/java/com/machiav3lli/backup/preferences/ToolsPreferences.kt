@@ -35,7 +35,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarX
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ListNumbers
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TrashSimple
 import com.machiav3lli.backup.ui.compose.item.LaunchPreference
-import com.machiav3lli.backup.ui.compose.recycler.BusyBackground
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
 import com.machiav3lli.backup.ui.compose.theme.ColorExodus
 import com.machiav3lli.backup.ui.compose.theme.ColorExtDATA
@@ -70,8 +70,7 @@ fun ToolsPrefsPage() {
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
-
-        BusyBackground(
+        InnerBackground(
             modifier = Modifier.fillMaxSize()
         ) {
             LazyColumn(
@@ -103,12 +102,14 @@ fun ToolsPrefsPage() {
                                     )
 
                                     pref_schedulesExportImport -> neoActivity.moveTo(NavItem.Exports.destination)
+
                                     pref_saveAppsList -> context.onClickSaveAppsList(
                                         snackbarHostState,
                                         coroutineScope
                                     )
 
                                     pref_logViewer -> neoActivity.moveTo(NavItem.Logs.destination)
+
                                     pref_terminal -> neoActivity.moveTo(NavItem.Terminal.destination)
                                 }
                             }

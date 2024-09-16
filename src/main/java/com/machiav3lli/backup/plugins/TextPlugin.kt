@@ -28,7 +28,14 @@ fun TextEditor(
     placeholder: String = "",
     onChanged: (String) -> Unit = {},
 ) {
-    var input by remember { mutableStateOf(TextFieldValue(text = text, selection = TextRange(text.length))) }
+    var input by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = text,
+                selection = TextRange(text.length)
+            )
+        )
+    }
     val textFieldFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -60,22 +67,30 @@ open class TextPlugin(file: File) : Plugin(name = file.nameWithoutExtension, fil
     init {
         try {
             text = file.readText()
-            tracePlugin { ("${this.javaClass.simpleName} $name loaded <- ${file.name}") }
+            tracePlugin { "${this.javaClass.simpleName} $name loaded <- ${file.name}" }
         } catch (e: Throwable) {
             text = ""
-            tracePlugin { ("${this.javaClass.simpleName} $name created -> ${file.name}") }
+            tracePlugin { "${this.javaClass.simpleName} $name created -> ${file.name}" }
         }
     }
 
     override fun save() {
-        file.parentFile?.mkdirs()
-        file.writeText(text)
-        tracePlugin { ("${this.javaClass.simpleName} $name saved -> ${file.name}") }
+        try {
+            file.parentFile?.mkdirs()
+            file.writeText(text)
+            tracePlugin { "${this.javaClass.simpleName} $name saved -> ${file.name}" }
+        } catch (e: Throwable) {
+            tracePlugin { "${this.javaClass.simpleName} $name failed to save -> ${file.name}" }
+        }
     }
 
     override fun delete() {
-        file.delete()
-        tracePlugin { ("${this.javaClass.simpleName} $name deleted -> ${file.name}") }
+        try {
+            file.delete()
+            tracePlugin { "${this.javaClass.simpleName} $name deleted -> ${file.name}" }
+        } catch (e: Throwable) {
+            tracePlugin { "${this.javaClass.simpleName} $name failed to delete -> ${file.name}" }
+        }
     }
 
     @Composable

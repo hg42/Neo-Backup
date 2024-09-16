@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Looper
 import android.os.PowerManager
 import android.os.Process
 import android.util.Log
@@ -66,6 +67,7 @@ import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.methodName
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
+import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +89,7 @@ import java.lang.Integer.max
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.exitProcess
 
 
 //---------------------------------------- developer settings - logging
@@ -257,6 +260,8 @@ val traceSerialize = TraceUtils.TracePref(
     default = false
 )
 
+val RESCUE_NAV get() = "rescue"
+
 
 class OABX : Application() {
 
@@ -274,6 +279,34 @@ class OABX : Application() {
 
         super.onCreate()
 
+        if (pref_catchUncaughtException.value) {
+            Thread.setDefaultUncaughtExceptionHandler { _, e ->
+                try {
+                    try {
+                        //Timber.i("\n\n" + "=".repeat(60))
+                        LogsHandler.unexpectedException(e)
+                        //LogsHandler.logErrors("uncaught: ${e.message}")
+                    } catch (_: Throwable) {
+                        // ignore
+                    }
+                    if (pref_uncaughtExceptionsJumpToPreferences.value) {
+                        context.restartApp(RESCUE_NAV)
+                    }
+                    object : Thread() {
+                        override fun run() {
+                            Looper.prepare()
+                            Looper.loop()
+                        }
+                    }.start()
+                } catch (_: Throwable) {
+                    // ignore
+                } finally {
+                    activity?.finishAffinity()
+                    exitProcess(3)
+                }
+            }
+        }
+
         DynamicColors.applyToActivitiesIfAvailable(
             this,
             DynamicColorsOptions.Builder()
@@ -284,7 +317,7 @@ class OABX : Application() {
         //TODO hg42 beginBusy(startupMsg)
         hitBusy(60000)
 
-        Plugin.ensureScanned()
+        Plugin.ensureScanned()  // before ShellHandler, because plugins are used there
         initShellHandler()
 
         val result = registerReceiver(
@@ -608,16 +641,16 @@ class OABX : Application() {
 
         var appsSuspendedChecked = false
 
+        val db: ODatabase get() = NB.db
+
         var shellHandler: ShellHandler? = null
             private set
-
-        val db: ODatabase get() = NB.db
 
         fun initShellHandler(): ShellHandler? {
             return try {
                 shellHandler = ShellHandler()
                 shellHandler
-            } catch (e: ShellHandler.ShellCommandFailedException) {
+            } catch (e: Throwable) {
                 null
             }
         }

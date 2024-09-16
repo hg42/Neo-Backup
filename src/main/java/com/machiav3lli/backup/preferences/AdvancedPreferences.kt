@@ -1,6 +1,7 @@
 package com.machiav3lli.backup.preferences
 
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -10,12 +11,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -26,17 +33,25 @@ import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isRelease
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
+import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
+import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
+import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Hash
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldStar
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
-import com.machiav3lli.backup.ui.compose.recycler.BusyBackground
+import com.machiav3lli.backup.ui.compose.item.BasePreference
+import com.machiav3lli.backup.ui.compose.item.TextInput
+import com.machiav3lli.backup.ui.compose.mix
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
 import com.machiav3lli.backup.ui.compose.theme.ColorSpecial
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
@@ -44,6 +59,7 @@ import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.ui.item.PrefUI
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.sortFilterModel
@@ -66,7 +82,10 @@ fun DevPrefGroups() {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         PrefsGroupCollapsed(prefs = devUserOptions, heading = "advanced users (those who know)")
-        PrefsGroupCollapsed(prefs = devAltOptions, heading = "alternatives (to compare two variants)")
+        PrefsGroupCollapsed(
+            prefs = devAltOptions,
+            heading = "alternatives (to compare two variants)"
+        )
         PrefsGroupCollapsed(prefs = devLogOptions, heading = "logging")
         PrefsGroupCollapsed(prefs = devTraceOptions, heading = "tracing")
         PrefsGroupCollapsed(prefs = devFileOptions, heading = "file handling")
@@ -83,7 +102,7 @@ fun AdvancedPrefsPage() {
 
     val prefs = Pref.prefGroups["adv"]?.toPersistentList() ?: persistentListOf()
 
-    BusyBackground(
+    InnerBackground(
         modifier = Modifier.fillMaxSize()
     ) {
         LazyColumn(
@@ -140,36 +159,135 @@ else
 
 //---------------------------------------- developer settings - advanced users
 
-val pref_suCommand = StringPref(
+@Composable
+fun SuCommandPreference(
+    modifier: Modifier = Modifier,
+    pref: StringPref,
+    dirty: Boolean = pref.dirty.value,
+    index: Int = 0,
+    groupSize: Int = 1,
+) {
+    //traceCompose { "SuCommandPreference: $pref" }
+    BasePreference(
+        modifier = modifier,
+        pref = pref,
+        dirty = dirty,
+        titleId = pref.titleId,
+        summaryId = pref.summaryId,
+        summary = pref.summary,
+        index = index,
+        groupSize = groupSize,
+        bottomWidget = {
+            LaunchedEffect(true) {
+                pref.onChanged?.invoke(pref)
+            }
+            if (pref.value != suCommand) {
+                Text(
+                    "=> $suCommand",
+                    color = Color.Cyan.mix(MaterialTheme.colorScheme.onSurface),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+            TextInput(
+                pref.value,
+                modifier = Modifier.fillMaxWidth(),
+                editOnClick = true
+            ) {
+                pref.value = it
+            }
+        },
+    )
+}
+
+class SuCommandPref(
+    key: String,
+    private: Boolean = true,
+    defaultValue: String,
+    @StringRes titleId: Int = -1,
+    @StringRes summaryId: Int = -1,
+    summary: String? = null,
+    UI: PrefUI? = null,
+    icon: ImageVector? = null,
+    iconTint: Color? = null,
+    enableIf: (() -> Boolean)? = null,
+    onChanged: ((Pref) -> Unit)? = null,
+) : StringPref(
+    key = key,
+    private = private,
+    defaultValue = defaultValue,
+    titleId = titleId,
+    summaryId = summaryId,
+    summary = summary,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        SuCommandPreference(pref = pref as SuCommandPref, index = index, groupSize = groupSize)
+    },
+    icon = icon,
+    iconTint = iconTint,
+    enableIf = enableIf,
+    onChanged = onChanged
+)
+
+val suCommand_summary get() = """
+        the command used to elevate the shell to a 'root' shell (in our sense),
+        the whole command must be a shell, reading commands from stdin and executing them,
+        there are also builtin fallback commands
+        """.trimIndent().replace("\n", " ").trim()
+
+val suCommand_default = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'"
+
+val pref_suCommand = SuCommandPref(
     key = "dev-adv.suCommand",
-    summary = "the command used to elevate the shell to a 'root' shell (in our sense), the whole command must be a shell, reading commands from stdin and executing them in an elevated environment to be able to access the system and app data and execute some system commands like pm, if it fails there are also fallback commands (the default is one of them, also a simple su, see log for which one was used)",
-    defaultValue = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
-    onChanged = {
-        val pref = it as StringPref
-        pref.iconTint = if (validateSuCommand(pref.value))
+    //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
+    summary = suCommand_summary,
+    icon = Phosphor.Hash,
+    iconTint = Color.Gray,
+    defaultValue = suCommand_default,
+) {
+    val pref = it as SuCommandPref
+    if (pref.value == "")
+        pref.value = suCommand_default
+    if (pref.value != suCommand) {
+        if (!validateSuCommand(pref.value)) {
+            findSuCommand()
+            traceDebug { "findSuCommand: suCommand = $suCommand" }
+        }
+    }
+    pref.iconTint = if (isLikeRoot == true) {
+        if (pref.value == suCommand)
             Color.Green
         else
-            Color.Red
+            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+    } else {
+        Color.Red
     }
-)
+    pref.summary = suCommand_summary
+    traceDebug  { "summary: ${pref.summary}" }
+    traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
+    pref.dirty.value = true
+}
 
 val pref_libsuUseRootShell = BooleanPref(
     key = "dev-adv.libsuUseRootShell",
-    summary = "use root shell for libsu (just in case automatic detection fails, libsu should automatically fallback to a normal shell if 'su' command not available",
+    summary = """
+        start libsu shell as 'su' instead of 'sh' before suCommand elevates it
+        (as a paranoid fallback, in case 'sh' might not allow elevating for an unknown reason)
+        [needs restart]
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = true
 )
 
 val pref_libsuTimeout = IntPref(
     key = "dev-adv.libsuTimeout",
-    summary = "[seconds] timeout for libsu commands that produce outputs (extracting backups does not use a timeout!)",
-    entries = (10..300 step 20).toList(),
+    summary = "[seconds] timeout for libsu commands (does not affect the tar commands)",
+    entries = ((10..90 step 10) + (100..300 step 50)).toList(),
     defaultValue = 60
 )
 
 val pref_maxJobs = IntPref(
     key = "dev-adv.maxJobs",
     summary = "maximum number of jobs run concurrently (0 = default = numCores)[needs restart]",
-    entries = (0..10 * numCores).toList(),
+    entries = (0..1 * numCores).toList(),
     defaultValue = 0
 )
 
@@ -200,12 +318,6 @@ val pref_busyFadeTime = IntPref(
     defaultValue = 2000
 )
 
-val pref_hideBackupLabels = BooleanPref(
-    key = "dev-adv.hideBackupLabels",
-    summary = "speed up package list by hiding the backup data type icons (keeps the package type)",
-    defaultValue = false
-)
-
 val pref_cancelOnStart = BooleanPref(
     key = "dev-adv.cancelOnStart",
     summaryId = R.string.prefs_cancelonstart_summary,
@@ -232,13 +344,16 @@ val pref_useExactAlarm = BooleanPref(
 
 val pref_backupPauseApps = BooleanPref(
     key = "dev-adv.backupPauseApps",
-    summary = "pause apps during backups to avoid inconsistencies caused by ongoing file changes or other conflicts",
+    summary = """
+        pause apps during backups to avoid inconsistencies caused
+        by ongoing file changes or other conflicts (doesn't seem to have big benefits)
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = true
 )
 
 val pref_backupSuspendApps = BooleanPref(
     key = "dev-adv.backupSuspendApps",
-    summary = "additionally use pm suspend command to pause apps",
+    summary = "additionally use pm suspend command to pause apps (unfortunately not very useful, some disadvantages)",
     defaultValue = false,
     enableIf = { pref_backupPauseApps.value }
 )
@@ -313,7 +428,10 @@ val pref_cacheFileLists = BooleanPref(
 
 val pref_useNoteIcon = BooleanPref(
     key = "dev-alt.useNoteIcon",
-    summary = "use the icon instead of the big fat 'edit note' button",
+    summary = """
+        use icon instead of 'edit note' button and color note background
+        to emphasize the note instead of the always existent edit button
+        """.trimIndent().replace("\n", " ").trim(),
     defaultValue = false
 )
 
@@ -332,6 +450,12 @@ val pref_paranoidHousekeeping = BooleanPref(
 val pref_ignoreLockedInHousekeeping = BooleanPref(
     key = "dev-alt.ignoreLockedInHousekeeping",
     summary = "keep the configured number of unlocked backups, instead of also counting locked backups",
+    defaultValue = false
+)
+
+val pref_fullScreenBackground = BooleanPref(
+    key = "dev-alt.fullScreenBackground",
+    summary = "extend background (laser, version) to fullscreen",
     defaultValue = false
 )
 
@@ -376,8 +500,8 @@ val pref_versionOpacity = IntPref(
     key = "dev-alt.versionOpacity",
     summary = "opacity of version [percent]",
     entries = ((0..9 step 1) + (10..100 step 5)).toList(),
-    defaultValue = if (isRelease) 0 else 1
-    // invisible but can be seen when zooming
+    defaultValue = if (isRelease) 1 else 75
+    // invisible but can be seen with image processing
 )
 
 val pref_busyHitTime = IntPref(
@@ -385,6 +509,12 @@ val pref_busyHitTime = IntPref(
     summary = "time being busy after hitting the watchdog (ms)",
     entries = (busyTick..4000 step busyTick).toList(),
     defaultValue = 2000
+)
+
+val pref_lookForEmptyBackups = BooleanPref(
+    key = "dev-alt.lookForEmptyBackups",
+    summary = "scan for empty backups (slower refresh, especially remote)",
+    defaultValue = false
 )
 
 val pref_earlyEmptyBackups = BooleanPref(   //TODO hg42 to be removed
@@ -464,7 +594,10 @@ val pref_refreshAppInfoTimeout = IntPref(
 
 val pref_killThisApp = LaunchPref(
     key = "dev-fake.killThisApp",
-    summary = "terminate app, service and process, but leave the schedules(=alarms) intact (in contrast to force-close, where alarms are removed from the system)"
+    summary = """
+        terminate app, service and process, but leave the schedules(=alarms) intact
+        (in contrast to force-close, where alarms are removed from the system)
+        """.trimIndent().replace("\n", " ").trim(),
 ) {
     OABX.activity?.let { ActivityCompat.finishAffinity(it) }
     System.exit(0)

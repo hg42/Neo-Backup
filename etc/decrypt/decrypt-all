@@ -1,9 +1,29 @@
 #!/bin/sh
 
-password=${1:-no_password_given}
+password=${1}
 directory=$(realpath ${2:-.})
 
 cd $(dirname $0)
 
-pipenv --bare install
-pipenv --bare run python decrypt-all.py $password $directory
+if which -s uv; then
+
+  uv --quiet venv
+  uv --quiet pip sync requirements.txt
+  echo
+  uv --quiet run python decrypt-all.py $password $directory
+
+elif which -s pipenv; then
+
+  pipenv --bare lock
+  echo
+  pipenv --bare run python decrypt-all.py $password $directory
+
+else
+
+  echo "(maybe you should install a virtual environment manager, either uv or pipenv, see README.md)"
+  echo "assuming that packages in requirements.txt is already installed"
+  echo "e.g. a virtualenv is active and the packages installed"
+
+  python decrypt-all.py $password $directory
+
+fi

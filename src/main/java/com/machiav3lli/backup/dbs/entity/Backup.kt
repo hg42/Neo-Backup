@@ -26,6 +26,7 @@ import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.regexPackageFolder
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.getBackupRoot
@@ -290,6 +291,86 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
                 return null
             } catch (e: Throwable) {
                 logException(e, "file: ${propertiesFile.path} =\n$serialized", backTrace = false)
+                return null
+            }
+        }
+
+        fun createInvalidFrom(
+            directory: StorageFile,
+            propertiesFile: StorageFile? = null,
+            packageName: String? = null,
+            why: String? = null,
+        ): Backup? {
+            try {
+
+                val packageNameFixed = packageName ?: run {
+                    if (propertiesFile != null) {
+                        if (propertiesFile.name == BACKUP_INSTANCE_PROPERTIES_INDIR) {
+                            propertiesFile.parent?.name
+                        } else {
+                            val baseName = propertiesFile.name?.removeSuffix(".$PROP_NAME")
+                            baseName?.let { dirName ->
+                                propertiesFile.parent?.findFile(dirName)?.name
+                            }
+                        }
+                    } else {
+                        directory.name?.let { name ->
+                            if (regexPackageFolder.matches(name)) {
+                                name
+                            } else {
+                                regexPackageFolder.find(name)?.let { match ->
+                                    match.groups[0]?.value
+                                }
+                            }
+                        }
+                    }
+                } ?: ""
+
+                val backup = Backup(
+                    base = PackageInfo(
+                        packageName = "...$packageNameFixed",
+                        versionName = "INVALID" + if (why != null) ": $why" else "",
+                        versionCode = 0,
+                    ),
+                    backupDate = LocalDateTime.parse("2000-01-01T00:00:00"),
+                    hasApk = false,
+                    hasAppData = false,
+                    hasDevicesProtectedData = false,
+                    hasExternalData = false,
+                    hasObbData = false,
+                    hasMediaData = false,
+                    compressionType = null,
+                    cipherType = null,
+                    iv = null,
+                    cpuArch = "",
+                    permissions = emptyList(),
+                    persistent = false,
+                    note = "INVALID",
+                    size = 0,
+                )
+                backup.apply {
+                    file = propertiesFile
+                    dir = directory
+                    packageLabel = "? INVALID BACKUP"
+                    backupVersionCode = -1
+                    profileId = 0
+                    isSystem = false
+                }
+
+                return backup
+
+            } catch (e: Throwable) {
+                logException(e,
+                    "creating invalid backup item also failed for directory ${
+                        directory.path
+                    }${
+                        if (propertiesFile != null)
+                            " and file ${propertiesFile.path}"
+                        else
+                            ""
+                    }",
+                    backTrace = false
+                )
                 return null
             }
         }

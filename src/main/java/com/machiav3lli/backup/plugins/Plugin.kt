@@ -67,7 +67,7 @@ abstract class Plugin(val name: String, var file: File) {
 
         // add new plugin classes here, necessary to have all classes initialized
 
-        val pluginCompanions = mutableListOf<PluginCompanion>(
+        val pluginCompanions get() = mutableListOf<PluginCompanion>(
             SpecialFilesPlugin.Companion,
             InternalRegexPlugin.Companion,
             InternalShellScriptPlugin.Companion,
@@ -83,7 +83,7 @@ abstract class Plugin(val name: String, var file: File) {
             pluginCompanion: PluginCompanion,
             extensions: List<String>,
         ): Boolean {
-            tracePlugin { ("register ${pluginCompanion.name()} type: $type, extensions: $extensions") }
+            tracePlugin { "register ${pluginCompanion.name()} type: $type, extensions: $extensions" }
             pluginTypes[type] = pluginCompanion
             pluginExtension[type] = extensions.first()
             extensions.forEach {
@@ -110,7 +110,8 @@ abstract class Plugin(val name: String, var file: File) {
 
         private var plugins = mutableMapOf<String, Plugin>()
 
-        fun setPlugins(vararg args: Pair<String, Plugin>) { plugins = mutableMapOf(*args) }
+        fun setPlugins(pluginMap: Map<String, Plugin>) { plugins = pluginMap.toMutableMap() }
+        fun setPlugins(vararg args: Pair<String, Plugin>) { setPlugins(*args) }
 
         fun get(name: String) = plugins.get(name)
 
@@ -147,7 +148,9 @@ abstract class Plugin(val name: String, var file: File) {
 
         fun scan() {    // must be omnipotent
 
-            pluginCompanions.forEach { it.register() }
+            pluginCompanions.forEach {
+                it.register()
+            }
 
             synchronized(Plugin) {
                 scanned = false

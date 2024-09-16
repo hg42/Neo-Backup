@@ -18,12 +18,12 @@
 package com.machiav3lli.backup.utils
 
 import android.app.Activity
-import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.net.Uri
 import android.os.LocaleList
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
@@ -52,7 +52,6 @@ import com.machiav3lli.backup.THEME_DYNAMIC_DARK
 import com.machiav3lli.backup.THEME_DYNAMIC_LIGHT
 import com.machiav3lli.backup.THEME_LIGHT
 import com.machiav3lli.backup.THEME_SYSTEM_BLACK
-import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.items.ActionResult
 import com.machiav3lli.backup.traceDebug
@@ -82,6 +81,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.util.Locale
+import kotlin.system.exitProcess
 
 fun Context.setCustomTheme() {
     AppCompatDelegate.setDefaultNightMode(getThemeStyleX(styleTheme))
@@ -275,15 +275,31 @@ val secondaryColor
         else -> ArcticCyan
     }
 
-fun Context.restartApp() {
+fun Context.restartApp(data: String? = null) {
     Timber.w(
-        "restarting application"
+        "restarting application${
+            data?.let { " at $data" } ?: { "" } 
+        }"
     )
-    startActivity(
-        Intent.makeRestartActivityTask(
-            ComponentName(this, MainActivityX::class.java)
-        )
-    )
+    val context = this.applicationContext
+
+    context.packageManager
+        ?.getLaunchIntentForPackage(context.packageName)
+        ?.let { intent ->
+
+            // finish all activities
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+
+            // eventually start with navigation data
+            if (data != null)
+                intent.setData(Uri.parse(data))
+
+            context.startActivity(intent)
+
+            exitProcess(0)
+        }
+
+    exitProcess(99)
 }
 
 var recreateActivitiesJob: Job? = null

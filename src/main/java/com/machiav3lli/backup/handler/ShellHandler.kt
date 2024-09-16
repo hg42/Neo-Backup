@@ -19,6 +19,9 @@ package com.machiav3lli.backup.handler
 
 import android.content.Context
 import android.os.Build
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.text.isDigitsOnly
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addErrorCommand
@@ -26,6 +29,7 @@ import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.ShellHandler.Companion.splitCommand
 import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInfo
+import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.baseInfo
 import com.machiav3lli.backup.preferences.pref_libsuTimeout
 import com.machiav3lli.backup.preferences.pref_libsuUseRootShell
@@ -35,7 +39,6 @@ import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
-import com.topjohnwu.superuser.ShellUtils.fastCmd
 import com.topjohnwu.superuser.io.SuRandomAccessFile
 import de.voize.semver4k.Semver
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +59,24 @@ import java.util.concurrent.TimeUnit
 const val verKnown = "0.8.0 - 0.8.7"
 const val verBugDotDotDirHang = "0.8.3 - 0.8.6"
 const val verBugDotDotDirExtract = "0.8.0 - 0.8.0"  //TODO hg42 more versions?
+
+class FakeShellResult(
+    var aCode: Int,
+    val aOut: MutableList<String> = mutableListOf(),
+    val aErr: MutableList<String> = mutableListOf(),
+) : Shell.Result() {
+    override fun getOut(): MutableList<String> {
+        return aOut
+    }
+
+    override fun getErr(): MutableList<String> {
+        return aErr
+    }
+
+    override fun getCode(): Int {
+        return aCode
+    }
+}
 
 class ShellHandler {
 
@@ -165,10 +186,11 @@ class ShellHandler {
 
     init {
         Shell.enableVerboseLogging = isDebug
-        initLibSU()
-        needFreshShell(startup = true)
+        initPrivilegedShell()
 
-        baseInfo().forEach { Timber.i(it) }
+        runCatching {
+            baseInfo().forEach { Timber.i(it) }
+        }
 
         utilBoxes = mutableListOf<UtilBox>()
         try {
@@ -301,7 +323,8 @@ class ShellHandler {
     class ShellCommandFailedException(
         @field:Transient val shellResult: Shell.Result,
         val command: String,
-    ) : Exception()
+        cause: Throwable? = null,
+    ) : Exception(cause)
 
     class UnexpectedCommandResult(message: String, val shellResult: Shell.Result?) :
         Exception(message)
@@ -667,8 +690,7 @@ class ShellHandler {
                 "su command run to gain root    = $suCommand",
             )
 
-        var suCommand: String = "su"
-            private set
+        var suCommand by mutableStateOf("")
 
         val profileId: String get() = ShellCommands.currentProfile.toString()
 
@@ -742,67 +764,30 @@ class ShellHandler {
             return result
         }
 
-        fun checkCommand(command: String, check: (String) -> Boolean): Boolean {
-            try {
-                val result = fastCmd(command)
-                if (check(result))
-                    return true
-                else {
-                    Timber.i("check failed: $command")
-                }
-            } catch (e: Throwable) {
-                logException(e, what = "check failed: $command")
-            }
-            return false
-        }
+        val checkRootScript get() = InternalShellScriptPlugin.findScript("checkroot").toString()
 
-        fun checkRootFileAccess(): Boolean {
-            return checkCommand("echo \$ANDROID_DATA/user/${profileId}/*") {
-                it.trim().isNotEmpty()
-            }
-                    && checkCommand("echo \$ANDROID_DATA/app/*") {
-                it.trim().isNotEmpty()
-            }
-                    && checkCommand("echo \$ANDROID_ASSETS/*") {
-                it.trim().isNotEmpty()
-            }
-        }
+        fun checkRootEquivalent() = runAsRoot("sh '$checkRootScript'", throwFail = false).isSuccess
 
-        fun checkRootPermissions(): Boolean {
-            return checkCommand("id -u") { it.toInt() == 0 }
-        }
-
-        fun checkRootEquivalent() = checkRootFileAccess() && checkRootPermissions()
-
-        var hasRootFileAccess: Boolean? = null
-            get() {
-                if (field == null)
-                    field = checkRootFileAccess()
-                return field ?: false
-            }
-
-        var hasRootPermissions: Boolean? = null
-            get() {
-                if (field == null)
-                    field = checkRootPermissions()
-                return field ?: false
-            }
+        var checkedCommand: String = ""
 
         var isLikeRoot: Boolean? = null
             get() {
-                if (field == null)
+                if (field == null || suCommand != checkedCommand) {
                     field = checkRootEquivalent()
+                    checkedCommand = suCommand
+                }
                 return field ?: false
             }
 
         class ShellInit : Shell.Initializer() {
             override fun onInit(context: Context, shell: Shell): Boolean {
-                val result = shell.newJob()
-                    .add(suCommand)
+                var command = if (suCommand == "") "su" else suCommand
+                var result = shell.newJob()
+                    .add(command)
                     .to(mutableListOf<String>(), mutableListOf<String>())
                     .exec()
                 if (result.isSuccess) {
-                    Timber.i("suCommand = $suCommand")
+                    Timber.i("suCommand = $suCommand => ok")
                     return true
                 }
                 Timber.w(
@@ -818,82 +803,108 @@ class ShellHandler {
                             ""
                     }"
                 )
+                // fallback
+                command = "sh"
+                result = shell.newJob()
+                    .add(command)
+                    .to(mutableListOf<String>(), mutableListOf<String>())
+                    .exec()
+                if (result.isSuccess) {
+                    Timber.i("fallback shell '$command' => ok")
+                    return true
+                }
                 return false
             }
         }
 
+        fun initLibSU() {
+            val builder = Shell.Builder.create()
+                .setTimeout(pref_libsuTimeout.value.toLong())
+                .setInitializers(ShellInit::class.java)
+            if (!pref_libsuUseRootShell.value)
+            // we add our own suCommand to elevate privileges, so start with a simple shell
+                builder.setFlags(Shell.FLAG_NON_ROOT_SHELL)
+            // could be used instead of toybox, but busybox does not provide all we need
+            //.setInitializers(BusyBoxInstaller::class.java)
+            Shell.setDefaultBuilder(builder)
+        }
+
         fun tryGainAccessCommand(): Boolean {
             try {
-                val builder = Shell.Builder.create()
-                    .setTimeout(pref_libsuTimeout.value.toLong())
-                    .setInitializers(ShellInit::class.java)
-                if (!pref_libsuUseRootShell.value)
-                    builder.setFlags(Shell.FLAG_NON_ROOT_SHELL)    // we add our own suCommands
-                //.setInitializers(BusyBoxInstaller::class.java)
-                Shell.setDefaultBuilder(builder)
-                needFreshShell(true)
+                needFreshShell()
                 if (checkRootEquivalent())
                     return true
             } catch (e: Throwable) {
-                logException(e, what = "$ $suCommand")
+                logException(e, what = "suCommand: $suCommand")
             }
-            Shell.getCachedShell()?.let {
-                if (it.isAlive)
-                    it.waitAndClose(0L, TimeUnit.SECONDS)
-            }
+            releaseShell(trace = false)
             return false
         }
 
         fun validateSuCommand(command: String): Boolean {
-            val old = suCommand
             try {
                 Timber.i("validateSuCommand: $command")
                 suCommand = command
                 if (tryGainAccessCommand()) {
                     return true
                 }
-            } catch(e: Throwable) {
-                logException(e, what = "$ $suCommand")
+            } catch (e: Throwable) {
+                logException(e, what = "suCommand: $suCommand")
             }
-            suCommand = old
             return false
         }
 
-        fun initLibSU() {
-            for (command in listOfNotNull(
-                if (pref_suCommand.value != "") pref_suCommand.value else null,
+        fun findSuCommand(command: String? = null): String {
+            for (tryCommand in listOfNotNull(
+                if (command == "") null else command,
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
                 "su",
                 "/system/bin/su",
                 "sh"
             )) {
-                if (validateSuCommand(command))
-                    return
+                if (validateSuCommand(tryCommand))
+                    return suCommand
             }
-            //suCommand = ""  // setDefaultBuilder would be missing here
+            // fallback to simple libsu
+            suCommand = ""
+            return suCommand
         }
 
-        fun needFreshShell(
-            startup: Boolean = false,
-        ): Shell {
-            val shellBefore = Shell.getCachedShell()
-            if (shellBefore != null && shellBefore.isAlive) {
-                if (startup)
-                    Timber.e("ERROR: previous cached shell found, terminating it ($shellBefore)")
-                else
-                    traceDebug { "previous cached shell found, trying to terminate it ($shellBefore)" }
-                shellBefore.waitAndClose(0L, TimeUnit.SECONDS)
+        fun initPrivilegedShell() {
+            initLibSU()
+            findSuCommand(pref_suCommand.value)
+        }
+
+        fun releaseShell(trace: Boolean = true): Shell? {
+            return try {
+                val shell = Shell.getCachedShell()
+                if (shell != null
+                //&& shell.isAlive
+                ) {
+                    traceDebug { "previous cached shell found, trying to terminate it ($shell)" }
+                    shell.waitAndClose(0L, TimeUnit.SECONDS)
+                }
+                return shell
+            } catch (e: Throwable) {
+                logException(e, what = "releaseShell")
+                null
             }
-            Shell.cmd("true").exec()
-            val shellAfter = Shell.getShell()
-            if (shellBefore != null) {
-                if (shellAfter === shellBefore)
-                    Timber.e("ERROR: shell not refreshed! ($shellBefore vs $shellAfter)")
-                else
-                    traceDebug { "new shell created ($shellAfter)" }
+        }
+
+        fun needFreshShell() {
+            try {
+                val shellBefore = releaseShell()
+                val shellAfter = Shell.getShell()
+                if (shellBefore != null) {
+                    if (shellAfter === shellBefore)
+                        Timber.e("ERROR: shell not refreshed! ($shellBefore vs $shellAfter)")
+                    else
+                        traceDebug { "new shell created ($shellAfter)" }
+                }
+            } catch (e: Throwable) {
+                logException(e, what = "needFreshShell")
             }
-            return shellAfter
         }
 
         @Throws(ShellCommandFailedException::class)
@@ -907,15 +918,22 @@ class ShellHandler {
             // Shell.Config.setFlags(Shell.FLAG_REDIRECT_STDERR);
             // stderr is used for logging, so it's better not to call an application that does that
             // and keeps quiet
-            Timber.d("Running Command: $command")
-            val stdout: List<String> = arrayListOf()
-            val stderr: List<String> = arrayListOf()
-            val result = Shell.cmd(command).to(stdout, stderr).exec()
-            Timber.d("Command(s) $command ended with ${result.code}")
-            if (!result.isSuccess) {
+            var result: Shell.Result = FakeShellResult(-1)
+            try {
+                Timber.d("Running Command: $command")
+                val stdout: List<String> = arrayListOf()
+                val stderr: List<String> = arrayListOf()
+                result = Shell.cmd(command).to(stdout, stderr).exec()
+                Timber.d("Command(s) $command ended with ${result.code}")
+                if (!result.isSuccess) {
+                    addErrorCommand(command)
+                    if (throwFail)
+                        throw ShellCommandFailedException(result, command)
+                }
+            } catch (e: Throwable) {
                 addErrorCommand(command)
                 if (throwFail)
-                    throw ShellCommandFailedException(result, command)
+                    throw ShellCommandFailedException(result, command = command, cause = e)
             }
             return result
         }
@@ -933,31 +951,36 @@ class ShellHandler {
 
             return runBlocking(Dispatchers.IO) {
 
-                val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
+                runCatching {
 
-                val shellIn = process.outputStream
-                //val shellOut = process.inputStream
-                val shellErr = process.errorStream
+                    val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
 
-                val errAsync = async(Dispatchers.IO) {
-                    shellErr.readBytes().decodeToString()
+                    val shellIn = process.outputStream
+                    //val shellOut = process.inputStream
+                    val shellErr = process.errorStream
+
+                    val errAsync = async(Dispatchers.IO) {
+                        shellErr.readBytes().decodeToString()
+                    }
+
+                    shellIn.write("$command\n".encodeToByteArray())
+
+                    inStream.copyTo(shellIn, 65536)
+                    shellIn.close()
+
+                    val err = errAsync.await()
+                    withContext(Dispatchers.IO) { process.waitFor(10, TimeUnit.SECONDS) }
+                    if (process.isAlive)
+                        process.destroyForcibly()
+                    val code = process.exitValue()
+
+                    if (code != 0)
+                        addErrorCommand(command)
+
+                    (code to err)
+                }.getOrElse {
+                    (-1 to (it.message ?: "unknown error"))
                 }
-
-                shellIn.write("$command\n".encodeToByteArray())
-
-                inStream.copyTo(shellIn, 65536)
-                shellIn.close()
-
-                val err = errAsync.await()
-                withContext(Dispatchers.IO) { process.waitFor(10, TimeUnit.SECONDS) }
-                if (process.isAlive)
-                    process.destroyForcibly()
-                val code = process.exitValue()
-
-                if (code != 0)
-                    addErrorCommand(command)
-
-                (code to err)
             }
         }
 
@@ -969,34 +992,38 @@ class ShellHandler {
 
             return runBlocking(Dispatchers.IO) {
 
-                val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
+                runCatching {
 
-                val shellIn = process.outputStream
-                val shellOut = process.inputStream
-                val shellErr = process.errorStream
+                    val process = Runtime.getRuntime().exec(splitCommand(suCommand).toTypedArray())
 
-                val errAsync = async(Dispatchers.IO) {
-                    shellErr.readBytes().decodeToString()
+                    val shellIn = process.outputStream
+                    val shellOut = process.inputStream
+                    val shellErr = process.errorStream
+
+                    val errAsync = async(Dispatchers.IO) {
+                        shellErr.readBytes().decodeToString()
+                    }
+
+                    shellIn.write(command.encodeToByteArray())
+                    shellIn.close()
+
+                    shellOut.copyTo(outStream, 65536)
+                    outStream.flush()
+
+                    val err = errAsync.await()
+                    withContext(Dispatchers.IO) {
+                        process.waitFor(10, TimeUnit.SECONDS)
+                    }
+                    if (process.isAlive)
+                        process.destroyForcibly()
+                    val code = process.exitValue()
+                    if (code != 0)
+                        addErrorCommand(command)
+
+                    (code to err)
+                }.getOrElse {
+                    (-1 to (it.message ?: "unknown error"))
                 }
-
-                shellIn.write(command.encodeToByteArray())
-                shellIn.close()
-
-                shellOut.copyTo(outStream, 65536)
-                outStream.flush()
-
-                val err = errAsync.await()
-                withContext(Dispatchers.IO) {
-                    process.waitFor(10, TimeUnit.SECONDS)
-                }
-                if (process.isAlive)
-                    process.destroyForcibly()
-                val code = process.exitValue()
-
-                if (code != 0)
-                    addErrorCommand(command)
-
-                (code to err)
             }
         }
 

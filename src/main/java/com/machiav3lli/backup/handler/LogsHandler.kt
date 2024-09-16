@@ -224,14 +224,14 @@ class LogsHandler {
             e: Throwable,
             what: Any? = null,
             backTrace: Boolean = false,
-            prefix: String? = null,
+            prefix: String = "",
             unhandled: Boolean = false,
         ) {
             var whatStr = ""
             if (what != null) {
                 whatStr = what.toString()
                 whatStr = if (whatStr.contains("\n") || whatStr.length > 20)
-                    "{\n$whatStr\n}\n"
+                    "{\n$whatStr\n}"
                 else
                     "$whatStr : "
             }

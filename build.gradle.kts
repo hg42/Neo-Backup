@@ -28,6 +28,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    //alias(libs.plugins.kotlin.scripting)
 }
 
 data class InfoFromGit(
@@ -196,6 +197,8 @@ val neobackup_keystore: String by rootProject.extra
 val neobackup_keystorepass: String by rootProject.extra
 val neobackup_keypass: String by rootProject.extra
 
+val jvmVersion = JavaVersion.VERSION_17
+
 android {
     namespace = "com.machiav3lli.backup"
 
@@ -335,19 +338,22 @@ android {
         compose = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = jvmVersion
+        targetCompatibility = jvmVersion
     }
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = compileOptions.sourceCompatibility.toString()
-            freeCompilerArgs = listOf("-Xjvm-default=all")
-
+    kotlin {
+        jvmToolchain(jvmVersion.toString().toInt())
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-Xjvm-default=all",
+                //"-Xuse-fir-lt=false",   // Scripts are not yet supported with K2 in LightTree mode
+                //"-Xallow-any-scripts-in-source-roots",
+            )
             if (project.findProperty("enableComposeCompilerReports") == "true") {
                 val metricsDir =
                     "${project.layout.buildDirectory.asFile.get().absolutePath}/compose_metrics"
                 println("--- enableComposeCompilerReports -> $metricsDir")
-                freeCompilerArgs += listOf(
+                freeCompilerArgs.addAll(
                     "-P",
                     "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$metricsDir",
                     "-P",
@@ -449,9 +455,9 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
     //---------------------------------------- hg42
     // can only be enabled on demand, otherwise it conflicts with compilation
-    // TODO hg42 without thew library the .main.kts script still works, but syntax checking is not working
-    // TODO hg42 and ide complains about script at wrong place
+    // TODO hg42 without the library the .main.kts script still works, but syntax checking is not working
     //implementation(libs.kotlin.main.kts)
+    implementation(kotlin("script-runtime"))    // for intellisense in kts scripts
 }
 
 // using a task as a preBuild dependency instead of a function that takes some time insures that it runs
@@ -481,4 +487,13 @@ tasks.withType<Test> {
     useJUnit() // we still use junit4
     // useTestNG()
     // useJUnitPlatform()
+}
+
+
+// Exclude (non-gradle) kts scripts from compilation
+tasks.withType<KotlinCompile>().configureEach {
+    setSource(sources.filterNot {
+        //it.name.endsWith(".generator.kts")
+        it.extension == "kts"
+    })
 }

@@ -636,7 +636,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
     }
 
     @Throws(RestoreFailedException::class, CryptoSetupException::class)
-    private fun genericRestoreFromArchive(
+    fun genericRestoreFromArchive(
         dataType: String,
         archive: StorageFile,
         targetPath: String,

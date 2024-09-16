@@ -4,7 +4,6 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,29 +13,34 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.machiav3lli.backup.activities.MainActivityX
 import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import tests.onNodeWait
 import tests.onNodeWaitOrAssert
 import timber.log.Timber
 
+@RunWith(AndroidJUnit4::class)
 class Test_SelectionSaveLoad {
 
-    @Rule
-    @JvmField
-    var test: ComposeContentTestRule = createAndroidComposeRule<MainActivityX>()
+    @get:Rule
+    //var test = createAndroidComposeRule<MainActivityX>()
+    var test = createAndroidComposeRule(MainActivityX::class.java)
+    //val test = createComposeRule()
 
     @Before
     fun setUp() {
         //test.setContent {  }
-        test.onRoot().printToLog("root")
+        //test.onRoot().printToLog("root")
     }
 
     @Test
     fun test_findList() {
+        test.onRoot().printToLog("before")
         test.waitForIdle()
         val column = test.onNodeWait(hasTestTag("VerticalItemList.Column"), 10000)
         column?.printToLog("column") ?: Timber.d("----------", "ERROR")
@@ -74,5 +78,6 @@ class Test_SelectionSaveLoad {
             val count = test.onAllNodesWithText(selectionName).fetchSemanticsNodes().size
             assertEquals("menu entries", count, 1)
         }
+        test.onRoot().printToLog("after")
     }
 }

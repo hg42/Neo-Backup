@@ -6,6 +6,7 @@ import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -36,12 +38,10 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -50,13 +50,17 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.machiav3lli.backup.ERROR_PREFIX
@@ -64,6 +68,7 @@ import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.endBusy
+import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.PREFS_BACKUP_FILE
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
@@ -87,16 +92,20 @@ import com.machiav3lli.backup.pref_maxLogLines
 import com.machiav3lli.backup.pref_trace
 import com.machiav3lli.backup.preferences.DevPrefGroups
 import com.machiav3lli.backup.preferences.LogsPage
+import com.machiav3lli.backup.preferences.Terminal
 import com.machiav3lli.backup.preferences.TerminalButton
-import com.machiav3lli.backup.preferences.TerminalPage
 import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesFromSerialized
@@ -114,7 +123,149 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 
+
+@Composable
+fun TextInput(
+    text: TextFieldValue,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    trailingIcon: (@Composable () -> Unit)? = null,
+    editOnClick: Boolean = false,
+    submitEachChange: Boolean = false,
+    onSubmit: (TextFieldValue) -> Unit = {},
+) {
+    val input = remember(text) { mutableStateOf(text) }
+    var editing by remember { mutableStateOf(!editOnClick) }
+    val focusRequester = remember { FocusRequester() }
+
+    fun submit(final: Boolean = true) {
+        onSubmit(input.value)
+        if (editOnClick && final)
+            editing = false
+    }
+
+    if (editing) {
+
+        OutlinedTextField(
+            modifier = modifier
+                .testTag("input")
+                .focusRequester(focusRequester)
+                .onFocusChanged { focusState ->
+                    if (editOnClick)
+                        editing = focusState.isFocused
+                },
+            value = input.value,
+            placeholder = { Text(text = placeholder, color = Color.Gray) },
+            singleLine = true,
+            trailingIcon = trailingIcon ?: {
+                Icon(
+                    imageVector = Phosphor.Check,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .clickable {
+                            submit()
+                        }
+                )
+            },
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    submit()
+                }
+            ),
+            keyboardOptions = KeyboardOptions(
+                autoCorrect = false
+            ),
+            onValueChange = {
+                if (it.text.contains("\n")) {
+                    input.value = it.copy(text = it.text.replace("\n", ""))
+                    if (editOnClick)
+                        editing = false
+                    submit()
+                } else
+                    input.value = it
+                if (submitEachChange)
+                    submit(false)
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
+    } else {
+
+        val fieldPadding = 16.dp
+
+        Row {
+            Text(
+                text = text.text,
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .weight(1f)
+                    .clickable {
+                        editing = true
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Icon(
+                modifier = Modifier
+                    //.padding(vertical = fieldPadding, horizontal = 4.dp)
+                    .align(Alignment.CenterVertically)
+                    .clickable {
+                        editing = true
+                    },
+                imageVector = Phosphor.Pencil,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.flatten()
+            )
+            Spacer(modifier = Modifier.width(fieldPadding))
+        }
+
+    }
+}
+
+@Composable
+fun TextInput(
+    text: String,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    trailingIcon: @Composable () -> Unit = {},
+    editOnClick: Boolean = false,
+    submitEachChange: Boolean = false,
+    onSubmit: (String) -> Unit = {},
+) {
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(text)) }
+
+    TextInput(
+        text = textFieldValue,
+        modifier = modifier,
+        placeholder = placeholder,
+        trailingIcon = trailingIcon,
+        editOnClick = editOnClick,
+        submitEachChange = submitEachChange,
+    ) {
+        textFieldValue = it
+        onSubmit(it.text)
+    }
+}
+
+@Preview
+@Composable
+fun TextInputPreview() {
+
+    var text by remember { mutableStateOf("input text") }
+    var longtext by remember { mutableStateOf("input text which is too long for the space and causes wrapping which oushes the icon out") }
+
+    Column {
+        TextInput(text = text, editOnClick = false) { text = it }
+        TextInput(text = text, editOnClick = true) { text = it }
+        TextInput(text = longtext, editOnClick = true) { text = it }
+    }
+}
+
+
 var devToolsTab = mutableStateOf("")
+val devToolsSearch = mutableStateOf(TextFieldValue(""))
 
 val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
     "SUPPORT" to { DevSupportTab() },
@@ -122,7 +273,7 @@ val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
     "log" to { DevLogTab() },
     "infolog" to { DevInfoLogTab() },
     "tools" to { DevToolsTab() },
-    "term" to { TerminalPage() },
+    "term" to { DevTerminalTab() },
     "devsett" to { DevSettingsTab() },
     "plugins" to { DevPluginsTab() },
 ) + if (isDebug) listOf<Pair<String, @Composable () -> Any>>(
@@ -164,61 +315,40 @@ fun DevLogTab() {
 @Composable
 fun DevSettingsTab() {
 
+    var search by devToolsSearch
     val scroll = rememberScrollState(0)
-    var search by remember { mutableStateOf("") }
-
-    val color = MaterialTheme.colorScheme.onSurface
 
     Column {
-        OutlinedTextField(
-            value = search,
+        TextInput(
+            text = search,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
-            singleLine = true,
-            //placeholder = { Text(text = "search", color = Color.Gray) },
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = color,
-                unfocusedTextColor = color,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                unfocusedTrailingIconColor = color,
-                focusedTrailingIconColor = color, //if (search.length > 0) Color.Transparent else overlayColor
-            ),
-            textStyle = MaterialTheme.typography.bodyMedium,
+            placeholder = "search",
             trailingIcon = {
-                if (search.isEmpty())
+                if (search.text.isEmpty())
                     Icon(
                         imageVector = Phosphor.MagnifyingGlass,
                         contentDescription = "search",
-                        modifier = Modifier.size(ICON_SIZE_SMALL)
                         //tint = tint,
-                        //contentDescription = description
+                        modifier = Modifier.size(ICON_SIZE_SMALL)
                     )
                 else
                     Icon(
                         imageVector = Phosphor.X,
-                        contentDescription = "search",
+                        contentDescription = "clear",
+                        //tint = tint,
                         modifier = Modifier
                             .size(ICON_SIZE_SMALL)
-                            .clickable { search = "" }
-                        //tint = tint,
-                        //contentDescription = description,
+                            .clickable {
+                                search =
+                                    TextFieldValue("")     // keep on it's own line for better breakpoints
+                            }
                     )
             },
-            keyboardOptions = KeyboardOptions(
-                autoCorrect = false,
-                //imeAction = ImeAction.Done
-            ),
-            //keyboardActions = KeyboardActions(
-            //    onDone = {
-            //        todo
-            //        search = ""
-            //    }
-            //),
-            onValueChange = {
-                search = it
+            submitEachChange = true,
+            onSubmit = {
+                search = it                     // keep in it's own line for better breakpoints
             }
         )
 
@@ -227,14 +357,14 @@ fun DevSettingsTab() {
                 .verticalScroll(scroll)
                 .weight(1f)
         ) {
-            if (search.isEmpty())
+            if (search.text.isEmpty())
                 DevPrefGroups()
             else
                 PrefsGroup(
                     prefs =
                     Pref.prefGroups.values.flatten()
                         .filter {
-                            it.key.contains(search, ignoreCase = true)
+                            it.key.contains(search.text, ignoreCase = true)
                                     && it.group !in listOf("persist", "kill")
                         }.toPersistentList()
                 )
@@ -254,24 +384,11 @@ fun DevDialog(
         Surface(
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             dialogUI()
         }
     }
-}
-
-@Composable
-fun TextInput(name: TextFieldValue, onNameChange: (TextFieldValue) -> Unit) {
-    OutlinedTextField(
-        value = name,
-        onValueChange = onNameChange,
-        placeholder = { Text("Name") },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        textStyle = LocalTextStyle.current.copy(fontSize = 18.sp)
-    )
 }
 
 @Composable
@@ -333,7 +450,8 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
     }
 
     fun delete() {
-        editPlugin?.delete()
+        if (editPlugin?.isBuiltin == false)
+            editPlugin?.delete()
         onSubmit(null)
     }
 
@@ -387,14 +505,15 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                     submit()
                 }
             }
-            TerminalButton("Delete") {
-                delete()
-            }
+            if (editPlugin?.isBuiltin == false)
+                TerminalButton("Delete") {
+                    delete()
+                }
             TerminalButton("Cancel") {
                 cancel()
             }
         }
-        TextInput(name) {
+        TextInput(name, placeholder = "Name") {
             name = it
         }
         Text(
@@ -420,9 +539,9 @@ fun PluginItem(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.outlinedCardColors(
             containerColor = if (plugin.isBuiltin)
-                MaterialTheme.colorScheme.surfaceContainerHighest
+                MaterialTheme.colorScheme.surfaceContainer
             else
-                MaterialTheme.colorScheme.surfaceContainerLow
+                MaterialTheme.colorScheme.surfaceContainerHighest
         ),
         modifier = Modifier.clickable {
             onEdit(plugin)
@@ -542,9 +661,13 @@ fun PluginsPagePreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
     Plugin.setPlugins(
-        "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
-        "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
-        "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),
+        listOf(
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files",
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files",
+            "/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files",
+        ).mapIndexed { index, path ->
+            "test_files$index" to SpecialFilesPlugin(File(path))
+        }.toMap()
     )
 
     PluginsPage()
@@ -755,6 +878,12 @@ val pref_openBackupDir = LaunchPref(
 }
 
 @Composable
+fun DevTerminalTab() {
+
+    Terminal()
+}
+
+@Composable
 fun DevToolsTab() {
 
     val scroll = rememberScrollState(0)
@@ -831,13 +960,22 @@ fun DevSupportTab() {
 @Composable
 fun DevTools(
     expanded: MutableState<Boolean>,
+    goto: String? = null,
+    search: String? = null,
 ) {
+    var tab by devToolsTab
+
     LaunchedEffect(true) {
+        goto?.let {
+            devToolsTab.value = goto
+        }
+        search?.let {
+            devToolsSearch.value = TextFieldValue(search)
+        }
         if (devToolsTab.value.isEmpty())
             devToolsTab.value = "devsett"
     }
 
-    var tab by devToolsTab
     val tempShowInfo = remember { mutableStateOf(false) }
     val showInfo = OABX.showInfoLog || tempShowInfo.value
 
@@ -847,92 +985,95 @@ fun DevTools(
         shape = AbsoluteRoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Row(modifier = Modifier
-                //.wrapContentSize()
-                .padding(8.dp, 4.dp, 8.dp, 0.dp)
-                .combinedClickable(
-                    onClick = { expanded.value = false },
-                    onLongClick = { tab = "" }
-                )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .wrapContentHeight()
-                ) {
-                    TitleOrInfoLog(
-                        title = "DevTools",
-                        showInfo = showInfo,
-                        tempShowInfo = tempShowInfo,
-                        modifier = Modifier
-                            .wrapContentHeight()
-                            .combinedClickable(
-                                onClick = {
-                                    OABX.showInfoLog = OABX.showInfoLog.not()
-                                    if (OABX.showInfoLog.not())
-                                        tempShowInfo.value = false
-                                },
-                                onLongClick = {
-                                }
-                            )
-                    )
-                }
-                //Text(text = tab, modifier = Modifier)
-                RefreshButton(hideIfNotBusy = true)
-                TerminalButton(
-                    "          close          "
-                ) {
-                    expanded.value = false
-                }
-            }
+        InnerBackground {
 
-            @Composable
-            fun TabButton(name: String) {
-                TerminalButton(
-                    text = name,
-                    important = (tab == name),
-                ) {
-                    if (tab != name)
-                        tab = name
-                    else {
-                        tab = ""
-                        MainScope().launch {
-                            yield()
-                            tab = name
-                        }
-                    }
-                }
-            }
-
-            FlowRow(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 8.dp,
-                        top = 0.dp,
-                        end = 8.dp,
-                        bottom = 4.dp
-                    )
+                    .fillMaxSize()
+            ) {
+                Row(modifier = Modifier
+                    //.wrapContentSize()
+                    .padding(8.dp, 4.dp, 8.dp, 0.dp)
                     .combinedClickable(
                         onClick = { expanded.value = false },
                         onLongClick = { tab = "" }
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                devToolsTabs.forEach {
-                    TabButton(it.first)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentHeight()
+                            .background(Color.Transparent)
+                    ) {
+                        TitleOrInfoLog(
+                            title = "DevTools",
+                            showInfo = showInfo,
+                            tempShowInfo = tempShowInfo,
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .combinedClickable(
+                                    onClick = {
+                                        OABX.showInfoLog = OABX.showInfoLog.not()
+                                        if (OABX.showInfoLog.not())
+                                            tempShowInfo.value = false
+                                    },
+                                    onLongClick = {
+                                    }
+                                )
+                        )
+                    }
+                    //Text(text = tab, modifier = Modifier)
+                    RefreshButton(hideIfNotBusy = true)
+                    TerminalButton(
+                        "          close          "
+                    ) {
+                        expanded.value = false
+                    }
                 }
-            }
 
-            devToolsTabs.find { it.first == tab }?.let {
-                it.second()
+                @Composable
+                fun TabButton(name: String) {
+                    TerminalButton(
+                        text = name,
+                        important = (tab == name),
+                    ) {
+                        if (tab != name)
+                            tab = name
+                        else {
+                            tab = ""
+                            MainScope().launch {
+                                yield()
+                                tab = name
+                            }
+                        }
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = 8.dp,
+                            top = 0.dp,
+                            end = 8.dp,
+                            bottom = 4.dp
+                        )
+                        .combinedClickable(
+                            onClick = { expanded.value = false },
+                            onLongClick = { tab = "" }
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    devToolsTabs.forEach {
+                        TabButton(it.first)
+                    }
+                }
+
+                devToolsTabs.find { it.first == tab }?.let {
+                    it.second()
+                }
             }
         }
     }
@@ -946,9 +1087,13 @@ fun DevToolsPreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
     Plugin.setPlugins(
-        "test_files1" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files")),
-        "test_files2" to SpecialFilesPlugin(File("/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files")),
-        "test_ext" to SpecialFilesPlugin(File("/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files")),
+        listOf(
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app1.special_files",
+            "/data/user/0/com.machiav3lli.backup.hg42/files/plugin/test_app2.special_files",
+            "/storage/emulated/Android/data/com.machiav3lli.backup.hg42/files/plugin/test_ext.special_files",
+        ).mapIndexed { index, path ->
+            "test_files$index" to SpecialFilesPlugin(File(path))
+        }.toMap()
     )
 
     val expanded = remember { mutableStateOf(true) }
@@ -966,6 +1111,9 @@ fun DevToolsPreview() {
             TerminalButton("count") {
                 count++
                 OABX.addInfoLogText("line $count")
+            }
+            TerminalButton("busy") {
+                hitBusy(5000)
             }
         }
         if (expanded.value)

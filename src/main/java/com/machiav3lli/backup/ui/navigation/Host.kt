@@ -24,8 +24,8 @@ import com.machiav3lli.backup.pages.MainPage
 import com.machiav3lli.backup.pages.PermissionsPage
 import com.machiav3lli.backup.pages.PrefsPage
 import com.machiav3lli.backup.pages.WelcomePage
-import com.machiav3lli.backup.preferences.ExportsPage
 import com.machiav3lli.backup.preferences.LogsPage
+import com.machiav3lli.backup.preferences.SchedulesExportsPage
 import com.machiav3lli.backup.preferences.TerminalPage
 import com.machiav3lli.backup.preferences.persist_beenWelcomed
 
@@ -40,22 +40,21 @@ fun MainNavHost(
         startDestination = if (persist_beenWelcomed.value) NavItem.Permissions.destination
         else NavItem.Welcome.destination
     ) {
-        slideInComposable(NavItem.Lock.destination) {
+        slideInComposable(route = NavItem.Lock.destination) {
             LockPage { OABX.main?.resumeMain() }
         }
-        slideInComposable(NavItem.Welcome.destination) {
+        slideInComposable(route = NavItem.Welcome.destination) {
             WelcomePage()
         }
         slideInComposable(route = NavItem.Permissions.destination) {
             PermissionsPage()
         }
-        slideInComposable(NavItem.Main.destination) {
+        slideInComposable(route = NavItem.Main.destination) {
             MainPage(
                 navController = navController
             )
         }
-        slideInComposable(
-            "${NavItem.Prefs.destination}?page={page}",
+        slideInComposable(route = "${NavItem.Prefs.destination}?page={page}",
             args = listOf(
                 navArgument("page") {
                     type = NavType.IntType
@@ -72,7 +71,7 @@ fun MainNavHost(
         }
         slideInComposable(NavItem.Exports.destination) {
             OABX.main?.exportsViewModel?.let { viewModel ->
-                ExportsPage(viewModel)
+                SchedulesExportsPage(viewModel)
             }
         }
         slideInComposable(NavItem.Logs.destination) {

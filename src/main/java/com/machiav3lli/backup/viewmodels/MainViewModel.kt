@@ -267,7 +267,7 @@ class MainViewModel(
                                 .any { it.contains(search, ignoreCase = true) }
                             )
                 }
-                .applyFilter(filter, OABX.main!!)
+                .applyFilter(filter, OABX.context)
 
             traceFlows { "***** filtered ->> ${list.size}" }
 
