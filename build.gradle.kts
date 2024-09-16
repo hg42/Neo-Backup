@@ -18,6 +18,7 @@
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -489,6 +490,73 @@ tasks.withType<Test> {
     // useJUnitPlatform()
 }
 
+
+// generators
+
+if (false) {
+    // use with sdkman: sdk install kotlin
+
+    val sourceDirs =
+        android.sourceSets.map { it.java.srcDirs.map { if (it.name == "java") it.parentFile else it } }
+            .flatten()
+    println("sourceDirs: ${sourceDirs.map { "${it.javaClass.simpleName}: ${it.absolutePath}" }}")
+
+    fun findGeneratorKtsFiles(dir: File): List<File> {
+        return dir.walkTopDown()
+            .filter { it.extension == "kts" }
+            .filter { it.name.endsWith(".generator.kts") }
+            .toList()
+    }
+
+    val generatorFiles = sourceDirs.map { findGeneratorKtsFiles(it) }.flatten()
+
+    val kotlinRunner = "kotlin"
+
+    println("kotlinRunner: $kotlinRunner")
+
+    println()
+
+    generatorFiles.forEach { generatorFile ->
+        val baseName = generatorFile.nameWithoutExtension.removeSuffix(".generator")
+
+        val defFile = File(generatorFile.parentFile, "$baseName.def")
+        val generatedKtFile = File(generatorFile.parentFile, "$baseName.kt")
+        val taskName = "generate${baseName}Kt"
+
+        println("$taskName: ${generatorFile.relativeTo(rootDir)} -> ${generatedKtFile.name}")
+
+        tasks.register(taskName, Exec::class.java) {
+            if (defFile.exists()) {
+                inputs.file(defFile)
+            }
+            outputs.file(generatedKtFile)
+
+            //commandLine("gradle", "-q", "-b", generatorFile.absolutePath)
+            //commandLine("kotlin", generatorFile.absolutePath)
+            //commandLine(
+            //    org.jetbrains.kotlin.cli.jvm.K2JVMCompiler::class.java.canonicalName,
+            //    "-script",
+            //    generatorFile.absolutePath
+            //)
+            //commandLine(kotlinCompiler, generatorFile.absolutePath)
+
+            doLast {
+                exec {
+                    executable(kotlinRunner)
+                    args(generatorFile.absolutePath)
+                }
+                println("Generated ${generatedKtFile.absolutePath}")
+            }
+        }.configure {
+            // Ensure this task runs before Kotlin compilation
+            tasks.named("compileKotlin") {
+                dependsOn(this@configure)
+            }
+        }
+    }
+
+    println()
+}
 
 // Exclude (non-gradle) kts scripts from compilation
 tasks.withType<KotlinCompile>().configureEach {
