@@ -2,6 +2,7 @@ package com.machiav3lli.backup.plugins
 
 import androidx.compose.runtime.Composable
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.tracePlugin
 import timber.log.Timber
 import java.io.File
@@ -47,7 +48,7 @@ abstract class Plugin(val name: String, var file: File) {
         }
     }
 
-    val isBuiltin get() = file.path.startsWith(builtinDir!!.path)
+    val isBuiltin get() = file.path.startsWith(builtinDir.path)
 
     fun ensureEditable() {
         if (isBuiltin) {
@@ -67,11 +68,12 @@ abstract class Plugin(val name: String, var file: File) {
 
         // add new plugin classes here, necessary to have all classes initialized
 
-        val pluginCompanions get() = mutableListOf<PluginCompanion>(
-            SpecialFilesPlugin.Companion,
-            InternalRegexPlugin.Companion,
-            InternalShellScriptPlugin.Companion,
-        )
+        val pluginCompanions
+            get() = mutableListOf<PluginCompanion>(
+                SpecialFilesPlugin.Companion,
+                InternalRegexPlugin.Companion,
+                InternalShellScriptPlugin.Companion,
+            )
 
         var pluginTypes = mutableMapOf<String, PluginCompanion>()
         var pluginExtensions = mutableMapOf<String, String>()
@@ -110,14 +112,21 @@ abstract class Plugin(val name: String, var file: File) {
 
         private var plugins = mutableMapOf<String, Plugin>()
 
-        fun setPlugins(pluginMap: Map<String, Plugin>) { plugins = pluginMap.toMutableMap() }
-        fun setPlugins(vararg args: Pair<String, Plugin>) { setPlugins(*args) }
+        fun setPlugins(pluginMap: Map<String, Plugin>) {
+            plugins = pluginMap.toMutableMap()
+        }
+
+        fun setPlugins(vararg args: Pair<String, Plugin>) {
+            setPlugins(*args)
+        }
 
         fun get(name: String) = plugins.get(name)
 
         fun getEnabled(name: String) = get(name)?.takeIf { it.enabled }
 
-        fun getAll(predicate: (Map.Entry<String, Plugin>) -> Boolean) = plugins.filter(predicate = predicate)
+        fun getAll(predicate: (Map.Entry<String, Plugin>) -> Boolean) =
+            plugins.filter(predicate = predicate)
+
         inline fun <reified T> getAll() = getAll { it.value is T }.map { it.value as T }
 
         // files need to be copied from ap[k to filesDir, so use assets.directory instead of filesDir
@@ -131,10 +140,15 @@ abstract class Plugin(val name: String, var file: File) {
         }
 
         fun loadPlugin(file: File): Plugin? {
-            return if (file.isDirectory()) {
-                loadPluginFromDir(file)
-            } else {
-                createFrom(file)
+            return try {
+                if (file.isDirectory()) {
+                    loadPluginFromDir(file)
+                } else {
+                    createFrom(file)
+                }
+            } catch (e: Throwable) {
+                logException(e)
+                null
             }
         }
 
