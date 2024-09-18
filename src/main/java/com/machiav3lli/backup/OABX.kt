@@ -783,9 +783,9 @@ class OABX : Application() {
             }
         }
 
-        fun hitBusy(time: Int = 0) {
+        fun hitBusy(time: Int = pref_busyHitTime.value) {
             busyCountDownAtomic.set(
-                max(time.toInt(), pref_busyHitTime.value) / busyTick
+                time / busyTick
             )
         }
 
