@@ -26,7 +26,6 @@ import androidx.biometric.BiometricManager
 import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.PREFS_SHARED_PRIVATE
@@ -44,8 +43,8 @@ import com.machiav3lli.backup.preferences.pref_backupExternalData
 import com.machiav3lli.backup.preferences.pref_backupMediaData
 import com.machiav3lli.backup.preferences.pref_backupObbData
 import com.machiav3lli.backup.preferences.pref_biometricLock
-import com.machiav3lli.backup.preferences.pref_compressionType
 import com.machiav3lli.backup.preferences.pref_compressionLevel
+import com.machiav3lli.backup.preferences.pref_compressionType
 import com.machiav3lli.backup.preferences.pref_deviceLock
 import com.machiav3lli.backup.preferences.pref_disableVerification
 import com.machiav3lli.backup.preferences.pref_enableSpecialBackups
@@ -248,7 +247,7 @@ fun Context.getLocaleOfCode(localeCode: String): Locale = when {
 
 fun Context.getLanguageList() =
     mapOf(PREFS_LANGUAGES_SYSTEM to resources.getString(R.string.prefs_language_system)) +
-            BuildConfig.DETECTED_LOCALES
+            com.machiav3lli.backup.BuildConfig.DETECTED_LOCALES
                 .sorted()
                 .associateWith { translateLocale(getLocaleOfCode(it)) }
 

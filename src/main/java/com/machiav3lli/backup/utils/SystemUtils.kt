@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellCommands
@@ -31,7 +30,6 @@ object SystemUtils {
 
     fun Context.getApplicationInfos(what: Int = 0): PackageInfo? {
         val packageManager: PackageManager = getPackageManager()
-        val packageName = BuildConfig.APPLICATION_ID
         return packageManager.getPackageInfo(packageName, what)
     }
 
@@ -65,13 +63,14 @@ object SystemUtils {
         return null
     }
 
+    val packageName = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
     @Suppress("DEPRECATION")
     val versionCode = if (OABX.minSDK(28)) {
         OABX.context.getApplicationInfos()?.longVersionCode
     } else {
         OABX.context.getApplicationInfos()?.versionCode
-    } ?: 0
-    val versionName = OABX.context.getApplicationInfos()?.versionName ?: "?"
+    } ?: com.machiav3lli.backup.BuildConfig.VERSION_CODE
+    val versionName = OABX.context.getApplicationInfos()?.versionName ?: com.machiav3lli.backup.BuildConfig.VERSION_NAME
     val updateId = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
 
     val applicationIssuer = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"

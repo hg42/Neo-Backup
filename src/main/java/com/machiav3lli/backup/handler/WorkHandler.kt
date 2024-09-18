@@ -15,7 +15,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.activities.MainActivityX
@@ -24,6 +23,7 @@ import com.machiav3lli.backup.preferences.pref_fakeScheduleDups
 import com.machiav3lli.backup.preferences.pref_maxRetriesPerPackage
 import com.machiav3lli.backup.services.CommandReceiver
 import com.machiav3lli.backup.tasks.AppActionWork
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import timber.log.Timber
 import java.text.SimpleDateFormat
@@ -451,7 +451,7 @@ class WorkHandler(appContext: Context) {
                                 appContext,
                                 classAddress("NotificationHandler")
                             )
-                                .setGroup(BuildConfig.APPLICATION_ID)
+                                .setGroup(SystemUtils.packageName)
                                 .setSortKey("1-$batchName")
                                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                                 .setContentTitle(title)

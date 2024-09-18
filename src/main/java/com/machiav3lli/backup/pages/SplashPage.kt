@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
@@ -66,7 +65,7 @@ fun SplashPage() {
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = listOf(
-                    BuildConfig.APPLICATION_ID,
+                    SystemUtils.packageName,
                     SystemUtils.versionName,
                     SystemUtils.applicationIssuer?.let { "signed by $it" } ?: "",
                 ).joinToString("\n"),

@@ -22,7 +22,6 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
@@ -30,7 +29,6 @@ import com.machiav3lli.backup.handler.regexPackageFolder
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.getBackupRoot
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.FileNotFoundException
@@ -39,7 +37,7 @@ import java.time.LocalDateTime
 
 @Entity(primaryKeys = ["packageName", "backupDate"])
 @Serializable
-data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
+data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class) constructor(
     var backupVersionCode: Int = 0,
     var packageName: String,
     var packageLabel: String,
@@ -86,7 +84,7 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
         persistent: Boolean = false,
         note: String = "",
     ) : this(
-        backupVersionCode = BuildConfig.MAJOR * 1000 + BuildConfig.MINOR,
+        backupVersionCode = com.machiav3lli.backup.BuildConfig.MAJOR * 1000 + com.machiav3lli.backup.BuildConfig.MINOR,
         packageName = base.packageName,
         packageLabel = base.packageLabel,
         versionName = base.versionName,

@@ -78,7 +78,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.BACKUP_DATE_TIME_FORMATTER
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
@@ -159,7 +158,7 @@ fun shell(command: String, silent: Boolean = false): List<String> {
 fun appInfo(): List<String> {
     return listOf(
         "------ application",
-        "package   = ${BuildConfig.APPLICATION_ID}",
+        "package   = ${SystemUtils.packageName}",
         "version   = ${SystemUtils.versionName} : ${SystemUtils.versionCode}",
         SystemUtils.applicationIssuer.let { "signed by = $it" },
     )

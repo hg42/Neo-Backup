@@ -30,6 +30,7 @@ import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
 import com.machiav3lli.backup.preferences.pref_restoreKillApps
 import com.machiav3lli.backup.tasks.AppActionWork
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
@@ -159,7 +160,7 @@ abstract class BaseAppAction protected constructor(
         const val BACKUP_DIR_MEDIA_FILES = "media_files"
 
         val replacements = mapOf(
-            "<ownPackage>" to com.machiav3lli.backup.BuildConfig.APPLICATION_ID.replace(
+            "<ownPackage>" to SystemUtils.packageName.replace(
                 ".",
                 """\."""
             )

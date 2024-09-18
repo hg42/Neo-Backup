@@ -58,6 +58,7 @@ import com.machiav3lli.backup.services.PackageUnInstalledReceiver
 import com.machiav3lli.backup.services.ScheduleService
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
@@ -79,7 +80,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import timber.log.Timber
-import java.lang.Integer.max
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
@@ -653,10 +653,10 @@ class OABX : Application() {
             return Build.VERSION.SDK_INT >= sdk
         }
 
-        val isRelease = BuildConfig.APPLICATION_ID.endsWith(".backup")
-        val isDebug = BuildConfig.DEBUG
-        val isNeo = BuildConfig.APPLICATION_ID.contains("neo")
-        val isHg42 = BuildConfig.APPLICATION_ID.contains("hg42")
+        val isRelease = SystemUtils.packageName.endsWith(".backup")
+        val isDebug = com.machiav3lli.backup.BuildConfig.DEBUG
+        val isNeo = SystemUtils.packageName.contains("neo")
+        val isHg42 = SystemUtils.packageName.contains("hg42")
 
         //------------------------------------------------------------------------------------------ infoText
 

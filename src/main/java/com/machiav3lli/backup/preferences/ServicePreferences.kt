@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.COMPRESSION_TYPES
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
@@ -54,6 +53,7 @@ import com.machiav3lli.backup.ui.item.ListPref
 import com.machiav3lli.backup.ui.item.PasswordPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.StringPref
+import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -320,5 +320,5 @@ val pref_installationPackage = StringPref(
     titleId = R.string.prefs_installerpackagename,
     icon = Phosphor.Textbox,
     iconTint = ColorOBB,
-    defaultValue = BuildConfig.APPLICATION_ID
+    defaultValue = SystemUtils.packageName
 )

@@ -19,7 +19,6 @@ package com.machiav3lli.backup.handler
 
 import android.content.Context
 import android.content.pm.PackageManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.MODE_DATA
 import com.machiav3lli.backup.actions.BackupAppAction
@@ -103,13 +102,13 @@ object BackupRestoreHelper {
 
     @Throws(IOException::class)
     fun copySelfApk(context: Context, shell: ShellHandler): Boolean {
-        val filename = BuildConfig.APPLICATION_ID + '-' + SystemUtils.versionName + ".apk"
+        val filename = SystemUtils.packageName + '-' + SystemUtils.versionName + ".apk"
         try {
             val backupRoot = context.getBackupRoot()
             val apkFile = backupRoot.findFile(filename)
             apkFile?.delete()
             try {
-                val myInfo = context.packageManager.getPackageInfo(BuildConfig.APPLICATION_ID, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
+                val myInfo = context.packageManager.getPackageInfo(SystemUtils.packageName, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
                 val fileInfos =
                     shell.suGetDetailedDirectoryContents(myInfo.applicationInfo.sourceDir, false)
                 if (fileInfos.size != 1) {

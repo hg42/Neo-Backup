@@ -40,7 +40,7 @@ class Test_ignoredPackages {
 
     @Test
     fun test_doNotStop_matchesOwnPackage() {
-        val packageName = com.machiav3lli.backup.BuildConfig.APPLICATION_ID  // use explicit BuildConfig
+        val packageName = com.machiav3lli.backup.SystemUtils.packageName  // use explicit BuildConfig
         assertTrue(
             "does not match: $packageName",
             packageName.matches(doNotStop)
