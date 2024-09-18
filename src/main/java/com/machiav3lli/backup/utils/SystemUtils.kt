@@ -72,6 +72,7 @@ object SystemUtils {
         OABX.context.getApplicationInfos()?.versionCode
     } ?: 0
     val versionName = OABX.context.getApplicationInfos()?.versionName ?: "?"
+    val updateId = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
 
     val applicationIssuer = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
 
