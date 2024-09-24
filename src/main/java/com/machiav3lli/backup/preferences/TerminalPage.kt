@@ -37,8 +37,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -50,7 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -67,7 +64,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -111,6 +107,8 @@ import com.machiav3lli.backup.ui.compose.ifThen
 import com.machiav3lli.backup.ui.compose.isAtBottom
 import com.machiav3lli.backup.ui.compose.isAtTop
 import com.machiav3lli.backup.ui.compose.item.RoundButton
+import com.machiav3lli.backup.ui.compose.item.SimpleButton
+import com.machiav3lli.backup.ui.compose.item.SmallButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.utils.SystemUtils
@@ -351,15 +349,16 @@ fun textLogShare(lines: List<String>, temporary: Boolean = false) {
         val fileName = "${BACKUP_DATE_TIME_FORMATTER.format(now)}.log.txt"
 
         runCatching {
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).let { dir ->
-                File(dir, fileName).let { file ->
-                    file.writeText(text)
-                    SystemUtils.share(
-                        StorageFile(file),
-                        asFile = true
-                    )
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                .let { dir ->
+                    File(dir, fileName).let { file ->
+                        file.writeText(text)
+                        SystemUtils.share(
+                            StorageFile(file),
+                            asFile = true
+                        )
+                    }
                 }
-            }
         }.onFailure {
             //TODO hg42 we could try even more here
             logException(it)
@@ -391,48 +390,6 @@ fun supportLog(title: String = "") {
 
 fun supportInfoLogShare() {
     textLogShare(supportInfo())
-}
-
-@Composable
-fun TerminalButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    important: Boolean = false,
-    action: () -> Unit,
-) {
-    val color = if (important) MaterialTheme.colorScheme.primaryContainer
-    else MaterialTheme.colorScheme.surfaceContainerHighest
-    val textColor = if (important) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurface
-    SmallFloatingActionButton(
-        modifier = Modifier
-            .padding(2.dp, 0.dp)
-            .wrapContentWidth()
-            .wrapContentHeight()
-            .then(modifier),
-        containerColor = color,
-        onClick = action
-    ) {
-        Text(
-            modifier = Modifier
-                .padding(8.dp, 0.dp),
-            text = text,
-            color = textColor
-        )
-    }
-}
-
-@Composable
-fun SmallButton(
-    icon: ImageVector,
-    tint: Color? = null,
-    onClick: () -> Unit,
-) {
-    RoundButton(
-        icon = icon,
-        onClick = onClick,
-        tint = tint ?: MaterialTheme.colorScheme.primary
-    )
 }
 
 @Composable
@@ -747,37 +704,37 @@ fun Terminal(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            TerminalButton(
+            SimpleButton(
                 "SUPPORT",
                 important = true
             ) { launch { supportInfoLogShare() } }
-            TerminalButton(
+            SimpleButton(
                 "share",
                 important = true
             ) { launch { textLogShare(output) } }
-            TerminalButton("clear", important = true) { output.clear() }
-            TerminalButton("log/int") { produce { logInt() } }
-            TerminalButton("log/app") { produce { logApp() } }
-            TerminalButton("log/rel") { produce { logRel() } }
-            TerminalButton("log/all") { produce { logSys() } }
-            TerminalButton("info") { produce { extendedInfo() } }
-            TerminalButton("prefs") { produce { dumpPrefs() } }
-            TerminalButton("env") { produce { dumpEnv() } }
-            TerminalButton("alarms") { produce { dumpAlarms() } }
-            TerminalButton("timing") { produce { dumpTiming() } }
-            TerminalButton("threads") { produce { threadsInfo() } }
-            TerminalButton("access") { produce { accessTest() } }
-            TerminalButton("dbpkg") { produce { dumpDbAppInfo() } }
-            TerminalButton("dbsch") { produce { dumpDbSchedule() } }
-            TerminalButton("errInfo") { produce { lastErrorPkg() + lastErrorCommand() } }
-            TerminalButton("err->cmd") {
+            SimpleButton("clear", important = true) { output.clear() }
+            SimpleButton("log/int") { produce { logInt() } }
+            SimpleButton("log/app") { produce { logApp() } }
+            SimpleButton("log/rel") { produce { logRel() } }
+            SimpleButton("log/all") { produce { logSys() } }
+            SimpleButton("info") { produce { extendedInfo() } }
+            SimpleButton("prefs") { produce { dumpPrefs() } }
+            SimpleButton("env") { produce { dumpEnv() } }
+            SimpleButton("alarms") { produce { dumpAlarms() } }
+            SimpleButton("timing") { produce { dumpTiming() } }
+            SimpleButton("threads") { produce { threadsInfo() } }
+            SimpleButton("access") { produce { accessTest() } }
+            SimpleButton("dbpkg") { produce { dumpDbAppInfo() } }
+            SimpleButton("dbsch") { produce { dumpDbSchedule() } }
+            SimpleButton("errInfo") { produce { lastErrorPkg() + lastErrorCommand() } }
+            SimpleButton("err->cmd") {
                 command =
                     if (OABX.lastErrorCommands.isNotEmpty())
                         OABX.lastErrorCommands.first()
                     else
                         "no error command"
             }
-            TerminalButton("findBackups") { OABX.context.findBackups(forceTrace = true) }
+            SimpleButton("findBackups") { OABX.context.findBackups(forceTrace = true) }
         }
         Box(
             modifier = Modifier

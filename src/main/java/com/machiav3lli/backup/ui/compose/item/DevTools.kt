@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
@@ -93,7 +96,6 @@ import com.machiav3lli.backup.pref_trace
 import com.machiav3lli.backup.preferences.DevPrefGroups
 import com.machiav3lli.backup.preferences.LogsPage
 import com.machiav3lli.backup.preferences.Terminal
-import com.machiav3lli.backup.preferences.TerminalButton
 import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
@@ -124,6 +126,53 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 
+
+
+@Composable
+fun SimpleButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    important: Boolean = false,
+    action: () -> Unit,
+) {
+    val color =
+        if (important) MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surfaceContainerHighest
+    val textColor =
+        if (important) MaterialTheme.colorScheme.onPrimaryContainer
+        else MaterialTheme.colorScheme.onSurface
+    SmallFloatingActionButton(
+        modifier = Modifier
+            .padding(2.dp, 0.dp)
+            .wrapContentWidth()
+            .wrapContentHeight()
+            .then(modifier),
+        containerColor = color,
+        onClick = action
+    ) {
+        Text(
+            modifier = Modifier
+                .padding(8.dp, 0.dp),
+            text = text,
+            color = textColor
+        )
+    }
+}
+
+@Composable
+fun SmallButton(
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    tint: Color? = null,
+    action: () -> Unit,
+) {
+    RoundButton(
+        icon = icon,
+        modifier = modifier,
+        onClick = action,
+        tint = tint ?: MaterialTheme.colorScheme.primary
+    )
+}
 
 @Composable
 fun TextInput(
@@ -477,7 +526,7 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
             }
             Spacer(modifier = Modifier.weight(1f))
             if (editPlugin == null) {
-                TerminalButton("Create") {
+                SimpleButton("Create") {
                     if (Plugin.userDir != null) {
                         val file = fileFor(
                             dir = Plugin.userDir!!,
@@ -489,7 +538,7 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                     editPlugin!!.save()
                 }
             } else {
-                TerminalButton(if (editPlugin?.isBuiltin ?: true) "Save Copy" else "Save") {
+                SimpleButton(if (editPlugin?.isBuiltin ?: true) "Save Copy" else "Save") {
                     if (editPlugin != null && Plugin.userDir != null) {
                         try {
                             val file = fileFor(
@@ -512,14 +561,14 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                     submit()
                 }
             }
-            TerminalButton("Share") {
+            SimpleButton("Share") {
                 share()
             }
             if (editPlugin?.isBuiltin == false)
-                TerminalButton("Delete") {
+                SimpleButton("Delete") {
                     delete()
                 }
-            TerminalButton("Cancel") {
+            SimpleButton("Cancel") {
                 cancel()
             }
         }
@@ -614,11 +663,11 @@ fun PluginsPage() {
         Row {
             Spacer(modifier = Modifier.weight(1f))
 
-            TerminalButton("New") {
+            SimpleButton("New") {
                 edit(null)
             }
 
-            TerminalButton("Reload") {
+            SimpleButton("Reload") {
                 reload()
             }
         }
@@ -1035,7 +1084,7 @@ fun DevTools(
                     }
                     //Text(text = tab, modifier = Modifier)
                     RefreshButton(hideIfNotBusy = true)
-                    TerminalButton(
+                    SimpleButton(
                         "          close          "
                     ) {
                         expanded.value = false
@@ -1044,7 +1093,7 @@ fun DevTools(
 
                 @Composable
                 fun TabButton(name: String) {
-                    TerminalButton(
+                    SimpleButton(
                         text = name,
                         important = (tab == name),
                     ) {
@@ -1115,14 +1164,14 @@ fun DevToolsPreview() {
             .height(1000.dp)
     ) {
         Row {
-            TerminalButton(if (expanded.value) "close" else "open") {
+            SimpleButton(if (expanded.value) "close" else "open") {
                 expanded.value = expanded.value.not()
             }
-            TerminalButton("count") {
+            SimpleButton("count") {
                 count++
                 OABX.addInfoLogText("line $count")
             }
-            TerminalButton("busy") {
+            SimpleButton("busy") {
                 hitBusy(5000)
             }
         }
