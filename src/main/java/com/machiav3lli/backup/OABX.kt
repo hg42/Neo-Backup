@@ -653,10 +653,10 @@ class OABX : Application() {
             return Build.VERSION.SDK_INT >= sdk
         }
 
-        val isRelease = SystemUtils.packageName.endsWith(".backup")
-        val isDebug = com.machiav3lli.backup.BuildConfig.DEBUG
-        val isNeo = SystemUtils.packageName.contains("neo")
-        val isHg42 = SystemUtils.packageName.contains("hg42")
+        val isRelease get() = SystemUtils.packageName.endsWith(".backup")
+        val isDebug get() = SystemUtils.packageName.contains("debug")
+        val isNeo get() = SystemUtils.packageName.contains("neo")
+        val isHg42 get() = SystemUtils.packageName.contains("hg42")
 
         //------------------------------------------------------------------------------------------ infoText
 
