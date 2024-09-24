@@ -820,9 +820,9 @@ class OABX : Application() {
 
         private var theBackupsMap = mutableMapOf<String, List<Backup>>()
 
-        fun getBackups(): Map<String, List<Backup>> {
+        fun getBackups(): ImmutableMap<String, List<Backup>> {
             synchronized(theBackupsMap) {
-                return theBackupsMap
+                return theBackupsMap.toImmutableMap()
             }
         }
 
