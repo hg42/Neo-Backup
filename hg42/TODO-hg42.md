@@ -5,8 +5,6 @@
 
 ### bug
 
-* special items missing in custom list
-
 ### check
 
 * prove, if installing an apk changes the ignored directories to the new app user
@@ -20,11 +18,11 @@
     # oabx should restore own settings
     * encrypt/decrypt single/all backups (per buttons)
     ? file watchers instead of scanning all the time
-    * special packages paths and size display
-    * shell command onStart, onStop (?) e.g. for rclone mount (how about service?)
-    * shell command before and after complete backup/restore
-    * check the basic shell commands at start and complain if they do not work (check toybox version etc.)
-    * check shell features and choose corresponding code
+    * special packages paths and size display / plugin text
+    * shell hook onStart, onStop (?) e.g. for rclone mount (how about service?)
+    * shell hook before and after complete backup/restore
+    * check the basic shell commands at start and complain if they do not work
+    ? check shell features and choose corresponding code (e.g. busybox vs. toybox)
     ? if busybox available use it and it's features [not feature complete for us]
 
     * genericRestorePermissions
@@ -38,6 +36,7 @@
 
 * interaction
     * launcher shortcut
+    ? activities to open special pages
     * more intents / remote control
      
 * organize
