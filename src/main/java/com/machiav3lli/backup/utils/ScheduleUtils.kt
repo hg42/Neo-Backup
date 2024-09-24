@@ -125,7 +125,7 @@ val useSeconds = updateInterval < 60_000
 fun calcTimeLeft(schedule: Schedule): Pair<String, String> {
     var absTime = ""
     var relTime = ""
-    val now = System.currentTimeMillis()
+    val now = SystemUtils.now
     val at = calculateTimeToRun(schedule, now)
     absTime = ISO_DATE_TIME_FORMAT_MIN.format(at)
     val timeDiff = max(at - now, 0)
@@ -173,7 +173,7 @@ fun scheduleAlarm(context: Context, scheduleId: Long, rescheduleBoolean: Boolean
 
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-                val now = System.currentTimeMillis()
+                val now = SystemUtils.now
                 val timeToRun = calculateTimeToRun(schedule, now)
                 val timeLeft = timeToRun - now
 
@@ -237,7 +237,7 @@ fun scheduleAlarm(context: Context, scheduleId: Long, rescheduleBoolean: Boolean
                 }
                 traceSchedule {
                     "[$scheduleId] schedule starting in: ${
-                        TimeUnit.MILLISECONDS.toMinutes(schedule.timeToRun - System.currentTimeMillis())
+                        TimeUnit.MILLISECONDS.toMinutes(schedule.timeToRun - SystemUtils.now)
                     } minutes name=${schedule.name}"
                 }
             } else
@@ -388,7 +388,7 @@ internal class StartSchedule(
 
     override fun execute() {
         Thread {
-            val now = System.currentTimeMillis()
+            val now = SystemUtils.now
             val serviceIntent = Intent(context, ScheduleService::class.java)
             scheduleDao.getSchedule(scheduleId)?.let { schedule ->
                 serviceIntent.putExtra("scheduleId", scheduleId)

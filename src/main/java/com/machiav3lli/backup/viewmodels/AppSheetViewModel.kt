@@ -33,6 +33,7 @@ import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.showNotification
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.ui.compose.MutableComposableFlow
+import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -70,7 +71,7 @@ class AppSheetViewModel(
         "snackBarText"
     )
 
-    private var notificationId: Int = System.currentTimeMillis().toInt()
+    private var notificationId: Int = SystemUtils.now.toInt()
     val refreshNow = mutableStateOf(true)
     val dismissNow = mutableStateOf(false)
 

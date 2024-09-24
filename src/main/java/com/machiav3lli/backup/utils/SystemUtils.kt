@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellCommands
@@ -237,4 +238,6 @@ object SystemUtils {
         }
     }
 
+    val msSinceBoot get() = SystemClock.elapsedRealtime()
+    val now get() = System.currentTimeMillis()
 }

@@ -68,6 +68,8 @@ import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -491,7 +493,7 @@ class OABX : Application() {
                             Log.WARN    -> "W"
                             else        -> "?"
                         }
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.now
                     val date = ISO_DATE_TIME_FORMAT_MS.format(now)
                     try {
                         addLogMessage("$date $prio $tag : $message")

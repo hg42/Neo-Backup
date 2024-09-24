@@ -23,6 +23,7 @@ import com.machiav3lli.backup.handler.BackupRestoreHelper
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.items.ActionResult
 import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.utils.SystemUtils
 
 class RestoreActionTask(
     appInfo: Package, oAndBackupX: MainActivityX, shellHandler: ShellHandler, restoreMode: Int,
@@ -37,7 +38,7 @@ class RestoreActionTask(
         if (mainActivityX == null || mainActivityX.isFinishing) {
             return ActionResult(app, backup, "", false)
         }
-        notificationId = System.currentTimeMillis().toInt()
+        notificationId = SystemUtils.now.toInt()
         publishProgress()
         result = BackupRestoreHelper.restore(
             mainActivityX, null, shellHandler,

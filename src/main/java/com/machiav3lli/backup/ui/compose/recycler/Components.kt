@@ -60,6 +60,7 @@ import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.RefreshButton
 import com.machiav3lli.backup.ui.compose.item.SelectionChip
 import com.machiav3lli.backup.ui.item.ChipItem
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.applicationIssuer
 import com.machiav3lli.backup.utils.SystemUtils.versionName
 import kotlinx.coroutines.Dispatchers
@@ -322,7 +323,7 @@ fun BusyBackgroundAnimated(
                 .fillMaxSize()
         ) {
             fun currentAngle(): Float =
-                System.currentTimeMillis() % turnTime * 360f / turnTime
+                SystemUtils.msSinceBoot % turnTime * 360f / turnTime
             //var angle by rememberSaveable { mutableStateOf(70f) }
             //var angle by rememberSaveable { mutableFloatStateOf(calcAngle()) }
             var angle by rememberSaveable { mutableStateOf(currentAngle()) }

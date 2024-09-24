@@ -29,6 +29,7 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logErrors
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.StorageFile.Companion.invalidateCache
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.getBackupRoot
 import timber.log.Timber
 import java.io.BufferedOutputStream
@@ -68,7 +69,7 @@ class ExportsHandler(var context: Context) {
             }
         }
         showNotification(
-            context, MainActivityX::class.java, System.currentTimeMillis().toInt(),
+            context, MainActivityX::class.java, SystemUtils.now.toInt(),
             context.getString(R.string.sched_exported), null, false
         )
     }

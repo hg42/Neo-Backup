@@ -50,6 +50,7 @@ import com.machiav3lli.backup.preferences.textLog
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.tasks.ScheduledActionTask
 import com.machiav3lli.backup.traceSchedule
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.scheduleAlarm
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import timber.log.Timber
@@ -68,7 +69,7 @@ open class ScheduleService : Service() {
         traceSchedule { "%%%%% ############################################################ ScheduleService create" }
         super.onCreate()
         OABX.service = this
-        this.notificationId = System.currentTimeMillis().toInt()
+        this.notificationId = SystemUtils.now.toInt()
 
         if (pref_useForegroundInService.value) {
             createNotificationChannel()
@@ -150,7 +151,7 @@ open class ScheduleService : Service() {
 
                 repeat(1 + pref_fakeScheduleDups.value) { count ->
 
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.now
 
                     // hg42:
                     // while it looks reasonable to re-schedule after the job is done,

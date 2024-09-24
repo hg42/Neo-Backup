@@ -32,6 +32,7 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.items.SpecialFilter
 import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
 import kotlinx.serialization.Serializable
 import java.io.FileNotFoundException
@@ -47,7 +48,7 @@ data class Schedule(
     val timeHour: Int = 12,
     val timeMinute: Int = 0,
     val interval: Int = 1,
-    val timePlaced: Long = System.currentTimeMillis(),
+    val timePlaced: Long = SystemUtils.now,
 
     val filter: Int = MAIN_FILTER_DEFAULT,
     val mode: Int = MODE_APK,
@@ -155,7 +156,7 @@ data class Schedule(
                     val item = fromSerialized(inputStream.reader().readText())
                     schedule = item.copy(
                         enabled = false,
-                        timePlaced = System.currentTimeMillis(),
+                        timePlaced = SystemUtils.now,
                         timeToRun = 0,
                     )
                 }
@@ -193,7 +194,7 @@ data class Schedule(
                 .copy(
                     id = schedule.id,
                     enabled = false,
-                    timePlaced = System.currentTimeMillis(),
+                    timePlaced = SystemUtils.now,
                     timeToRun = 0,
                 )
             return this

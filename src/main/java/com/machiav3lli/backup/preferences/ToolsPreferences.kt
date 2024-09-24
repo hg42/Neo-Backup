@@ -42,6 +42,7 @@ import com.machiav3lli.backup.ui.compose.theme.ColorExtDATA
 import com.machiav3lli.backup.ui.item.LinkPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.navigation.NavItem
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.applyFilter
 import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.show
@@ -172,7 +173,7 @@ private fun Context.onClickUninstalledBackupsDelete(
 }
 
 private fun Context.deleteBackups(deleteList: List<Package>) {
-    val notificationId = System.currentTimeMillis().toInt()
+    val notificationId = SystemUtils.now.toInt()
     deleteList.forEachIndexed { i, ai ->
         showNotification(
             this,
@@ -217,7 +218,7 @@ private fun Context.onClickCopySelf(
                 showNotification(
                     this@onClickCopySelf,
                     MainActivityX::class.java,
-                    System.currentTimeMillis().toInt(),
+                    SystemUtils.now.toInt(),
                     getString(R.string.copyOwnApkSuccess),
                     "",
                     false
@@ -230,7 +231,7 @@ private fun Context.onClickCopySelf(
                 showNotification(
                     this@onClickCopySelf,
                     MainActivityX::class.java,
-                    System.currentTimeMillis().toInt(),
+                    SystemUtils.now.toInt(),
                     getString(R.string.copyOwnApkFailed),
                     "",
                     false
@@ -307,7 +308,7 @@ fun Context.writeAppsListFile(appsList: List<String>, filteredBoolean: Boolean) 
     BufferedOutputStream(listFile.outputStream())
         .use { it.write(filesText.toByteArray(StandardCharsets.UTF_8)) }
     showNotification(
-        this, MainActivityX::class.java, System.currentTimeMillis().toInt(),
+        this, MainActivityX::class.java, SystemUtils.now.toInt(),
         getString(
             if (filteredBoolean) R.string.write_apps_list_filtered
             else R.string.write_apps_list_all

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.machiav3lli.backup.utils.SystemUtils
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -94,13 +95,13 @@ class Bug_UI_SelectableContainerCrashOnEmptyText {
         clock.autoAdvance = false
         //what?.let { Log.d("%%%%%%%%%%", it) }
         val startVirt = clock.currentTime
-        val startReal = System.currentTimeMillis()
+        val startReal = SystemUtils.msSinceBoot
 
         todo()
 
         while (true) {
             val virt = clock.currentTime - startVirt
-            val real = System.currentTimeMillis() - startReal
+            val real = SystemUtils.msSinceBoot - startReal
             //Log.d("..........", "virt: $virt real: $real")
             if (virt > real)
                 Thread.sleep(virt-real)

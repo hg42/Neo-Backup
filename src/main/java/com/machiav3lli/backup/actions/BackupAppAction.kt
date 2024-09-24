@@ -51,6 +51,7 @@ import com.machiav3lli.backup.utils.CIPHER_ALGORITHM
 import com.machiav3lli.backup.utils.CryptoSetupException
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
 import com.machiav3lli.backup.utils.copyRootFileToDocument
 import com.machiav3lli.backup.utils.encryptStream
@@ -95,9 +96,9 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
             if (fakeSeconds > 0) {
 
                 val step = 1000L * 1
-                val startTime = System.currentTimeMillis()
+                val startTime = SystemUtils.msSinceBoot
                 do {
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.msSinceBoot
                     val seconds = (now - startTime) / 1000.0
                     work?.setOperation((seconds / 10).toInt().toString().padStart(3, '0'))
                     Thread.sleep(step)

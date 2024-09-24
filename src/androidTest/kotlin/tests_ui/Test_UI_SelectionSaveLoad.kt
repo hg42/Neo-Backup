@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.machiav3lli.backup.activities.MainActivityX
+import com.machiav3lli.backup.utils.SystemUtils
 import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -57,7 +58,7 @@ class Test_SelectionSaveLoad {
             it.onChildAt(0).performTouchInput { longClick(center) }
             test.waitForIdle()
 
-            val selectionName = "selection-${System.currentTimeMillis()}"
+            val selectionName = "selection-${SystemUtils.msSinceBoot}"
 
             // save selection as "selection-XXX"
             test.onNodeWaitOrAssert(hasText("Put...")).performTouchInput { click(center) }

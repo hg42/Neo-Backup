@@ -90,7 +90,7 @@ class WorkHandler(appContext: Context) {
         batchesKnown.keys.toList().forEach { // copy the keys, because collection changes now
             batchesKnown[it]?.let { batch ->
                 if (batch.nFinished > 1 || batch.isCanceled) {
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.now
                     if (now - batch.startTime > longAgo) {
                         Timber.d("""%%%%% $it removing...\""")
                         batchesKnown.remove(it)
@@ -272,7 +272,7 @@ class WorkHandler(appContext: Context) {
                 ?: manager.getWorkInfosByTag(AppActionWork::class.qualifiedName!!).get()
                 ?: return
 
-            val now = System.currentTimeMillis()
+            val now = SystemUtils.now
             val batchesRunning = mutableMapOf<String, WorkState>()
 
             val appContext = OABX.context

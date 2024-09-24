@@ -75,6 +75,7 @@ import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.ui.navigation.clearBackStack
 import com.machiav3lli.backup.ui.navigation.safeNavigate
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
@@ -451,7 +452,7 @@ class MainActivityX : BaseActivity() {
         selectedPackageNames: List<String?>,
         selectedModes: List<Int>,
     ) {
-        val now = System.currentTimeMillis()
+        val now = SystemUtils.now
         val notificationId = now.toInt()
         val batchType = getString(if (backupBoolean) R.string.backup else R.string.restore)
         val batchName = WorkHandler.getBatchName(batchType, now)
@@ -522,7 +523,7 @@ class MainActivityX : BaseActivity() {
         selectedApk: Map<String, Int>,
         selectedData: Map<String, Int>,
     ) {
-        val now = System.currentTimeMillis()
+        val now = SystemUtils.now
         val notificationId = now.toInt()
         val batchType = getString(R.string.restore)
         val batchName = WorkHandler.getBatchName(batchType, now)

@@ -29,6 +29,7 @@ import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.handler.ExportsHandler
 import com.machiav3lli.backup.handler.showNotification
 import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,7 +85,7 @@ class ExportsViewModel(val database: ScheduleDao, private val appContext: Applic
         viewModelScope.launch {
             import(export)
             showNotification(
-                appContext, MainActivityX::class.java, System.currentTimeMillis().toInt(),
+                appContext, MainActivityX::class.java, SystemUtils.now.toInt(),
                 appContext.getString(R.string.sched_imported), export.name, false
             )
         }
