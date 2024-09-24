@@ -110,6 +110,7 @@ import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesFromSerialized
 import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesToSerialized
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.recreateActivities
@@ -455,6 +456,12 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
         onSubmit(null)
     }
 
+    fun share() {
+        editPlugin?.file
+            ?.also { SystemUtils.share(StorageFile(it), asFile = true) }
+            ?: run { (editPlugin as? TextPlugin)?.let { SystemUtils.share(it.text) } }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -504,6 +511,9 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
                     }
                     submit()
                 }
+            }
+            TerminalButton("Share") {
+                share()
             }
             if (editPlugin?.isBuiltin == false)
                 TerminalButton("Delete") {
