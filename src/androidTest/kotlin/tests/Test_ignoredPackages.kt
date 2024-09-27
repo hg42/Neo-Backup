@@ -2,6 +2,7 @@ package tests.tests
 
 import com.machiav3lli.backup.actions.BaseAppAction.Companion.doNotStop
 import com.machiav3lli.backup.actions.BaseAppAction.Companion.ignoredPackages
+import com.machiav3lli.backup.utils.SystemUtils
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -40,7 +41,7 @@ class Test_ignoredPackages {
 
     @Test
     fun test_doNotStop_matchesOwnPackage() {
-        val packageName = com.machiav3lli.backup.SystemUtils.packageName  // use explicit BuildConfig
+        val packageName = SystemUtils.packageName  // use explicit BuildConfig
         assertTrue(
             "does not match: $packageName",
             packageName.matches(doNotStop)
