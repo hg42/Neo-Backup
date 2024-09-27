@@ -27,6 +27,7 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URLDecoder
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -280,43 +281,40 @@ open class StorageFile {
         this.parent = parent
         this._uri = uri
         name?.let { this.name = it }
-        if (//false &&        //TODO hg42 temporary until RootFile speed is fixed (too many directory lists)
-            pref_shadowRootFile.value && allowShadowing
-        ) {
-            parent ?: run {
-                uri?.let { uri ->
-                    if (this.name == null)
-                        this.name =
-                            uri.lastPathSegment //TODO hg42 ???  / vs %2F , is the last segment the name?
-                    try {
-                        val last = this.name!!
-                        Timber.i("SAF: last=$last uri=$uri")
-                        if (last.startsWith('/')) {
-                            val checkFile = RootFile(last)
-                            if (isWritablePath(checkFile)) {
-                                Timber.i("found direct RootFile shadow at $checkFile")
-                                file = checkFile
-                            } else
-                                throw Exception("cannot use RootFile shadow at $last")
-                        } else {
-                            var (storage, subPath) = last.split(":", limit = 2)
-                            //val user = ShellCommands.currentProfile
-                            val user = uri.authority?.split("@", limit = 2)?.first() ?: ShellCommands.currentProfile
-                            if (storage == "primary")
-                                storage = "emulated/$user"
-                            file = getShadowPath(
-                                user.toString(),
-                                storage,
-                                subPath,
-                                ::isWritablePath
-                            )
-                            if (file == null)
-                                throw Exception("cannot find RootFile shadow at $last")
-                        }
-                    } catch (e: Throwable) {
-                        file = null
-                        Timber.i("using access via SAF")
+        if (parent == null && uri != null) {
+            if (pref_shadowRootFile.value && allowShadowing) {
+                try {
+                    val last =
+                        //uri.lastPathSegment // docs say: last segment of the decoded(!) path, not the encoded one
+                        // so make it explicit:
+                        URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
+                    Timber.i("SAF: last=$last uri=$uri")
+                    if (last.startsWith('/')) {
+                        val checkFile = RootFile(last)
+                        if (isWritablePath(checkFile)) {
+                            Timber.i("found direct RootFile shadow at $checkFile")
+                            file = checkFile
+                        } else
+                            throw Exception("cannot use RootFile shadow at $last")
+                    } else {
+                        var (storage, subPath) = last.split(":", limit = 2)
+                        //val user = ShellCommands.currentProfile
+                        val user = uri.authority?.split("@", limit = 2)?.first()
+                            ?: ShellCommands.currentProfile
+                        if (storage == "primary")
+                            storage = "emulated/$user"
+                        file = getShadowPath(
+                            user.toString(),
+                            storage,
+                            subPath,
+                            ::isWritablePath
+                        )
+                        if (file == null)
+                            throw Exception("cannot find RootFile shadow at $last")
                     }
+                } catch (e: Throwable) {
+                    file = null
+                    Timber.i("using access via SAF")
                 }
             }
         }
