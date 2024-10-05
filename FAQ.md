@@ -38,6 +38,7 @@
   * [now I want to detect the end of the operation](#now-i-want-to-detect-the-end-of-the-operation)
 * [What is the difference to implementations like Seedvault?](#what-is-the-difference-to-implementations-like-seedvault)
 * [What is the difference to the famous Titanium Backup?](#what-is-the-difference-to-the-famous-titanium-backup)
+* [Do I need encryption?](#do-i-need-encryption)
 * [How can I open encrypted backups on my computer?](#how-can-i-open-encrypted-backups-on-my-computer)
 * [What does the notification of schedules and batch jobs tell me?](#what-does-the-notification-of-schedules-and-batch-jobs-tell-me)
 * [Does NB support multi-user setups / work-profile?](#does-nb-support-multi-user-setups--work-profile)
@@ -307,8 +308,8 @@ In the next Android versions Google will (most probably) force apps more and mor
 * Performance, more of Performance and tons of Performance (with multithreading the pricture is different, SAF is slightly faster than using root commands)
 * obfuscation of the classical path structure
 * unreliable file names (providers can rename the files as they like, meaning a file named xyz can be named 1234)
-* insane strategy if the file already exists, instead of overwriting it, it creates a new file with a number, you need to delete the file, then wait until it's really deleted, then write the new one and hope the caches are updated  
-* you would think that accessing GDrive or other remote storage should be a natural advantage of SAF, but interestingly we don't know any app besides DocumentsUI that can access a GDrive directory via SAF  
+* insane strategy if the file already exists, instead of overwriting it, it creates a new file with a number, you need to delete the file, then wait until it's really deleted, then write the new one and hope the caches are updated
+* you would think that accessing GDrive or other remote storage should be a natural advantage of SAF, but interestingly we don't know any app besides DocumentsUI that can access a GDrive directory via SAF
 
 ### Below some "performance" or time measuring infos from an older phone
 
@@ -629,23 +630,31 @@ You're all root users, so capable of copying files, right?
 
 All preferences excluding the password are stored in:
 
+```path
     /data/user/0/com.machiav3lli.backup/shared_prefs/com.machiav3lli.backup_preferences.xml
+```
 
 This file contains the password (in case you use encryption) and it's encrypted by a key stored in Keystore, so no backup possible, you need to enter it again:
 
+```path
     /data/user/0/com.machiav3lli.backup/shared_prefs/com.machiav3lli.backup.xml
+```
 
 These files include the database tables for the global blocklist and the schedules etc. (there were individual databases at some point in the past...):
 
+```path
     /data/user/0/com.machiav3lli.backup/databases/main.db
     /data/user/0/com.machiav3lli.backup/databases/main.db-shm
     /data/user/0/com.machiav3lli.backup/databases/main.db-wal
+```
 
 These files are runtime data, the queue that is persistent through boot, you might want to delete them, if you want to stop NB executing remaining jobs (or you enable the preference to cancel them on startup):
 
+```path
     /data/user/0/com.machiav3lli.backup/no_backup/androidx.work.workdb-shm
     /data/user/0/com.machiav3lli.backup/no_backup/androidx.work.workdb-wal
     /data/user/0/com.machiav3lli.backup/no_backup/androidx.work.workdb
+```
 
 You can look into the databases with an SQLite editor app, e.g. MixPlorer can do it or you may use the app "SQLite Editor" (com.speedsoftware.sqleditor) or any other sqlite app, also possible from a PC.
 
@@ -707,7 +716,9 @@ The Intent must contain the package name, that is:
 
 The broadcast receiver is:
 
+```url
     com.machiav3lli.backup.services.CommandReceiver
+```
 
 note, this is a fixed name, `com.machiav3lli.backup` is a namespace not a package name.
 
@@ -730,6 +741,7 @@ trigger a schedule (like pressing the run button)
 * extras
   * name = the name of the schedule
 * example: start a specific schedule
+
     ```bash
     am broadcast -a schedule -e name "the name of the schedule" -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
     ```
@@ -741,10 +753,13 @@ cancel a schedule or all schedules
 * extras:
   * name = the name of the schedule (without, it cancels **all** schedules)
 * example: for canceling all schedules
+
   ```bash
   am broadcast -a cancel -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
   ```
+
 * example: canceling a specific schedule:
+
   ```bash
   am broadcast -a cancel -e name "the name of the schedule" -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
   ```
@@ -757,9 +772,11 @@ set a new time of a schedule
   * name = the name of the schedule
   * time = new time in HH:MM format, e.g. 12:34
 * example: set a schedule to the time 12:34
+
   ```bash
   am broadcast -a reschedule -e name "the name of the schedule" -e time 12:34 -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
   ```
+
 ### now I want to detect the end of the operation
 
 For a single app you can check the properties file, because this is only written, when the backup is finished and successful.
@@ -856,6 +873,51 @@ Here is a quick status overview, what NB is capable of - to be edited.
 
 </details>
 
+## Do I need encryption?
+
+Well, it depends...
+
+Over all it's about risking that others might access your data visa risking your backups by a single point of failure (the password and/or the properties file).
+
+Here are some things to consider:
+
+* Non-encrypted backups are simple tar archives that can be used with any archiver (e.g. to extract single files).
+* If encryption is necessary, you could also use encrypted filesystems or similar.
+
+* Internal storage is encrypted.
+* Apps are isolated, only NB is granted the right to write to the backup folder.
+* Root apps can access everything, but they can also access your data directly, no need to access the backup for this.
+* Even with a stolen device it's the same for the real data and the backup. Either internal storage is readable or not.
+
+* External storage is not encrypted.
+
+* Remote storage is often not encrypted.
+
+* You can loose/forget your password (this really happens among users)
+* There is a certain risk to loose or damage properties file(s) (not sure why, but it also happens among our users). Then you are doomed. The properties file contains a key (called "iv") that is necessary to decrypt this particular backup. I think it is there to protect against statistical attacks (not sure if that works when the iv vector is readable, at least it's more difficult).
+
+ask yourself:
+
+* Which attack do I want to prevent?
+* How much worth has the secret? (e.g. life threat, money, privacy)
+* Then look at the technical properties of the protection.
+* How much risk does it have to loose the data?
+* How much does losing the data cost (not only money)?
+
+Properties of the protection:
+
+* E.g. drive encryption is usually accessible as long as you are logged in (or the drive is unlocked).
+
+* In contrast, with single file encryption you could unlock only the data that you need right now.
+
+* All encryption does not help, if the password (or whatever is the key) can be stolen.
+
+Often it's quite different as you think.
+
+As an example, it seems to be more secure to ask for a password on each access instead of storing it.
+
+However, if an intruder can watch you typing it (lots of possibilities, e.g. phishing, or looking at your screen, or some spy code inserted into a library), he can easily get your password. While a securely stored password  (e.g. hardware based in keystore) can only be stolen by inserted spy code when it is decrypted.
+
 ## How can I open encrypted backups on my computer?
 
 You can find the encryption algorithm and setup in this class: [Neo-Backup - Crypto.kt · GitHub](https://github.com/NeoApplications/Neo-Backup/blob/main/app/src/main/java/com/machiav3lli/backup/utils/CryptoUtils.kt) . The rest depends on the version you used.
@@ -879,7 +941,7 @@ Note: decryption needs the `iv` vector from the properties file (a random value)
 
 ## What does the notification of schedules and batch jobs tell me?
 
-*this decribes the notification beginning with version 8*
+(*this decribes the notification beginning with version 8*)
 
 **While it is running...**
 
@@ -940,8 +1002,10 @@ You can sync the backup directory to the remote directory using tools like synct
 If you have space for a complete backup, this is the preferred way (syncthing is known to work well).
 
 However, in cases when you don't have enough local storage, it is possible to
+
 * use the Storage Access Framework (SAF) to access remote locations or
 * use a remote directory mounted to the local file system.
+
 This means, writing to the local directory actually writes to the remote directory.
 
 Note, that Neo Backup (as derived from it's predecessors) was developed with local storage in mind. So it is not optimized for remote storage. It will need a lot of work on it's mechanisms to change that.
@@ -974,7 +1038,6 @@ the workaround is an older version, which you probably should use until the bug 
 
 [SMB Documents Provider 1.6.0](https://github.com/fuenor/smb-documents-provider/releases/tag/Ver.1.6.0)
 
-
 #### **Mounting** remote file systems to local folders
 
 works with
@@ -988,6 +1051,7 @@ It's an app that uses rclone to mount remote storage and can also make it access
 Neo backup should use the SAF option.
 To enable SAF in RoundSync, you need to configure some options:
 
+```text
     File Access
 
     [ ] Enable SAF Client Preview
@@ -1004,6 +1068,7 @@ To enable SAF in RoundSync, you need to configure some options:
 
     [ ] Allow any app to access your remotes
         WARNING: This will allow any app to read and write any path on any configured remote.
+```
 
 "Enable Content Provider Preview" is the necessary part to make the RoundSync SAF provider available in the sidebar of the directory selection.
 
@@ -1068,11 +1133,9 @@ They use rclone to integrate a bunch of remote storages into SAF.
 
 I also know these two SAF providers:
 
-CIFS (Windows network)
-https://play.google.com/store/apps/details?id=com.wa2c.android.cifsdocumentsprovider
+[CIFS (Windows network)](https://play.google.com/store/apps/details?id=com.wa2c.android.cifsdocumentsprovider)
 
-SSH
-https://play.google.com/store/apps/details?id=ru.nsu.bobrofon.easysshfs
+[SSH](https://play.google.com/store/apps/details?id=ru.nsu.bobrofon.easysshfs)
 
 Unfortunately the naming of such storage providers isn't very defined, "Document(s) Provider" or "Storage Access Provider", "File System" instead of "Provider" etc. So you never know if you found all.
 
@@ -1097,10 +1160,12 @@ that's not implemented (yet?).
 As a workaround you can rename the backup or easier put both in a sub-folder with a useful name. The subfolder could also be reused later for other backups of that "label".
 
 * you always need to handle folder and properties file equally, so that they live at the same directory level and have the same name like this:
-  ```
+
+  ```path
   path/backupfolder/
   path/backupfolder.properties
   ```
+
 * any subdirectories and file name additions below the basic backup directory (that one chosen in the preferences) will be shown after the date of the backup
 * in this name
   * the package name will be replaced by the package symbol
@@ -1108,14 +1173,16 @@ As a workaround you can rename the backup or easier put both in a sub-folder wit
 * the date and time used in the entry is that from inside the properties file (which should always be equal to that in the file name)
 
 e.g.
-```
+
+```path
 <backupdir>/xyz/abc-the.package.name-def/<date-and-time>-some-file-name-addition.properties
 ```
+
 will be shown like
-```
+
+```path
 xyz/abc-📦-def/some-file-name-addition
 ```
-
 
 ## How do I filter on changed data?
 
@@ -1125,36 +1192,35 @@ We know, Titanium Backup had this feature. We also discussed it.
 
 Some Android versions ago, we checked how much data changes every day.
 We found that almost all apps have changed data.
+
 * Those that don't, have a very small data size (apps like bubble level, calculators etc.), so they do not matter much.
 * Those with bigger data usually update it frequently (especially messaging apps).
 * The number of files is also much bigger today. Scanning all those data files does not make much sense.
 
 It is easier to have categories (= different schedules) of important and less important apps/data with corresponding backup intervals.
 
-
 ## How do I create a support log?
 
 use `preferences / Tools / Terminal / SUPPORT` (...wait...) then share the file (or find it in `<backupdir>/!-LOGS`)
 
-
 ## Troubleshooting
 
 * DevTools: for trouble shooting:
-    * long press on Title will show the DevTools popup for faster access to developer settings, log,
-      terminal and other tools
+  * long press on Title will show the DevTools popup for faster access to developer settings, log,
+    terminal and other tools
 * option to autosave a log if an unexpected exception happens, even if it is catched later, so we
   get better info from the inner circles
-    * → `logging/autoLogExceptions`
+  * → `logging/autoLogExceptions`
 * option to autosave a support log after each schedule, because it's difficult to do this manually
-    * → `logging/autoLogAfterSchedule`
+  * → `logging/autoLogAfterSchedule`
 * option to autosave a support log on suspicious events, e.g. duplicate schedules
-    * situations that are not necessarily an error, only "interesting" sometimes to have a look at
-    * → `logging/autoLogSuspicious`
+  * situations that are not necessarily an error, only "interesting" sometimes to have a look at
+  * → `logging/autoLogSuspicious`
 * `SUPPORT` button in DevTools or Terminal
   * `prepareSupport` enables the usual preferences to trace what happens
   * `shareSupport` button saves the text in the terminal and opens share menu
-      * if you want to review it, cancel the menu and goto the "View the log" tool instead, you can
-        still share from there
+    * if you want to review it, cancel the menu and goto the "View the log" tool instead, you can
+      still share from there
   * `afterSupport` reset them to defaults (less intensive tracing)
 * you may enable `logToSystemLogcat`, if the internal log isn't long enough and you need to use an app to capture a longer log (or catch it in case of crashes etc.)
 
