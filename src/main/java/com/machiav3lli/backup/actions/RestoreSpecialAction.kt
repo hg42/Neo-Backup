@@ -40,7 +40,7 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
     RestoreAppAction(context, work, shell) {
 
     @Throws(CryptoSetupException::class, RestoreFailedException::class)
-    override fun restoreAllData(
+    override fun restoreAll(
         work: AppActionWork?,
         app: Package,
         backup: Backup,

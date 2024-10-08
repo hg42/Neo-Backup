@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,12 +48,14 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import com.machiav3lli.backup.MODE_ALL
+import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
 import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.SELECTIONS_FOLDER_NAME
+import com.machiav3lli.backup.batchModes
 import com.machiav3lli.backup.handler.BackupRestoreHelper
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.ShellCommands
@@ -64,7 +67,9 @@ import com.machiav3lli.backup.traceTiming
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArchiveTray
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
+import com.machiav3lli.backup.ui.compose.icons.phosphor.Play
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.SystemUtils.runParallel
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
@@ -109,6 +114,54 @@ fun Confirmation(
         text = { Text(no) },
         onClick = {
             expanded.value = false
+        }
+    )
+}
+
+@Composable
+fun DataPartsSelector(
+    result: MutableIntState,
+) {
+    batchModes.forEach { (mode, name) ->
+        DropdownMenuItem(
+            leadingIcon = {
+                if ((result.intValue and mode) != 0)
+                    Icon(Phosphor.Check, null, tint = Color.Green)
+                else
+                    Icon(Phosphor.X, null, tint = Color.Red)
+            },
+            text = { Text(name) },
+            onClick = {
+                result.intValue = result.intValue xor mode
+            }
+        )
+    }
+}
+
+val persist_batchMode = IntPref(
+    key = "persist.batchMode",
+    entries = (MODE_UNSET..MODE_ALL).toList(),
+    defaultValue = MODE_ALL
+)
+
+@Composable
+fun SelectDataParts(
+    expanded: MutableState<Boolean>,
+    onAction: (mode: Int) -> Unit = {},
+) {
+    val mode = remember { mutableIntStateOf(persist_batchMode.value) }
+
+    DataPartsSelector(mode)
+
+    HorizontalDivider() //--------------------------------------------------------------------------
+
+    DropdownMenuItem(
+        leadingIcon = { Icon(Phosphor.Play, null) },
+        text = { Text("doit!") },
+        onClick = {
+            expanded.value = false
+            persist_batchMode.value = mode.intValue
+            onAction(mode.intValue)
         }
     )
 }
@@ -451,21 +504,21 @@ fun launchEachPackage(
     }
 }
 
-fun launchBackup(packages: List<Package>) {
+fun launchBackup(packages: List<Package>, mode: Int) {
     val selectedAndInstalled = packages.installed()
     OABX.main?.startBatchAction(
         true,
         selectedAndInstalled.map { it.packageName },
-        selectedAndInstalled.map { MODE_ALL }
+        selectedAndInstalled.map { mode }
     )
 }
 
-fun launchRestore(packages: List<Package>) {
+fun launchRestore(packages: List<Package>, mode: Int) {
     val packagesWithBackups = packages.withBackups()
     OABX.main?.startBatchAction(
         false,
         packagesWithBackups.map { it.packageName },
-        packagesWithBackups.map { MODE_ALL }
+        packagesWithBackups.map { mode }
     )
 }
 
@@ -590,7 +643,7 @@ fun MainPackageContextMenu(
                 }
             )
 
-            HorizontalDivider() //----------------------------------------------------------------------------
+            HorizontalDivider() //------------------------------------------------------------------
         }
 
         DropdownMenuItem(
@@ -673,18 +726,22 @@ fun MainPackageContextMenu(
 
         if (selection.count { it.value } > 0) {
 
-            HorizontalDivider() //----------------------------------------------------------------------------
+            HorizontalDivider() //------------------------------------------------------------------
 
             DropdownMenuItem(
                 enabled = false, onClick = {},
-                text = { Text("${selectedVisible.count()} selected items:") }
+                text = { Text("${selectedVisible.count()} selected and visible items:") }
             )
 
             DropdownMenuItem(
-                text = { Text("Backup") },
+                text = { Text("Backup...") },
                 onClick = {
-                    expanded.value = false
-                    launchBackup(selectedVisible)
+                    openSubMenu(subMenu) {
+                        SelectDataParts(expanded) { mode ->
+                            expanded.value = false
+                            launchBackup(selectedVisible, mode)
+                        }
+                    }
                 }
             )
 
@@ -692,14 +749,15 @@ fun MainPackageContextMenu(
                 text = { Text("Restore...") },
                 onClick = {
                     openSubMenu(subMenu) {
-                        Confirmation(expanded) {
-                            launchRestore(selectedVisible)
+                        SelectDataParts(expanded) { mode ->
+                            expanded.value = false
+                            launchRestore(selectedVisible, mode)
                         }
                     }
                 }
             )
 
-            HorizontalDivider() //----------------------------------------------------------------------------
+            HorizontalDivider() //------------------------------------------------------------------
 
             DropdownMenuItem(
                 text = { Text("Enable") },
@@ -731,7 +789,7 @@ fun MainPackageContextMenu(
                 }
             )
 
-            HorizontalDivider() //----------------------------------------------------------------------------
+            HorizontalDivider() //------------------------------------------------------------------
 
             DropdownMenuItem(
                 text = { Text("Delete All Backups...") },

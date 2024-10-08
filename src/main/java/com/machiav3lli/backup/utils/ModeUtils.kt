@@ -29,7 +29,7 @@ import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.possibleSchedModes
+import com.machiav3lli.backup.batchModesSequence
 
 fun altModeToMode(mode: Int, backupBoolean: Boolean) = when (mode) {
     ALT_MODE_APK -> MODE_APK
@@ -60,7 +60,7 @@ fun backupModeIfActive(mode: Int) = when {
     else                                                -> MODE_UNSET
 }
 
-fun modeToModes(mode: Int): List<Int> = possibleSchedModes
+fun modeToModes(mode: Int): List<Int> = batchModesSequence
     .filter { mode and it == it }
 
 fun modeToString(context: Context, mode: Int): String = when (mode) {

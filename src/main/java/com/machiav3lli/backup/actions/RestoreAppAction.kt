@@ -27,6 +27,8 @@ import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.batchModes
+import com.machiav3lli.backup.batchOperations
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler
@@ -107,14 +109,11 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                         found?.dir
                     }
                 if (backupDir != null) {
-                    if (backupMode and MODE_APK == MODE_APK) {
-                        work?.setOperation("a")
-                        restorePackage(backupDir, backup)
-                        refreshAppInfo(context, app)    // also waits for valid paths
-                    }
-                    if (backupMode != MODE_APK) {
-                        restoreAllData(work, app, backup, backupDir, backupMode)
-                    }
+
+                    //==================================================
+                    restoreAll(work, app, backup, backupDir, backupMode)
+                    //==================================================
+
                 } else return ActionResult(
                     app,
                     null,
@@ -160,49 +159,38 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
     }
 
     @Throws(CryptoSetupException::class, RestoreFailedException::class)
-    protected open fun restoreAllData(
+    protected open fun restoreAll(
         work: AppActionWork?,
         app: Package,
         backup: Backup,
         backupDir: StorageFile,
         backupMode: Int,
     ) {
-        if (!isPlausiblePath(app.dataPath, app.packageName))
-            refreshAppInfo(context, app)    // wait for valid paths
-        if (backup.hasAppData && backupMode and MODE_DATA == MODE_DATA) {
-            Timber.i("<${backup.packageName}> Restoring app's data")
-            work?.setOperation("=d")
+        fun doRestore(mode: Int, cond: Boolean, todo: () -> Unit) {
+            if (cond && (backupMode and mode) != 0) {
+                Timber.i("$app: Restoring ${batchModes[mode]}")
+                work?.setOperation(batchOperations[mode]!!)
+                todo()
+            }
+        }
+        doRestore(MODE_APK, backup.hasApk) {
+            restorePackage(backupDir, backup)
+        }
+        refreshAppInfo(context, app)    // also waits for valid paths
+        doRestore(MODE_DATA, backup.hasAppData) {
             restoreData(app, backup, backupDir)
-        } else {
-            Timber.i("<${backup.packageName}> Skip restoring app's data; not part of the backup or restore mode")
         }
-        if (backup.hasDevicesProtectedData && backupMode and MODE_DATA_DE == MODE_DATA_DE) {
-            Timber.i("<${backup.packageName}> Restoring app's device-protected data")
-            work?.setOperation("==p")
+        doRestore(MODE_DATA_DE, backup.hasDevicesProtectedData) {
             restoreDeviceProtectedData(app, backup, backupDir)
-        } else {
-            Timber.i("<${backup.packageName}> Skip restoring app's device protected data; not part of the backup or restore mode")
         }
-        if (backup.hasExternalData && backupMode and MODE_DATA_EXT == MODE_DATA_EXT) {
-            Timber.i("<${backup.packageName}> Restoring app's external data")
-            work?.setOperation("===x")
+        doRestore(MODE_DATA_EXT, backup.hasExternalData) {
             restoreExternalData(app, backup, backupDir)
-        } else {
-            Timber.i("<${backup.packageName}> Skip restoring app's external data; not part of the backup or restore mode")
         }
-        if (backup.hasObbData && backupMode and MODE_DATA_OBB == MODE_DATA_OBB) {
-            Timber.i("<${backup.packageName}> Restoring app's obb files")
-            work?.setOperation("====o")
+        doRestore(MODE_DATA_OBB, backup.hasObbData) {
             restoreObbData(app, backup, backupDir)
-        } else {
-            Timber.i("<${backup.packageName}> Skip restoring app's obb files; not part of the backup or restore mode")
         }
-        if (backup.hasMediaData && backupMode and MODE_DATA_MEDIA == MODE_DATA_MEDIA) {
-            Timber.i("<${backup.packageName}> Restoring app's media files")
-            work?.setOperation("=====m")
+        doRestore(MODE_DATA_MEDIA, backup.hasMediaData) {
             restoreMediaData(app, backup, backupDir)
-        } else {
-            Timber.i("<${backup.packageName}> Skip restoring app's media files; not part of the backup or restore mode")
         }
     }
 
@@ -422,32 +410,32 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         }
     }
 
-    //TODO wech
-    //@Throws(RestoreFailedException::class)
-    //private fun genericRestoreDataByCopying(
-    //    targetPath: String,
-    //    backupInstanceDir: StorageFile,
-    //    what: String,
-    //) {
-    //    try {
-    //        val backupDirToRestore = backupInstanceDir.findFile(what)
-    //            ?: throw RestoreFailedException(
-    //                String.format(
-    //                    LOG_DIR_IS_MISSING_CANNOT_RESTORE,
-    //                    what
-    //                )
-    //            )
-    //        suRecursiveCopyFileFromDocument(backupDirToRestore, targetPath)
-    //    } catch (e: IOException) {
-    //        throw RestoreFailedException("Could not read the input file due to IOException", e)
-    //    } catch (e: ShellCommandFailedException) {
-    //        val error = extractErrorMessage(e.shellResult)
-    //        throw RestoreFailedException(
-    //            "Shell command failed: ${e.command}\n$error",
-    //            e
-    //        )
-    //    }
-    //}
+//TODO wech
+//@Throws(RestoreFailedException::class)
+//private fun genericRestoreDataByCopying(
+//    targetPath: String,
+//    backupInstanceDir: StorageFile,
+//    what: String,
+//) {
+//    try {
+//        val backupDirToRestore = backupInstanceDir.findFile(what)
+//            ?: throw RestoreFailedException(
+//                String.format(
+//                    LOG_DIR_IS_MISSING_CANNOT_RESTORE,
+//                    what
+//                )
+//            )
+//        suRecursiveCopyFileFromDocument(backupDirToRestore, targetPath)
+//    } catch (e: IOException) {
+//        throw RestoreFailedException("Could not read the input file due to IOException", e)
+//    } catch (e: ShellCommandFailedException) {
+//        val error = extractErrorMessage(e.shellResult)
+//        throw RestoreFailedException(
+//            "Shell command failed: ${e.command}\n$error",
+//            e
+//        )
+//    }
+//}
 
     @Throws(RestoreFailedException::class, CryptoSetupException::class, IOException::class)
     protected fun openArchiveFile(
@@ -963,25 +951,25 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         //
         //} else {
 
-            val dataType = BACKUP_DIR_OBB_FILES
-            val backupArchive = findBackupArchive(dataType, backup, backupDir)
+        val dataType = BACKUP_DIR_OBB_FILES
+        val backupArchive = findBackupArchive(dataType, backup, backupDir)
 
-            val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
-            genericRestoreFromArchive(
-                dataType,
-                backupArchive.file,
-                extractTo,
-                backupArchive.isCompressed,
-                backupArchive.compressionType,
-                backupArchive.isEncrypted,
-                backup.iv,
-                context.externalCacheDir?.let { RootFile(it) },
-            )
-            genericRestorePermissions(
-                dataType,
-                extractTo,
-                uidgidcon
-            )
+        val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
+        genericRestoreFromArchive(
+            dataType,
+            backupArchive.file,
+            extractTo,
+            backupArchive.isCompressed,
+            backupArchive.compressionType,
+            backupArchive.isEncrypted,
+            backup.iv,
+            context.externalCacheDir?.let { RootFile(it) },
+        )
+        genericRestorePermissions(
+            dataType,
+            extractTo,
+            uidgidcon
+        )
         //}
     }
 
@@ -1008,25 +996,25 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         //
         //} else {
 
-            val dataType = BACKUP_DIR_MEDIA_FILES
-            val backupArchive = findBackupArchive(dataType, backup, backupDir)
+        val dataType = BACKUP_DIR_MEDIA_FILES
+        val backupArchive = findBackupArchive(dataType, backup, backupDir)
 
-            val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
-            genericRestoreFromArchive(
-                dataType,
-                backupArchive.file,
-                extractTo,
-                backupArchive.isCompressed,
-                backupArchive.compressionType,
-                backupArchive.isEncrypted,
-                backup.iv,
-                context.externalCacheDir?.let { RootFile(it) }
-            )
-            genericRestorePermissions(
-                dataType,
-                extractTo,
-                uidgidcon
-            )
+        val uidgidcon = getOwnerGroupContextWithWorkaround(app, extractTo)
+        genericRestoreFromArchive(
+            dataType,
+            backupArchive.file,
+            extractTo,
+            backupArchive.isCompressed,
+            backupArchive.compressionType,
+            backupArchive.isEncrypted,
+            backup.iv,
+            context.externalCacheDir?.let { RootFile(it) }
+        )
+        genericRestorePermissions(
+            dataType,
+            extractTo,
+            uidgidcon
+        )
         //}
     }
 

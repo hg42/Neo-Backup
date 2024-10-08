@@ -197,17 +197,38 @@ const val ALT_MODE_DATA = 2
 const val ALT_MODE_BOTH = 3
 
 const val MODE_UNSET = 0b0000000
-const val MODE_NONE = 0b0100000
+
 const val MODE_APK = 0b0010000
 const val MODE_DATA = 0b0001000
 const val MODE_DATA_DE = 0b0000100
 const val MODE_DATA_EXT = 0b0000010
 const val MODE_DATA_OBB = 0b0000001
 const val MODE_DATA_MEDIA = 0b1000000
-const val BACKUP_FILTER_DEFAULT = 0b1111111
-val possibleSchedModes =
+
+const val MODE_NONE = 0b0100000     //TODO name? it's not a mode! BACKUP_FILTER_NONE?
+
+val batchModes =
+    mapOf(
+        MODE_APK to "apk",
+        MODE_DATA to "data",
+        MODE_DATA_DE to "device-protected",
+        MODE_DATA_EXT to "external",
+        MODE_DATA_OBB to "obb",
+        MODE_DATA_MEDIA to "media"
+    )
+val batchOperations = mapOf(
+    MODE_APK to "a",
+    MODE_DATA to "=d",
+    MODE_DATA_DE to "==p",
+    MODE_DATA_EXT to "===x",
+    MODE_DATA_OBB to "====o",
+    MODE_DATA_MEDIA to "=====m",
+)
+val batchModesSequence =
     listOf(MODE_APK, MODE_DATA, MODE_DATA_DE, MODE_DATA_EXT, MODE_DATA_OBB, MODE_DATA_MEDIA)
-val MODE_ALL = possibleSchedModes.reduce { a, b -> a.or(b) }
+
+val MODE_ALL = batchModesSequence.reduce { a, b -> a.or(b) }
+val BACKUP_FILTER_DEFAULT = MODE_ALL or MODE_NONE
 
 val scheduleBackupModeChipItems = listOf(
     ChipItem.Apk,

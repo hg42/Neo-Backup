@@ -26,6 +26,8 @@ import com.machiav3lli.backup.MODE_DATA_EXT
 import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.batchModes
+import com.machiav3lli.backup.batchOperations
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.handler.BackupBuilder
 import com.machiav3lli.backup.handler.LogsHandler
@@ -141,44 +143,42 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 pauseApp(type = "backup", wh = When.pre, packageName = app.packageName)
 
             try {
-                if (backupMode and MODE_APK == MODE_APK) {
-                    Timber.i("$app: Backing up package")
-                    work?.setOperation("a")
+                fun doBackup(mode: Int, todo: () -> Unit) {
+                    if ((backupMode and mode) != 0) {
+                        Timber.i("$app: Backing up ${batchModes[mode]}")
+                        work?.setOperation(batchOperations[mode]!!)
+                        todo()
+                    }
+                }
+                doBackup(MODE_APK) {
                     backupPackage(app, backupInstanceDir)
                     backupBuilder.setHasApk(true)
                 }
-                var backupCreated: Boolean
-                if (backupMode and MODE_DATA == MODE_DATA) {
-                    Timber.i("$app: Backing up data")
-                    work?.setOperation("=d")
-                    backupCreated = backupData(app, backupInstanceDir, iv)
-                    backupBuilder.setHasAppData(backupCreated)
+                doBackup(MODE_DATA) {
+                    backupBuilder.setHasAppData(
+                        backupData(app, backupInstanceDir, iv)
+                    )
                 }
-                if (backupMode and MODE_DATA_DE == MODE_DATA_DE) {
-                    Timber.i("$app: Backing up device's protected data")
-                    work?.setOperation("==p")
-                    backupCreated = backupDeviceProtectedData(app, backupInstanceDir, iv)
-                    backupBuilder.setHasDevicesProtectedData(backupCreated)
+                doBackup(MODE_DATA_DE) {
+                    backupBuilder.setHasDevicesProtectedData(
+                        backupDeviceProtectedData(app, backupInstanceDir, iv)
+                    )
                 }
-                if (backupMode and MODE_DATA_EXT == MODE_DATA_EXT) {
-                    Timber.i("$app: Backing up external data")
-                    work?.setOperation("===x")
-                    backupCreated = backupExternalData(app, backupInstanceDir, iv)
-                    backupBuilder.setHasExternalData(backupCreated)
+                doBackup(MODE_DATA_EXT) {
+                    backupBuilder.setHasExternalData(
+                        backupExternalData(app, backupInstanceDir, iv)
+                    )
                 }
-                if (backupMode and MODE_DATA_OBB == MODE_DATA_OBB) {
-                    Timber.i("$app: Backing up obb files")
-                    work?.setOperation("====o")
-                    backupCreated = backupObbData(app, backupInstanceDir, iv)
-                    backupBuilder.setHasObbData(backupCreated)
+                doBackup(MODE_DATA_OBB) {
+                    backupBuilder.setHasObbData(
+                        backupObbData(app, backupInstanceDir, iv)
+                    )
                 }
-                if (backupMode and MODE_DATA_MEDIA == MODE_DATA_MEDIA) {
-                    Timber.i("$app: Backing up media files")
-                    work?.setOperation("=====m")
-                    backupCreated = backupMediaData(app, backupInstanceDir, iv)
-                    backupBuilder.setHasMediaData(backupCreated)
+                doBackup(MODE_DATA_MEDIA) {
+                    backupBuilder.setHasMediaData(
+                        backupMediaData(app, backupInstanceDir, iv)
+                    )
                 }
-
                 if (isCompressionEnabled()) {
                     Timber.i("$app: Compressing backup using ${getCompressionType()}")
                     backupBuilder.setCompressionType(getCompressionType())

@@ -708,7 +708,6 @@ val persist_skippedEncryptionCounter = IntPref(
     defaultValue = 0
 )
 
-
 //----------------------------------------
 
 fun publicPreferences(persist: Boolean = false) =
