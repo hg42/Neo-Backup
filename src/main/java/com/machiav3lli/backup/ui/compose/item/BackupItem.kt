@@ -55,11 +55,11 @@ fun BackupItem_headlineContent(
 ) {
     BalancedWrapRow {
         Text(
-            text = item.versionName ?: "",
+            text = "${item.versionName ?: ""} #${item.versionCode}",
             modifier = Modifier.balancedWrap(),
             overflow = TextOverflow.Ellipsis,
             maxLines = 5,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.labelMedium
         )
         AnimatedVisibility(visible = (item.cpuArch != android.os.Build.SUPPORTED_ABIS[0])) {
             Text(
