@@ -139,8 +139,6 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
                 }
             }
 
-        } catch (e: RuntimeException) {
-            throw RestoreFailedException("${e.message}", e)
         } catch (e: ShellCommandFailedException) {
             val error = extractErrorMessage(e.shellResult)
             Timber.e("$app: Restore $BACKUP_DIR_DATA failed. System might be inconsistent: $error")
@@ -150,6 +148,8 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
         } catch (e: IOException) {
             Timber.e("$app: Restore $BACKUP_DIR_DATA failed with IOException. System might be inconsistent: $e")
             throw RestoreFailedException("IOException", e)
+        } catch (e: RuntimeException) {
+            throw RestoreFailedException("${e.message}", e)
         } finally {
             val backupDeleted = FileUtils.deleteQuietly(tempPath)   // if deleteQuietly is missing, org.apache.commons.io is wrong (shitty version from 2003 that looks newer)
             Timber.d("$app: Uncompressed $BACKUP_DIR_DATA was deleted: $backupDeleted")

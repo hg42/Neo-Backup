@@ -618,17 +618,17 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
                             throw ScriptException(errFiltered)
                     }
                 }
+            } catch (e: ShellCommandFailedException) {
+                val error = extractErrorMessage(e.shellResult)
+                throw RestoreFailedException(
+                    "Could not restore a file due to a failed root command for $targetDir: $error",
+                    e
+                )
             } catch (e: FileNotFoundException) {
                 throw RestoreFailedException("Backup archive at $archive is missing", e)
             } catch (e: IOException) {
                 throw RestoreFailedException(
                     "Could not read the input file or write an output file due to IOException: $e",
-                    e
-                )
-            } catch (e: ShellCommandFailedException) {
-                val error = extractErrorMessage(e.shellResult)
-                throw RestoreFailedException(
-                    "Could not restore a file due to a failed root command for $targetDir: $error",
                     e
                 )
             }
