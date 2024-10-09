@@ -45,16 +45,28 @@ import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
 import com.machiav3lli.backup.ui.compose.theme.ColorUser
 import com.machiav3lli.backup.ui.item.InfoChipItem
 
-fun getStats(appsList: List<Package>): Triple<Int, Int, Int> {
-    var backupsNumber = 0
-    var updatedNumber = 0
+data class AppStats(
+    val nApps: Int,
+    val nBackups: Int,
+    val nUpdated: Int,
+    val szApps: Long,
+    val szData: Long
+)
+
+fun getStats(appsList: List<Package>): AppStats {   //TODO hg42 we actually want the separate parts, need to find an api
+    var nBackups = 0
+    var nUpdated = 0
+    var szApps = 0L
+    var szData = 0L
     appsList.forEach {
         if (it.hasBackups) {
-            backupsNumber += it.numberOfBackups
-            if (it.isUpdated) updatedNumber += 1
+            nBackups += it.numberOfBackups
+            if (it.isUpdated) nUpdated += 1
         }
+        szApps += it.appBytes
+        szData += it.dataBytes
     }
-    return Triple(appsList.size, backupsNumber, updatedNumber)
+    return AppStats(appsList.size, nBackups, nUpdated, szApps, szData)
 }
 
 fun PackageManager.getInstalledPackageInfosWithPermissions() =

@@ -122,6 +122,8 @@ fun Confirmation(
 fun DataPartsSelector(
     result: MutableIntState,
 ) {
+    //TODO hg42 add sizes
+
     batchModes.forEach { (mode, name) ->
         DropdownMenuItem(
             leadingIcon = {

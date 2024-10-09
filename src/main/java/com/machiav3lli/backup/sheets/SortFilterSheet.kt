@@ -17,7 +17,9 @@
  */
 package com.machiav3lli.backup.sheets
 
+import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +46,8 @@ import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BACKUP_FILTER_DEFAULT
+import com.machiav3lli.backup.CHIP_SIZE_APP
+import com.machiav3lli.backup.CHIP_SIZE_DATA
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
@@ -69,9 +73,11 @@ import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
 import com.machiav3lli.backup.ui.compose.item.ExpandableBlock
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.SwitchChip
+import com.machiav3lli.backup.ui.compose.recycler.InfoChipsBlock
 import com.machiav3lli.backup.ui.compose.recycler.MultiSelectableChipGroup
 import com.machiav3lli.backup.ui.compose.recycler.SelectableChipGroup
 import com.machiav3lli.backup.ui.item.ChipItem
+import com.machiav3lli.backup.ui.item.InfoChipItem
 import com.machiav3lli.backup.updatedFilterChipItems
 import com.machiav3lli.backup.utils.applyFilter
 import com.machiav3lli.backup.utils.getStats
@@ -101,28 +107,56 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
                     containerColor = Color.Transparent,
                 ),
                 headlineContent = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        DoubleVerticalText(
-                            upperText = currentStats().first.toString(),
-                            bottomText = stringResource(id = R.string.stats_apps),
-                            modifier = Modifier.weight(1f)
-                        )
-                        DoubleVerticalText(
-                            upperText = currentStats().second.toString(),
-                            bottomText = stringResource(id = R.string.stats_backups),
-                            modifier = Modifier.weight(1f)
-                        )
-                        DoubleVerticalText(
-                            upperText = currentStats().third.toString(),
-                            bottomText = stringResource(id = R.string.stats_updated),
-                            modifier = Modifier.weight(1f)
-                        )
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val stats = currentStats()
+                            DoubleVerticalText(
+                                upperText = stats.nApps.toString(),
+                                bottomText = stringResource(id = R.string.stats_apps),
+                                modifier = Modifier.weight(1f)
+                            )
+                            DoubleVerticalText(
+                                upperText = stats.nBackups.toString(),
+                                bottomText = stringResource(id = R.string.stats_backups),
+                                modifier = Modifier.weight(1f)
+                            )
+                            DoubleVerticalText(
+                                upperText = stats.nUpdated.toString(),
+                                bottomText = stringResource(id = R.string.stats_updated),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val stats = currentStats()
+                            InfoChipsBlock(list = listOf(
+                                InfoChipItem(
+                                    flag = CHIP_SIZE_APP,
+                                    text = stringResource(id = R.string.app_size) + " " + Formatter.formatFileSize(
+                                        LocalContext.current,
+                                        stats.szApps ?: 0
+                                    ),
+                                ),
+                                InfoChipItem(
+                                    flag = CHIP_SIZE_DATA,
+                                    text = stringResource(id = R.string.data_size) + " " + Formatter.formatFileSize(
+                                        LocalContext.current,
+                                        stats.szData ?: 0
+                                    ),
+                                ),
+                            ))
+                        }
                     }
                 },
                 trailingContent = {
