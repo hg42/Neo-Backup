@@ -89,8 +89,8 @@ val ISO_DATE_TIME_FORMAT_MS
 //val BACKUP_DATE_TIME_FORMATTER_OLD = DateTimeFormatter.ofPattern(FILE_DATE_TIME_PATTERN)
 
 // use millisec, because computers (and users) can be faster than a sec
-val BACKUP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(FILE_DATE_TIME_MS_PATTERN)
-val BACKUP_DATE_TIME_SHOW_FORMATTER = DateTimeFormatter.ofPattern(ISO_LIKE_DATE_TIME_PATTERN)
+val BACKUP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(FILE_DATE_TIME_MS_PATTERN)         //TODO hg42 ...FILE...
+val BACKUP_DATE_TIME_SHOW_FORMATTER = DateTimeFormatter.ofPattern(ISO_LIKE_DATE_TIME_PATTERN)   //TODO hg42 local vs iso
 val DATE_TIME_AS_VERSION_CODE_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_AS_VERSION_CODE_PATTERN)
 
 // optional millisec to include old format

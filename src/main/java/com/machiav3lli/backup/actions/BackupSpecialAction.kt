@@ -38,11 +38,12 @@ class BackupSpecialAction(context: Context, work: AppActionWork?, shell: ShellHa
         if (backupMode and MODE_APK == MODE_APK) {
             Timber.e("Special contents don't have APKs to backup. Ignoring")
         }
+        // return super.run(app, MODE_DATA)    //TODO simply do this?
         return if (backupMode and MODE_DATA == MODE_DATA)
             super.run(app, MODE_DATA)
         else ActionResult(
             app, null,
-            "Special backup only backups data, but data was not selected for backup",
+            "Special backup only backups data, but data was not selected for backup",   //TODO shouldn't we ignore that?
             false
         )
     }

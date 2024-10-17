@@ -23,13 +23,16 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -135,13 +138,18 @@ fun MainPage(
             contentColor = MaterialTheme.colorScheme.onBackground,
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             sheetContent = {
-                SortFilterSheet(
-                    onDismiss = {
-                        scope.launch {
-                            scaffoldState.bottomSheetState.partialExpand()
-                        }
-                    },
-                )
+                // bottom sheets are also recomposited when hidden
+                if (scaffoldState.bottomSheetState.currentValue != SheetValue.Hidden) {
+                    SortFilterSheet(
+                        onDismiss = {
+                            scope.launch {
+                                scaffoldState.bottomSheetState.partialExpand()
+                            }
+                        },
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(8.dp))    // placeholder
+                }
             }
         ) {
             val pagerState = rememberPagerState(pageCount = { pages.size })

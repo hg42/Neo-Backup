@@ -68,7 +68,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
         android:enableOnBackInvokedCallback="true"
-        tools:targetApi="32">
+        tools:targetApi="34">
 
         <receiver
             android:name=".services.MmsReceiver"

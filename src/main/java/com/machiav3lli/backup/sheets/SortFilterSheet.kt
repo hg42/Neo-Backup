@@ -91,12 +91,6 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
     val packageList by mActivity.viewModel.notBlockedList.collectAsState()
     var model by rememberSaveable { mutableStateOf(sortFilterModel) }
-    fun currentStats() = getStats(
-        packageList.applyFilter(
-            model,
-            OABX.context,
-        )
-    )  //TODO hg42 use central function for all the filtering
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -107,6 +101,12 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
                     containerColor = Color.Transparent,
                 ),
                 headlineContent = {
+                    val stats = getStats(
+                        packageList.applyFilter(
+                            model,
+                            OABX.context,
+                        )
+                    )
                     Column {
                         Row(
                             modifier = Modifier
@@ -115,7 +115,6 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val stats = currentStats()
                             DoubleVerticalText(
                                 upperText = stats.nApps.toString(),
                                 bottomText = stringResource(id = R.string.stats_apps),
@@ -139,23 +138,24 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val stats = currentStats()
-                            InfoChipsBlock(list = listOf(
-                                InfoChipItem(
-                                    flag = CHIP_SIZE_APP,
-                                    text = stringResource(id = R.string.app_size) + " " + Formatter.formatFileSize(
-                                        LocalContext.current,
-                                        stats.szApps ?: 0
+                            InfoChipsBlock(
+                                list = listOf(
+                                    InfoChipItem(
+                                        flag = CHIP_SIZE_APP,
+                                        text = stringResource(id = R.string.app_size) + " " + Formatter.formatFileSize(
+                                            LocalContext.current,
+                                            stats.szApps ?: 0
+                                        ),
                                     ),
-                                ),
-                                InfoChipItem(
-                                    flag = CHIP_SIZE_DATA,
-                                    text = stringResource(id = R.string.data_size) + " " + Formatter.formatFileSize(
-                                        LocalContext.current,
-                                        stats.szData ?: 0
+                                    InfoChipItem(
+                                        flag = CHIP_SIZE_DATA,
+                                        text = stringResource(id = R.string.data_size) + " " + Formatter.formatFileSize(
+                                            LocalContext.current,
+                                            stats.szData ?: 0
+                                        ),
                                     ),
-                                ),
-                            ))
+                                )
+                            )
                         }
                     }
                 },

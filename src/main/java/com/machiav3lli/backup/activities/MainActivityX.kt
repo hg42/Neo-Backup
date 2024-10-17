@@ -37,6 +37,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.navigation.NavHostController
@@ -49,6 +50,7 @@ import com.machiav3lli.backup.ALT_MODE_BOTH
 import com.machiav3lli.backup.ALT_MODE_DATA
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
+import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.startup
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.RESCUE_NAV
@@ -69,6 +71,7 @@ import com.machiav3lli.backup.preferences.pref_appTheme
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.ui.compose.ObservedEffect
 import com.machiav3lli.backup.ui.compose.item.DevTools
+import com.machiav3lli.backup.ui.compose.item.devToolsSearch
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
@@ -164,37 +167,8 @@ class MainActivityX : BaseActivity() {
             }"
         )
 
-        //TODO wech begin ??? or is this necessary with resume or similar?
-
         //TODO here or in MainPage? MainPage seems to be weird at least for each recomposition
         OABX.appsSuspendedChecked = false
-
-        //if (pref_catchUncaughtException.value) {               //TODO wech ???
-        //    Thread.setDefaultUncaughtExceptionHandler { _, e ->
-        //        try {
-        //            Timber.i("\n\n" + "=".repeat(60))
-        //            LogsHandler.unexpectedException(e)
-        //            LogsHandler.logErrors("uncaught: ${e.message}")
-        //            if (pref_uncaughtExceptionsJumpToPreferences.value) {
-        //                context.restartApp(RESCUE_NAV)
-        //            }
-        //            object : Thread() {
-        //                override fun run() {
-        //                    Looper.prepare()
-        //                    Looper.loop()
-        //                }
-        //            }.start()
-        //        } catch (_: Throwable) {
-        //            // ignore
-        //        } finally {
-        //            exitProcess(2)
-        //        }
-        //    }
-        //}
-
-        //TODO wech Shell.getShell() // should be handled in ShellHandler
-
-        //TODO wech end ???
 
         setContent {
             AppTheme {
@@ -245,14 +219,21 @@ class MainActivityX : BaseActivity() {
                         if (destination.route == NavItem.Main.destination && freshStart) {
                             freshStart = false
                             traceBold { "******************** freshStart && Main ********************" }
+
                             mScope.launch(Dispatchers.IO) {
+                                hitBusy(30000)
                                 runCatching { findBackups() }
                                 startup =
                                     false     // ensure backups are no more reported as empty
+                                hitBusy(30000)
                                 runCatching { updateAppTables() }
+                                hitBusy(1)
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
                             }
+
+                            devToolsSearch.value = TextFieldValue("")   //TODO hg42 hide implementation details
+
                             runOnUiThread { showEncryptionDialog() }
                         }
                     }
@@ -318,7 +299,12 @@ class MainActivityX : BaseActivity() {
 
             LaunchedEffect(true) {
                 withTimeoutOrNull(5000) {
-                    while (navController.graph.nodes.size() < 2)
+                    while (
+                        runCatching {
+                            navController.graph.nodes.size()
+                        }.getOrDefault(0)
+                          < 2
+                    )
                         delay(100)
                 }
                 doIntent(intent, "afterContent")
@@ -404,7 +390,7 @@ class MainActivityX : BaseActivity() {
     }
 
     fun refreshPackagesAndBackups() {
-        CoroutineScope(Dispatchers.IO).launch {
+        MainScope().launch(Dispatchers.IO) {
             invalidateBackupLocation()
         }
     }

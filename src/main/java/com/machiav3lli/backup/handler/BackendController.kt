@@ -241,8 +241,6 @@ suspend fun scanBackups(
         onPropsFile: suspend (StorageFile) -> Unit,
         renamer: (suspend () -> Unit)? = null,
     ) {
-        hitBusy()
-
         try {
             if (file.name == BACKUP_INSTANCE_PROPERTIES_INDIR
                 ||
@@ -276,9 +274,9 @@ suspend fun scanBackups(
         collector: FlowCollector<StorageFile>? = null
     ): Boolean {
 
-        hitBusy()
+       hitBusy()
 
-        beginNanoTimer("scanBackups.${if (packageName.isEmpty()) "" else "package."}listFiles")
+       beginNanoTimer("scanBackups.${if (packageName.isEmpty()) "" else "package."}listFiles")
         var list = file.listFiles()
         endNanoTimer("scanBackups.${if (packageName.isEmpty()) "" else "package."}listFiles")
 

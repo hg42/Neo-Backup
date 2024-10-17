@@ -37,6 +37,7 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
@@ -192,7 +193,6 @@ fun SuCommandPreference(
             TextInput(
                 pref.value,
                 modifier = Modifier.fillMaxWidth(),
-                editOnClick = true
             ) {
                 pref.value = it
             }
@@ -209,7 +209,7 @@ class SuCommandPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -228,7 +228,8 @@ class SuCommandPref(
     onChanged = onChanged
 )
 
-val suCommand_summary get() = """
+val suCommand_summary
+    get() = """
         the command used to elevate the shell to a 'root' shell (in our sense),
         the whole command must be a shell, reading commands from stdin and executing them,
         there are also builtin fallback commands
@@ -241,7 +242,17 @@ val pref_suCommand = SuCommandPref(
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
     summary = suCommand_summary,
     icon = Phosphor.Hash,
-    iconTint = Color.Gray,
+    iconTint = {
+        val pref = it as SuCommandPref
+        if (isLikeRoot == true) {
+            if (pref.value == suCommand)
+                Color.Green
+            else
+                Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+        } else {
+            Color.Red
+        }
+    },
     defaultValue = suCommand_default,
 ) {
     val pref = it as SuCommandPref
@@ -253,17 +264,9 @@ val pref_suCommand = SuCommandPref(
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
     }
-    pref.iconTint = if (isLikeRoot == true) {
-        if (pref.value == suCommand)
-            Color.Green
-        else
-            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
-    } else {
-        Color.Red
-    }
     pref.summary = suCommand_summary
-    traceDebug  { "summary: ${pref.summary}" }
-    traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
+    traceDebug { "summary: ${pref.summary}" }
+    traceDebug { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
     pref.dirty.value = true
 }
 
@@ -398,18 +401,14 @@ val pref_restoreTarCmd = BooleanPref(
 
 //---------------------------------------- developer settings - file handling
 
-val pref_allowShadowingDefault = BooleanPref(
-    key = "dev-file.allowShadowingDefault",
-    summaryId = R.string.prefs_allowshadowingdefault_summary,
-    defaultValue = false
-)
-
 val pref_shadowRootFile = BooleanPref(
     key = "dev-file.shadowRootFile",
     summaryId = R.string.prefs_shadowrootfile_summary,
     defaultValue = false,
-    enableIf = { pref_allowShadowingDefault.value }
-)
+) {
+    StorageFile.invalidateCache()
+    pref_pathBackupFolder.value = pref_pathBackupFolder.value
+}
 
 val pref_cacheUris = BooleanPref(
     key = "dev-file.cacheUris",
@@ -639,7 +638,7 @@ val pref_enableSpecialBackups = BooleanPref(
     titleId = R.string.prefs_enablespecial,
     summaryId = R.string.prefs_enablespecial_summary,
     icon = Phosphor.AsteriskSimple,
-    iconTint = ColorSpecial,
+    iconTint = { ColorSpecial },
     defaultValue = false
 )
 
@@ -648,7 +647,7 @@ val pref_disableVerification = BooleanPref(
     titleId = R.string.prefs_disableverification,
     summaryId = R.string.prefs_disableverification_summary,
     icon = Phosphor.AndroidLogo,
-    iconTint = ColorUpdated,
+    iconTint = { ColorUpdated },
     defaultValue = true
 )
 
@@ -657,7 +656,7 @@ val pref_giveAllPermissions = BooleanPref(
     titleId = R.string.prefs_restoreallpermissions,
     summaryId = R.string.prefs_restoreallpermissions_summary,
     icon = Phosphor.ShieldStar,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = false
 )
 

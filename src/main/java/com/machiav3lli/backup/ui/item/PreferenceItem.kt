@@ -5,10 +5,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.dialogs.EnumPrefDialogUI
+import com.machiav3lli.backup.dialogs.ListPrefDialogUI
+import com.machiav3lli.backup.dialogs.StringPrefDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.preferences.publicPreferences
 import com.machiav3lli.backup.traceDebug
@@ -67,7 +72,7 @@ open class Pref(
     var summary: String? = null,
     val UI: PrefUI? = null,
     val icon: ImageVector? = null,
-    var iconTint: Color?,
+    var iconTint: ((Pref) -> Color)? = null,
     val enableIf: (() -> Boolean)? = null,
     val onChanged: ((Pref) -> Unit)? = null,
     var group: String = "",
@@ -298,7 +303,7 @@ class BooleanPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -340,7 +345,7 @@ class IntPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: List<Int>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -383,7 +388,7 @@ open class StringPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -394,8 +399,17 @@ open class StringPref(
     summaryId = summaryId,
     summary = summary,
     UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
         StringPreference(pref = pref as StringPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(openDialogCustom = openDialog) {
+                StringPrefDialogUI(
+                    pref = pref,
+                    openDialogCustom = openDialog
+                )
+            }
         }
     },
     icon = icon,
@@ -427,7 +441,7 @@ class StringEditPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -456,7 +470,7 @@ class PasswordPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -467,8 +481,19 @@ class PasswordPref(
     summaryId = summaryId,
     summary = summary,
     UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
         PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(openDialogCustom = openDialog) {
+                StringPrefDialogUI(
+                    pref = pref,
+                    isPrivate = true,
+                    confirm = true,
+                    openDialogCustom = openDialog
+                )
+            }
         }
     },
     icon = icon,
@@ -487,7 +512,7 @@ class ListPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: Map<String, String>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -499,8 +524,17 @@ class ListPref(
     summaryId = summaryId,
     summary = summary,
     UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
         ListPreference(pref = pref as ListPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(openDialogCustom = openDialog) {
+                ListPrefDialogUI(
+                    pref = pref,
+                    openDialogCustom = openDialog,
+                )
+            }
         }
     },
     icon = icon,
@@ -519,7 +553,7 @@ class EnumPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: Map<Int, Int>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -531,8 +565,17 @@ class EnumPref(
     summaryId = summaryId,
     summary = summary,
     UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
         EnumPreference(pref = pref as EnumPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(openDialogCustom = openDialog) {
+                EnumPrefDialogUI(
+                    pref = pref as EnumPref,
+                    openDialogCustom = openDialog,
+                )
+            }
         }
     },
     icon = icon,
@@ -564,7 +607,7 @@ class LinkPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -590,7 +633,7 @@ class LaunchPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
     val onClick: () -> Unit = {},

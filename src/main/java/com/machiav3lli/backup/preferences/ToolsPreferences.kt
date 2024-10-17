@@ -90,7 +90,7 @@ fun ToolsPrefsPage() {
                                 index = index,
                                 groupSize = size,
                             ) {
-                                when (pref) {
+                                when (pref) {   // TODO hg42 use LaunchPref instead
                                     // TODO use only compose dialogs
                                     pref_batchDelete -> context.onClickUninstalledBackupsDelete(
                                         snackbarHostState,
@@ -128,7 +128,7 @@ val pref_batchDelete = LinkPref(
     titleId = R.string.prefs_batchdelete,
     summaryId = R.string.prefs_batchdelete_summary,
     icon = Phosphor.TrashSimple,
-    //iconTint = MaterialTheme.colorScheme.secondary
+    //iconTint = { MaterialTheme.colorScheme.secondary },
 )
 
 private fun Context.onClickUninstalledBackupsDelete(
@@ -201,7 +201,7 @@ val pref_copySelfApk = LinkPref(
     titleId = R.string.prefs_copyselfapk,
     summaryId = R.string.prefs_copyselfapk_summary,
     icon = Phosphor.AndroidLogo,
-    //iconTint = MaterialTheme.colorScheme.primary
+    //iconTint = { MaterialTheme.colorScheme.primary },
 )
 
 private fun Context.onClickCopySelf(
@@ -209,7 +209,12 @@ private fun Context.onClickCopySelf(
     coroutineScope: CoroutineScope,
 ): Boolean {
     try {
-        GlobalScope.launch(Dispatchers.IO) {
+        // A global CoroutineScope not bound to any job.
+        // Global scope is used to launch top-level coroutines which are
+        // operating on the whole application lifetime and are not cancelled prematurely.
+        // Active coroutines launched in GlobalScope do not keep the process alive.
+        // They are like daemon threads.
+        GlobalScope.launch(Dispatchers.IO) {  // TODO hg42 "they are like demon threads" -> use something like MainScope instead?
             if (BackupRestoreHelper.copySelfApk(
                     this@onClickCopySelf,
                     OABX.shellHandler!!
@@ -254,7 +259,7 @@ val pref_schedulesExportImport = LinkPref(
     titleId = R.string.prefs_schedulesexportimport,
     summaryId = R.string.prefs_schedulesexportimport_summary,
     icon = Phosphor.CalendarX,
-    iconTint = ColorExtDATA
+    iconTint = { ColorExtDATA },
 )
 
 val pref_saveAppsList = LinkPref(
@@ -262,7 +267,7 @@ val pref_saveAppsList = LinkPref(
     titleId = R.string.prefs_saveappslist,
     summaryId = R.string.prefs_saveappslist_summary,
     icon = Phosphor.ListNumbers,
-    iconTint = ColorExodus
+    iconTint = { ColorExodus },
 )
 
 
@@ -322,12 +327,12 @@ val pref_logViewer = LinkPref(
     key = "tool.logViewer",
     titleId = R.string.prefs_logviewer,
     icon = Phosphor.Bug,
-    iconTint = ColorDeData
+    iconTint = { ColorDeData },
 )
 
 val pref_terminal = LinkPref(
     key = "tool.terminal",
     titleId = R.string.prefs_tools_terminal,
     icon = Phosphor.Bug,
-    iconTint = ColorDeData
+    iconTint = { ColorDeData },
 )
