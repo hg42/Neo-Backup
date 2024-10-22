@@ -56,7 +56,7 @@ fun SlidePager(
     // sliding away the current page but fading in the new page
     // that would give immediate feedback (slide)
     // but compose would have more time to render the page when fading it in
-    HorizontalPager(modifier = modifier, state = pagerState, beyondBoundsPageCount = 0) { page ->
+    HorizontalPager(modifier = modifier, state = pagerState, beyondViewportPageCount = 0) { page ->
         pageItems[page].content()
     }
 }

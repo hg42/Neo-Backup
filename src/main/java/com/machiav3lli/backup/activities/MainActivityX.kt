@@ -75,7 +75,6 @@ import com.machiav3lli.backup.ui.compose.item.devToolsSearch
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.ui.navigation.clearBackStack
 import com.machiav3lli.backup.ui.navigation.safeNavigate
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
@@ -590,7 +589,7 @@ class MainActivityX : BaseActivity() {
         when {
             !persist_beenWelcomed.value
                  -> if (!navController.currentDestination?.route?.equals(NavItem.Welcome.destination)!!) {
-                navController.clearBackStack()
+                navController.clearBackStack<NavHostController>()
                 navController.safeNavigate(NavItem.Welcome.destination)
             }
 
