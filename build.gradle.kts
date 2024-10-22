@@ -81,14 +81,14 @@ fun getInfoFromGit(): InfoFromGit {
         lastTagPatch = patch
     }
 
-    // Aktuellen Branch ermitteln
+    // current branch
     val branchProcess = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .start()
     val currentBranch = branchProcess.inputStream.bufferedReader().use { it.readText().trim() }
     branchProcess.waitFor(10, TimeUnit.SECONDS)
 
-    // Hash des HEADs ermitteln
+    // hash of HEAD
     val hashProcess = ProcessBuilder("git", "rev-parse", "HEAD")
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .start()
@@ -122,33 +122,20 @@ val major by extra(lastTagMajor)
 val minor by extra(lastTagMinor)
 val revision by extra(lastTagPatch)
 
-//val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-//
-//val gitDetails = versionDetails()
-////println("gitDetails: $gitDetails")
-//val gitCommit = gitDetails.gitHash.take(8)
-////val gitTag = gitDetails.lastTag
-//val gitDistance = gitDetails.commitDistance
-//val gitHash = gitDetails.gitHash
-//// gitHashFull // full 40-character Git commit hash
-//val gitBranch = gitDetails.branchName // is null if the repository in detached HEAD mode
-//var gitDirty = !gitDetails.isCleanTag
-
-//val refTime = java.util.GregorianCalendar(2020, 0, 1).time!! // Date
-//val startTime = java.util.Date()
-//val seconds = ((startTime.time - refTime.time) / 1000); println("seconds:     $seconds")
-val refTime =
-    lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00"); println("refTime:     $refTime")
+val refTime = (
+        lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00")
+        ); println("refTime:     $refTime")
 val startTime = LocalDateTime.now(); println("startTime:   $startTime")
-val seconds =
-    startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC); println("seconds:     $seconds")
+val seconds = (
+        startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC)
+        ); println("seconds:     $seconds")
 val minutes = seconds / 60; println("minutes:     $minutes")
 val fiveminutes = seconds / 60 / 5; println("fiveminutes: $fiveminutes")
 val tenminutes = seconds / 60 / 10; println("tenminutes:  $tenminutes")
 val hours = seconds / 60 / 60; println("hours:       $hours")
 
 val buildTime by extra { startTime.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) }
-//var buildNumber by extra(buildTime.substring(1..6))
+val buildDay = buildTime.substring(0..5)
 val buildNumber: String by extra { minutes.toString() }
 //var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
 val buildLabel by extra {
@@ -173,9 +160,13 @@ val buildVersionCodeFromVersion = (
             buildNumber3
         }"
         )
-val buildVersionCodeFromTime = buildTime.dropLast(12 - 9)
-val buildVersionCode by extra { buildVersionCodeFromTime.toInt() }
-val buildVersion by extra { "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildTime}--${buildLabel}" }
+val buildVersionCodeFromTime = buildTime.substring(0..8)
+val buildVersionCode by extra {
+    buildVersionCodeFromTime.toInt()
+}
+val buildVersion by extra {
+    "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildDay}--${buildLabel}"
+}
 
 println(
     """
@@ -249,38 +240,6 @@ android {
         println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
 
-    fun <T : BaseVariantImpl> T.setOutputFileName() {
-        outputs.all {
-            (this as? BaseVariantOutputImpl)?.let {
-                it.outputFileName =
-                    "nb-${
-                        buildVersion.replace(
-                            "--",
-                            "--" +
-                                    it.name
-                                        .replace(Regex(".*Test"), "TEST")
-                                        .replace("debug", "DEBUG")
-                                        //.replace("hg42", "")
-                                        .replace("release", "rel")
-                                        //.replace("pumpkin", "")
-                                        //.replace("pumprel", "rel")
-                                        .replace(Regex("""--+"""), """-""")
-                                        .replace(Regex("""-+$"""), """""")
-                                        .uppercase()
-                                    + "--"
-                        ).replace("----", "--")
-                    }.apk"
-                println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
-            }
-        }
-    }
-    testVariants.all {
-        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
-    }
-    applicationVariants.all {
-        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
-    }
-
     buildTypes {
         named("release") {
             proguardFiles(
@@ -305,6 +264,8 @@ android {
             applicationIdSuffix = ".hg42.debug"
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
+            defaultConfig.versionCode = 777777777
+            defaultConfig.versionName = "$major.$minor.$revision.777777-hg42-DEBUG"
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
             signingConfig = signingConfigs.getByName("hg42test")
@@ -383,6 +344,41 @@ android {
                 "/META-INF/LICENSE.md"
             )
         }
+    }
+
+    fun <T : BaseVariantImpl> T.setOutputFileName() {
+        outputs.all {
+            (this as? BaseVariantOutputImpl)?.let {
+                it.outputFileName =
+                    "nb-${
+                        buildVersion.replace(
+                            "--",
+                            "--" +
+                                    it.name
+                                        .replace(Regex(".*Test"), "TST")
+                                        .replace("debug", "DBG")
+                                        //.replace("hg42", "")
+                                        .replace("release", "REL")
+                                        .replace("pumpkin", "PKN")
+                                        .replace("pumprel", "PRL")
+                                        .replace(Regex("""--+"""), """-""")
+                                        .replace(Regex("""-+$"""), """""")
+                                        .uppercase()
+                                    + "--"
+                        )
+                            //.replace(Regex("""-(\d{6})\d{6}-"""), """-$1-""")
+                            .replace("----", "--")
+                            .replace("--", "-")
+                    }.apk"
+                println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+            }
+        }
+    }
+    testVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+    }
+    applicationVariants.all {
+        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
     }
 }
 
