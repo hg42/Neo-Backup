@@ -66,12 +66,14 @@ object SystemUtils {
 
     val packageName get() = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
     @Suppress("DEPRECATION")
-    val versionCode get() = if (OABX.minSDK(28)) {
-        OABX.context.getApplicationInfos()?.longVersionCode
-    } else {
-        OABX.context.getApplicationInfos()?.versionCode
-    } ?: com.machiav3lli.backup.BuildConfig.VERSION_CODE
-    val versionName get() = OABX.context.getApplicationInfos()?.versionName ?: com.machiav3lli.backup.BuildConfig.VERSION_NAME
+    //val versionCode get() = if (OABX.minSDK(28)) {
+    //    OABX.context.getApplicationInfos()?.longVersionCode
+    //} else {
+    //    OABX.context.getApplicationInfos()?.versionCode
+    //} ?: com.machiav3lli.backup.BuildConfig.VERSION_CODE
+    val versionCode get() = com.machiav3lli.backup.BuildConfig.VERSION_CODE
+    //val versionName get() = OABX.context.getApplicationInfos()?.versionName ?: com.machiav3lli.backup.BuildConfig.VERSION_NAME
+    val versionName get() = com.machiav3lli.backup.BuildConfig.VERSION_NAME
     val updateId get() = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
 
     val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
