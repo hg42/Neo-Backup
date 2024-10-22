@@ -351,7 +351,7 @@ val pref_backupPauseApps = BooleanPref(
         pause apps during backups to avoid inconsistencies caused
         by ongoing file changes or other conflicts (doesn't seem to have big benefits)
         """.trimIndent().replace("\n", " ").trim(),
-    defaultValue = true
+    defaultValue = false
 )
 
 val pref_backupSuspendApps = BooleanPref(
