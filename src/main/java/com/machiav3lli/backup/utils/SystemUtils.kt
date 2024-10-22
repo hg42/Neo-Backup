@@ -64,19 +64,15 @@ object SystemUtils {
         return null
     }
 
-    val packageName = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
+    val packageName get() = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
     @Suppress("DEPRECATION")
-    val versionCode = if (OABX.minSDK(28)) {
-        OABX.context.getApplicationInfos()?.longVersionCode
-    } else {
-        OABX.context.getApplicationInfos()?.versionCode
-    } ?: com.machiav3lli.backup.BuildConfig.VERSION_CODE
-    val versionName = OABX.context.getApplicationInfos()?.versionName ?: com.machiav3lli.backup.BuildConfig.VERSION_NAME
-    val updateId = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
+    val versionCode get() = com.machiav3lli.backup.BuildConfig.VERSION_CODE
+    val versionName get() = com.machiav3lli.backup.BuildConfig.VERSION_NAME
+    val updateId get() = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
 
-    val applicationIssuer = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
+    val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
 
-    val numCores = Runtime.getRuntime().availableProcessors()
+    val numCores get() = Runtime.getRuntime().availableProcessors()
 
     suspend fun <T> runParallel(
         items: List<T>,
