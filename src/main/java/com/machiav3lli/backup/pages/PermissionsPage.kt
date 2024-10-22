@@ -86,7 +86,7 @@ import timber.log.Timber
 fun PermissionsPage() {
     val context = LocalContext.current
     val mScope = CoroutineScope(Dispatchers.Main)
-    val mainActivity = context as MainActivityX
+    val mainActivity = OABX.main!!
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     val permissionsList = remember {
         mutableStateMapOf<Permission, () -> Unit>()

@@ -66,7 +66,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
@@ -134,7 +133,7 @@ fun AppSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val mActivity = context as MainActivityX
+    val mActivity = OABX.main!!
     val openDialog = remember { mutableStateOf(false) }
     val dialogProps: MutableState<Pair<Int, Any>> = remember {
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))
@@ -318,7 +317,7 @@ fun AppSheet(
                     }
                 }
                 item {
-                    val launchIntent = context.packageManager
+                    val launchIntent = mActivity.packageManager
                         .getLaunchIntentForPackage(pkg.packageName)
                     AnimatedVisibility(visible = launchIntent != null) {
                         CardButton(
