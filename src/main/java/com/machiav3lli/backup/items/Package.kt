@@ -117,7 +117,7 @@ class Package {
         }
     }
 
-    fun runChecked(todo: () -> Unit) {
+    fun runOrLog(todo: () -> Unit) {
         try {
             todo()
         } catch (e: Throwable) {
@@ -256,18 +256,14 @@ class Package {
             throw RuntimeException("Asked to delete a backup of ${backup.packageName} but this object is for $packageName")
         }
         val parent = backup.file?.parent
-        runChecked { backup.file?.delete() }    // first, it could be inside dir
-        runChecked { backup.dir?.deleteRecursive() }
+        runOrLog { backup.file?.delete() }    // first, it could be inside dir
+        runOrLog { backup.dir?.deleteRecursive() }
         parent?.let {
             if (isPlausiblePath(parent.path))
-                try {
-                    it.delete()                 // delete the directory (but never the contents)
-                } catch (_: Throwable) {
-                    // ignore
-                }
+                runCatching { it.delete() }   // delete the directory (but never the contents)
         }
         if (!pref_paranoidBackupLists.value)
-            runChecked {
+            runOrLog {
                 //backupList = backupList - backup
                 removeBackupFromList(backup)
                 updateBackupListAndDatabase(backupList)
@@ -277,9 +273,7 @@ class Package {
     fun deleteBackup(backup: Backup) {
         _deleteBackup(backup)
         if (pref_paranoidBackupLists.value)
-            runChecked {
-                refreshBackupList()                                 // get real state of file system
-            }
+            runOrLog { refreshBackupList() }                // get real state of file system
     }
 
     fun rewriteBackup(
@@ -295,7 +289,7 @@ class Package {
         if (changedBackup.backupDate != backup.backupDate) {        //TODO hg42 probably paranoid
             throw RuntimeException("Asked to rewrite a backup from ${changedBackup.backupDate} but the original backup is from ${backup.backupDate}")
         }
-        runChecked {
+        runOrLog {
             synchronized(this) {
                 backup.file?.apply {
                     writeText(changedBackup.toSerialized())
@@ -303,9 +297,7 @@ class Package {
             }
         }
         if (pref_paranoidBackupLists.value)
-            runChecked {
-                refreshBackupList()                                 // get real state of file system
-            }
+            runOrLog { refreshBackupList() }                // get real state of file system
         else {
             //backupList = backupList - backup + changedBackup
             removeBackupFromList(backup)
@@ -319,9 +311,7 @@ class Package {
         while (backups.isNotEmpty())
             _deleteBackup(backups.removeLast())
         if (pref_paranoidBackupLists.value)
-            runChecked {
-                refreshBackupList()                         // get real state of file system only once
-            }
+            runOrLog { refreshBackupList() }                // get real state of file system only once
     }
 
     fun deleteOldestBackups(keep: Int) {
