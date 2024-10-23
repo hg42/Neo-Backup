@@ -263,7 +263,7 @@ class LogsHandler {
             }
         }
 
-        fun <T> catchExceptions(todo: () -> T): T? {
+        fun <T> runOrLog(todo: () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
@@ -272,12 +272,62 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> catchExceptions(todo: suspend () -> T): T? {
+        fun <T> runOrLog(default: T, todo: () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                unexpectedException(e)
+                default
+            }
+        }
+
+        suspend fun <T> runsOrLog(todo: suspend () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
                 unexpectedException(e)
                 null
+            }
+        }
+
+        suspend fun <T> runsOrLog(default: T, todo: suspend () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                unexpectedException(e)
+                default
+            }
+        }
+
+        fun <T> runOr(todo: () -> T): T? {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                null
+            }
+        }
+
+        fun <T> runOr(default: T, todo: () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                default
+            }
+        }
+
+        suspend fun <T> runsOr(todo: suspend () -> T): T? {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                null
+            }
+        }
+
+        suspend fun <T> runsOr(default: T, todo: suspend () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                default
             }
         }
     }
