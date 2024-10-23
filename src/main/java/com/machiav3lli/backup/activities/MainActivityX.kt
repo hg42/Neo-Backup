@@ -59,6 +59,7 @@ import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.DialogKey
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOr
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
@@ -298,12 +299,7 @@ class MainActivityX : BaseActivity() {
 
             LaunchedEffect(true) {
                 withTimeoutOrNull(5000) {
-                    while (
-                        runCatching {
-                            navController.graph.nodes.size()
-                        }.getOrDefault(0)
-                          < 2
-                    )
+                    while (runOr(0) { navController.graph.nodes.size() } < 2)
                         delay(100)
                 }
                 doIntent(intent, "afterContent")

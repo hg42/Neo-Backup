@@ -25,6 +25,7 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.THEME_DYNAMIC
 import com.machiav3lli.backup.THEME_SYSTEM
 import com.machiav3lli.backup.accentColorItems
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOr
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.secondaryColorItems
 import com.machiav3lli.backup.themeItems
@@ -172,7 +173,7 @@ val pref_pathBackupFolder = StringEditPref(
     icon = Phosphor.FolderNotch,
     iconTint = {
         val pref = it as StringEditPref
-        val alpha = if (pref.value == runCatching { backupDirConfigured }.getOrNull()) 1f else 0.3f
+        val alpha = if (pref.value == runOr(null) { backupDirConfigured }) 1f else 0.3f
         if (pref.value.isEmpty()) Color.Gray
         else if (backupFolderExists(pref.value)) Color.Green.copy(alpha = alpha)
         else Color.Red.copy(alpha = alpha)

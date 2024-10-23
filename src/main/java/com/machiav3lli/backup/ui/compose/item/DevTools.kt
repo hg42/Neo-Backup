@@ -77,6 +77,7 @@ import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.PREFS_BACKUP_FILE
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.UndeterminedStorageFile
@@ -829,7 +830,7 @@ val pref_savePreferences = LaunchPref(
     MainScope().launch(Dispatchers.IO) {
         val serialized = preferencesToSerialized()
         if (serialized.isNotEmpty()) {
-            runCatching {
+            runOrLog {
                 val backupRoot = OABX.context.getBackupRoot()
                 UndeterminedStorageFile(backupRoot, PREFS_BACKUP_FILE).let {
                     it.writeText(serialized)?.let {
@@ -846,7 +847,7 @@ val pref_loadPreferences = LaunchPref(
     summary = "load preferences from $PREFS_BACKUP_FILE, note, that the PASSWORD is NOT INCLUDED, please set it manually"
 ) {
     MainScope().launch(Dispatchers.IO) {
-        runCatching {
+        runOrLog {
             val backupRoot = OABX.context.getBackupRoot()
             backupRoot.findFile(PREFS_BACKUP_FILE)?.let {
                 val serialized = it.readText()
