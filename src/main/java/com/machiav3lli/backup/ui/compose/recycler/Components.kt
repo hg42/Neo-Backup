@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -33,7 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -324,9 +325,8 @@ fun BusyBackgroundAnimated(
         ) {
             fun currentAngle(): Float =
                 SystemUtils.msSinceBoot % turnTime * 360f / turnTime
-            //var angle by rememberSaveable { mutableStateOf(70f) }
-            //var angle by rememberSaveable { mutableFloatStateOf(calcAngle()) }
-            var angle by rememberSaveable { mutableStateOf(currentAngle()) }
+
+            var angle by rememberSaveable { mutableFloatStateOf(currentAngle()) }
             LaunchedEffect(true) {
                 withContext(Dispatchers.IO) {
                     animate(
@@ -404,38 +404,41 @@ fun FullScreenBackground(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    if (pref_fullScreenBackground.value)
+        BusyBackground(modifier = modifier, content = content)
+    else
+        content()
+}
+
+@Composable
+fun InnerBackground(
+    modifier: Modifier = Modifier,
+    opacity: Int = pref_versionOpacity.value,
+    content: @Composable () -> Unit,
+) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        if (pref_fullScreenBackground.value)
-            BusyBackground(modifier = modifier, content = content)
-        else
-            content()
+        BusyBackground(modifier = modifier, content = content)
 
         if (pref_versionOpacity.value > 0)
             Text(
                 text = "$versionName $applicationIssuer",
                 fontSize = 8.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = pref_versionOpacity.value / 100f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = opacity / 100f),
                 modifier = Modifier
+                    .padding(1.dp)
                     .fillMaxSize()
                     .wrapContentSize(Alignment.TopCenter)
             )
     }
 }
 
-@Composable
-fun InnerBackground(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    BusyBackground(modifier = modifier, content = content)
-}
-
 @Preview
 @Composable
 fun BusyBackgroundPreview() {
+
     OABX.fakeContext = LocalContext.current.applicationContext
 
     val busy by remember { OABX.busy }
@@ -443,24 +446,26 @@ fun BusyBackgroundPreview() {
     val level by remember { OABX.busyLevel }
     //var progress by remember { mutableStateOf(true) }
 
-    Column {
-        Row {
-            RefreshButton {
-                OABX.hitBusy(5000)
+    FullScreenBackground {
+        Column {
+            Row {
+                RefreshButton {
+                    OABX.hitBusy(5000)
+                }
+                ActionChip(text = "begin", positive = level > 0) {
+                    OABX.beginBusy()
+                }
+                ActionChip(text = "end", positive = level > 0) {
+                    OABX.endBusy()
+                }
             }
-            ActionChip(text = "begin", positive = level > 0) {
-                OABX.beginBusy()
-            }
-            ActionChip(text = "end", positive = level > 0) {
-                OABX.endBusy()
-            }
-        }
-        BusyBackground(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Text(
-                """
+            InnerBackground(
+                modifier = Modifier
+                    .fillMaxSize(),
+                opacity = 80,
+            ) {
+                Text(
+                    """
                     busy:   ${busy}
                     count:  ${count}
                     level:  ${level}
@@ -469,11 +474,12 @@ fun BusyBackgroundPreview() {
                     very busy
                     today
                 """.trimIndent(),
-                fontSize = 24.sp,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentSize(align = Alignment.Center)
-            )
+                    fontSize = 24.sp,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentSize(align = Alignment.Center)
+                )
+            }
         }
     }
 }
