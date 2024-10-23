@@ -271,6 +271,9 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
 
                 serialized = propertiesFile.readText()
 
+                if (serialized.isEmpty())
+                    return createInvalidFrom(propertiesFile, why = "empty-props")
+
                 val backup = fromSerialized(serialized)
 
                 //TODO bug: list serialization (jsonPretty, yaml) adds a space in front of each value
