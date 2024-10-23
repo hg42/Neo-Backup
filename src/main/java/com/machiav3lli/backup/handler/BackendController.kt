@@ -220,7 +220,7 @@ suspend fun scanBackups(
         if (damagedOp != null)
             renameDamagedToERROR(dir, "no-props")
         else
-            onInvalidBackup(dir, file, null, "no props")
+            onInvalidBackup(dir, file, null, "no-props")
     }
 
     suspend fun handleEmptyBackup(
