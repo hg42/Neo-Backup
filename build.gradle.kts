@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import com.android.build.api.variant.BuildConfigField
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import com.android.build.gradle.internal.tasks.factory.dependsOn
@@ -167,6 +168,27 @@ val buildVersionCode by extra {
 val buildVersion by extra {
     "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildDay}--${buildLabel}"
 }
+
+fun buildName(variant: String) = (
+        buildVersion.replace(
+            "--",
+            "--" +
+                    variant
+                        .replace(Regex(".*Test"), "TST")
+                        .replace("debug", "DBG")
+                        //.replace("hg42", "")
+                        .replace("release", "REL")
+                        .replace("pumpkin", "PKN")
+                        .replace("pumprel", "PRL")
+                        .replace(Regex("""--+"""), """-""")
+                        .replace(Regex("""-+$"""), """""")
+                        .uppercase()
+                    + "--"
+        )
+            //.replace(Regex("""-(\d{6})\d{6}-"""), """-$1-""")
+            .replace("----", "--")
+            .replace("--", "-")
+        )
 
 println(
     """
@@ -349,27 +371,7 @@ android {
     fun <T : BaseVariantImpl> T.setOutputFileName() {
         outputs.all {
             (this as? BaseVariantOutputImpl)?.let {
-                it.outputFileName =
-                    "nb-${
-                        buildVersion.replace(
-                            "--",
-                            "--" +
-                                    it.name
-                                        .replace(Regex(".*Test"), "TST")
-                                        .replace("debug", "DBG")
-                                        //.replace("hg42", "")
-                                        .replace("release", "REL")
-                                        .replace("pumpkin", "PKN")
-                                        .replace("pumprel", "PRL")
-                                        .replace(Regex("""--+"""), """-""")
-                                        .replace(Regex("""-+$"""), """""")
-                                        .uppercase()
-                                    + "--"
-                        )
-                            //.replace(Regex("""-(\d{6})\d{6}-"""), """-$1-""")
-                            .replace("----", "--")
-                            .replace("--", "-")
-                    }.apk"
+                it.outputFileName = "nb-${buildName(it.name)}.apk"
                 println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
             }
         }
@@ -379,6 +381,43 @@ android {
     }
     applicationVariants.all {
         (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+    }
+}
+
+androidComponents {
+    // public static final boolean DEBUG = Boolean.parseBoolean("true");
+    // public static final String APPLICATION_ID = "com.machiav3lli.backup.hg42.debug";
+    // public static final String BUILD_TYPE = "debug";
+    // public static final int VERSION_CODE = 777777777;
+    // public static final String VERSION_NAME = "8.3.8.777777-hg42-DEBUG-debug";
+    // // Field from default config.
+    // public static final String[] DETECTED_LOCALES = {"ar","bs","ca","cs","de","el","en","es","et","fa","fi","fil","fr","hi","hr","hu","in","it","ja","ko","lt","lv","ml","nb","nl","pa","pl","pt","pt-rBR","ro","ru","sr","sv","th","tr","uk","vi","zh","zh-rTW"};
+    // // Field from default config.
+    // public static final int MAJOR = 8;
+    // // Field from default config.
+    // public static final int MINOR = 3;
+    onVariants {
+        it.buildConfigFields.put(
+            "DEBUG", BuildConfigField("boolean", "Boolean.parseBoolean(\"${it.debuggable}\")", "")
+        )
+        it.buildConfigFields.put(
+            "APPLICATION_ID", BuildConfigField("String", "\"${it.applicationId.get()}\"", "")
+        )
+        it.buildConfigFields.put(
+            "BUILD_TYPE", BuildConfigField("String", "\"${it.buildType}\"", "")
+        )
+        it.buildConfigFields.put(
+            "VERSION_CODE", BuildConfigField("String", "\"$buildVersionCode\"", "")
+        )
+        it.buildConfigFields.put(
+            "VERSION_NAME", BuildConfigField("String", "\"${buildName(it.buildType!!)}\"", "")
+        )
+        it.buildConfigFields.put(
+            "MAJOR", BuildConfigField("int", "$major", "")
+        )
+        it.buildConfigFields.put(
+            "MINOR", BuildConfigField("int", "$minor", "")
+        )
     }
 }
 
