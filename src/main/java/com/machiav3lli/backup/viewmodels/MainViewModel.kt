@@ -341,8 +341,10 @@ class MainViewModel(
                 val appPackage = packageMap.value[packageName]
                 appPackage?.apply {
                     val new = Package(appContext, packageName)
-                    new.refreshFromPackageManager(OABX.context)
-                    if (!isSpecial) db.getAppInfoDao().update(new.packageInfo as AppInfo)
+                    if (!isSpecial) {
+                        new.refreshFromPackageManager(OABX.context)
+                        db.getAppInfoDao().update(new.packageInfo as AppInfo)
+                    }
                     //new.refreshBackupList()     //TODO hg42 ??? who calls this? take it from backupsMap?
                 }
             } catch (e: AssertionError) {
