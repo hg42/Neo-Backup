@@ -89,7 +89,7 @@ All new icons in 7.0.0 based on CC0 icons found on [SVG Repo](https://www.svgrep
 
 [Helena Zheng](https://helenazhang.com/) & [Tobias Fried](https://tobiasfried.com/) for the great [Phosphor Icons](https://phosphoricons.com/), we gladly use.
 
-### Languages: [<img align="right" src="https://hosted.weblate.org/widgets/neo-backup/-/287x66-white.png" alt="Übersetzungsstatus" />](https://hosted.weblate.org/engage/neo-backup/?utm_source=widget)
+### Languages: [<img align="right" src="https://hosted.weblate.org/widgets/neo-backup/-/287x66-white.png" alt="Translation stats" />](https://hosted.weblate.org/engage/neo-backup/?utm_source=widget)
 
 [<img src="https://hosted.weblate.org/widgets/neo-backup/-/multi-auto.svg" alt="Übersetzungsstatus" />](https://hosted.weblate.org/engage/neo-backup/)
 
