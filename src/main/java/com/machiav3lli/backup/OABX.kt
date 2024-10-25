@@ -834,13 +834,15 @@ class OABX : Application() {
             }
         }
 
-        fun setBackups(backups: Map<String, List<Backup>>) {
-            backups.forEach {
-                putBackups(it.key, it.value)
-            }
-            // clear no more existing packages
-            (theBackupsMap.keys - backups.keys).forEach {
-                removeBackups(it)
+        fun setBackups(backupsMap: Map<String, List<Backup>>) {
+            synchronized(theBackupsMap) {
+                backupsMap.forEach { (packageName, backups) ->
+                    theBackupsMap.put(packageName, backups)
+                }
+                // clear no more existing packages
+                (theBackupsMap.keys - backupsMap.keys).forEach {
+                    theBackupsMap.remove(it)
+                }
             }
         }
 
@@ -872,14 +874,18 @@ class OABX : Application() {
         }
 
         fun emptyBackupsForMissingPackages(packageNames: List<String>) {
-            (packageNames - theBackupsMap.keys).forEach {
-                putBackups(it, emptyList())
+            synchronized(theBackupsMap) {
+                (packageNames - theBackupsMap.keys).forEach {
+                    theBackupsMap.put(it, emptyList())
+                }
             }
         }
 
         fun emptyBackupsForAllPackages(packageNames: List<String>) {
-            packageNames.forEach {
-                putBackups(it, emptyList())
+            synchronized(theBackupsMap) {
+                packageNames.forEach {
+                    theBackupsMap.put(it, emptyList())
+                }
             }
         }
 
