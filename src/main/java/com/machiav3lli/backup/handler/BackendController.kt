@@ -559,8 +559,6 @@ fun Context.findBackups(
                                         backupsMap.getOrPut(backup.packageName) { mutableListOf() }
                                             .add(backup)
                                     }
-                                } ?: run {
-                                    throw Exception("props file ${props.path} not loaded")
                                 }
                         },
                         onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
@@ -572,9 +570,6 @@ fun Context.findBackups(
                                         backupsMap.getOrPut(backup.packageName) { mutableListOf() }
                                             .add(backup)
                                     }
-                                }
-                                ?: run {
-                                    throw Exception("props file${if (props != null) " ${props.path}" else ""} not loaded")
                                 }
                         }
                     )
