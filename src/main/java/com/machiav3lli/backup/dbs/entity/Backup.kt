@@ -283,14 +283,12 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
 
             } catch (e: FileNotFoundException) {
                 logException(e, "Cannot open ${propertiesFile.path}", backTrace = false)
-                return null
             } catch (e: IOException) {
                 logException(e, "Cannot read ${propertiesFile.path}", backTrace = false)
-                return null
             } catch (e: Throwable) {
                 logException(e, "file: ${propertiesFile.path} =\n$serialized", backTrace = false)
-                return null
             }
+            return null
         }
 
         fun createInvalidFrom(
@@ -299,6 +297,7 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
             packageName: String? = null,
             why: String? = null,
         ): Backup? {
+
             try {
 
                 val packageNameFixed = packageName ?: run {
@@ -324,42 +323,37 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                     }
                 } ?: ""
 
-                val backup = Backup(
-                    base = PackageInfo(
-                        packageName = "...$packageNameFixed",
-                        versionName = "INVALID" + if (why != null) ": $why" else "",
-                        versionCode = 0,
-                    ),
-                    backupDate = LocalDateTime.parse("2000-01-01T00:00:00"),
-                    hasApk = false,
-                    hasAppData = false,
-                    hasDevicesProtectedData = false,
-                    hasExternalData = false,
-                    hasObbData = false,
-                    hasMediaData = false,
-                    compressionType = null,
-                    cipherType = null,
-                    iv = null,
-                    cpuArch = "",
-                    permissions = emptyList(),
-                    persistent = false,
-                    note = "INVALID",
-                    size = 0,
+                val backup = fromSerialized(
+                    "{\n" +
+                            "    \"backupVersionCode\": ${
+                                    com.machiav3lli.backup.BuildConfig.MAJOR * 1000 +
+                                            com.machiav3lli.backup.BuildConfig.MINOR
+                            },\n" +
+                            "    \"packageName\": \"...$packageNameFixed\",\n" +
+                            "    \"packageLabel\": \"? INVALID BACKUP\",\n" +
+                            "    \"versionName\": \"${"INVALID" + if (why != null) ": $why" else ""}\",\n" +
+                            "    \"versionCode\": 0,\n" +
+                            //"    \"sourceDir\": \"/data/app/~~oXzw9ZEl326kQh4Ay1vHJQ==/org.woheller69.weather-gWQaSUpYxRgFVvgMTqNb9A==/base.apk\",\n" +
+                            "    \"splitSourceDirs\": [],\n" +
+                            "    \"backupDate\": \"2000-01-01T00:00:00\",\n" +
+                            "    \"hasApk\": false,\n" +
+                            "    \"hasAppData\": false,\n" +
+                            "    \"hasDevicesProtectedData\": false,\n" +
+                            "    \"hasExternalData\": false,\n" +
+                            "    \"compressionType\": \"zst\",\n" +
+                            //"    \"iv\": [],\n" +
+                            "    \"cpuArch\": \"\",\n" +
+                            "    \"size\": 0\n" +
+                            "}"
                 )
-                backup.apply {
-                    file = propertiesFile
-                    dir = directory
-                    packageLabel = "? INVALID BACKUP"
-                    backupVersionCode = -1
-                    profileId = 0
-                    isSystem = false
-                }
+
+                backup.file = propertiesFile
 
                 return backup
 
             } catch (e: Throwable) {
                 logException(e,
-                    "creating invalid backup item also failed for directory ${
+                    "creating invalid backup item also failed, for directory ${
                         directory.path
                     }${
                         if (propertiesFile != null)
@@ -369,8 +363,8 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                     }",
                     backTrace = false
                 )
-                return null
             }
+            return null
         }
     }
 }
