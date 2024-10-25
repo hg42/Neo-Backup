@@ -134,7 +134,7 @@ fun AppSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val mActivity = context as MainActivityX
+    val mActivity = OABX.main!!
     val openDialog = remember { mutableStateOf(false) }
     val dialogProps: MutableState<Pair<Int, Any>> = remember {
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))

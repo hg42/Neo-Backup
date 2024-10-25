@@ -61,7 +61,7 @@ import java.time.LocalDateTime
 @Composable
 fun ToolsPrefsPage() {
     val context = LocalContext.current
-    val neoActivity = context as MainActivityX
+    val neoActivity = OABX.main!!
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
