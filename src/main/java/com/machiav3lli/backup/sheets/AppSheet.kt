@@ -158,7 +158,7 @@ fun AppSheet(
         val hasBackups = pkg.hasBackups
 
         traceCompose {
-            "AppSheet ${thePackage.packageName} ${
+            "AppPage ${thePackage.packageName} ${
                 TraceUtils.formatBackups(
                     backups
                 )

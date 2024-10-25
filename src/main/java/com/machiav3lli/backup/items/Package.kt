@@ -157,11 +157,9 @@ class Package {
 
     fun updateBackupList(backups: List<Backup>) {
         traceBackups {
-            "<$packageName> updateBackupList: ${TraceUtils.formatSortedBackups(backups)} ${
-                TraceUtils.methodName(
-                    2
-                )
-            }"
+            "<$packageName> updateBackupList: ${
+                TraceUtils.formatSortedBackups(backups)
+            } ${TraceUtils.methodName(2)}"
         }
         backupList = backups
     }
@@ -169,9 +167,7 @@ class Package {
     fun updateBackupListAndDatabase(backups: List<Backup>) {
         traceBackups {
             "<$packageName> updateBackupListAndDatabase: ${
-                TraceUtils.formatSortedBackups(
-                    backups
-                )
+                TraceUtils.formatSortedBackups(backups)
             } ${TraceUtils.methodName(2)}"
         }
         backupList = backups
