@@ -116,6 +116,7 @@ import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.recreateActivities
+import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.viewmodels.LogViewModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
@@ -1088,6 +1089,12 @@ fun DevTools(
                         "          close          "
                     ) {
                         expanded.value = false
+                        try {
+                            if (OABX.main?.navController != null)
+                                ;
+                        } catch (e: Throwable) {
+                            OABX.main?.restartApp()
+                        }
                     }
                 }
 

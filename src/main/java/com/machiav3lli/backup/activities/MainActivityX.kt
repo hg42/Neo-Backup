@@ -352,10 +352,13 @@ class MainActivityX : BaseActivity() {
 
             "beforeContent"             -> {
                 when (command) {
-                    null                         -> {}
+                    null                         -> {
+                        return false
+                    }
 
                     "android.intent.action.MAIN" -> {
-                        if (data == null) return false
+                        if (data == null)
+                            return false
                         when (data.toString()) {
                             RESCUE_NAV -> {
                                 setContent {
@@ -366,15 +369,21 @@ class MainActivityX : BaseActivity() {
                         }
                     }
 
-                    else                         -> {}
+                    else                         -> {
+                        return false
+                    }
                 }
             }
 
             "afterContent", "newIntent" -> {
                 when (command) {
-                    null                         -> {}
+                    null                         -> {
+                        return false
+                    }
+
                     "android.intent.action.MAIN" -> {
-                        if (data == null) return false
+                        if (data == null)
+                            return false
                         moveTo(data.toString())
                     }
 
