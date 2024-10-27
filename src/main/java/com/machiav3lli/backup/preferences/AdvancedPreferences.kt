@@ -186,7 +186,6 @@ fun SuCommandPreference(
             TextInput(
                 pref.value,
                 modifier = Modifier.fillMaxWidth(),
-                editOnClick = true
             ) {
                 pref.value = it
             }

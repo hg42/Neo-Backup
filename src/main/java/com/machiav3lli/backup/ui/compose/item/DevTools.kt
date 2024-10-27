@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -52,7 +53,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -60,7 +60,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -107,7 +109,7 @@ import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
-import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
+import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowUUpLeft
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
@@ -172,104 +174,134 @@ fun SmallButton(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TextInput(
     text: TextFieldValue,
     modifier: Modifier = Modifier,
     placeholder: String = "",
     trailingIcon: (@Composable () -> Unit)? = null,
-    editOnClick: Boolean = false,
+    focusInitially: Boolean = false,
     submitEachChange: Boolean = false,
+    onUnfocusedClick: (() -> Unit)? = null,
     onSubmit: (TextFieldValue) -> Unit = {},
 ) {
     val input = remember(text) { mutableStateOf(text) }
-    var editing by remember { mutableStateOf(!editOnClick) }
+    var editing by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
     fun submit(final: Boolean = true) {
         onSubmit(input.value)
-        if (editOnClick && final)
-            editing = false
+        if (final) {
+            focusManager.clearFocus()
+        }
     }
 
-    if (editing) {
+    val clickTextToEdit = (onUnfocusedClick == null || editing)
 
-        OutlinedTextField(
-            modifier = modifier
-                .testTag("input")
-                .focusRequester(focusRequester)
-                .onFocusChanged { focusState ->
-                    if (editOnClick)
-                        editing = focusState.isFocused
-                },
-            value = input.value,
-            placeholder = { Text(text = placeholder, color = Color.Gray) },
-            singleLine = true,
-            trailingIcon = trailingIcon ?: {
-                Icon(
-                    imageVector = Phosphor.Check,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clickable {
-                            submit()
-                        }
-                )
-            },
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    submit()
-                }
-            ),
-            keyboardOptions = KeyboardOptions(
-                autoCorrectEnabled = false
-            ),
-            onValueChange = {
-                if (it.text.contains("\n")) {
-                    input.value = it.copy(text = it.text.replace("\n", ""))
-                    if (editOnClick)
-                        editing = false
-                    submit()
-                } else
-                    input.value = it
-                if (submitEachChange)
-                    submit(false)
-            }
-        )
+    // with onUnfocusClick set,
+    //   clicking the field executes the action
+    //   clicking the icon sets the focus
+    //   the unfocused field is disabled so it needs two steps
+    //     first setting editing to recompose it enabled
+    //     then requesting the focus
+    if (onUnfocusedClick != null)
+        LaunchedEffect(editing) {
+            if (editing)
+                focusRequester.requestFocus()
+        }
 
+    if (focusInitially)
         LaunchedEffect(Unit) {
             focusRequester.requestFocus()
         }
 
-    } else {
-
-        val fieldPadding = 16.dp
-
-        Row {
-            Text(
-                text = text.text,
+    OutlinedTextField(
+        modifier = modifier
+            .testTag("input")
+            .focusRequester(focusRequester)
+            .onFocusChanged { focusState ->
+                editing = focusState.isFocused
+            },
+        value = input.value,
+        enabled = clickTextToEdit,
+        placeholder = { Text(text = placeholder, color = Color.Gray) },
+        singleLine = false,
+        maxLines = 5,
+        colors = TextFieldDefaults.colors().copy(
+            unfocusedIndicatorColor = TextFieldDefaults.colors().unfocusedIndicatorColor.copy(alpha = 0.2f),
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            disabledTextColor = MaterialTheme.colorScheme.primary,
+            disabledTrailingIconColor = TextFieldDefaults.colors().unfocusedTrailingIconColor
+        ),
+        trailingIcon = trailingIcon ?: {
+            val spacing = 13.dp
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing),
                 modifier = Modifier
-                    .padding(fieldPadding)
-                    .weight(1f)
-                    .clickable {
-                        editing = true
-                    },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Icon(
-                modifier = Modifier
-                    //.padding(vertical = fieldPadding, horizontal = 4.dp)
-                    .align(Alignment.CenterVertically)
-                    .clickable {
-                        editing = true
-                    },
-                imageVector = Phosphor.Pencil,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.flatten()
-            )
-            Spacer(modifier = Modifier.width(fieldPadding))
+                    .padding(
+                        start = spacing,
+                        end = spacing
+                    )
+            ) {
+                if (editing) {
+                    Icon(
+                        imageVector = Phosphor.X,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clickable {
+                                input.value = TextFieldValue("")
+                            }
+                    )
+                    if (!submitEachChange)
+                        Icon(
+                            imageVector = Phosphor.ArrowUUpLeft,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clickable {
+                                    input.value = text
+                                    focusManager.clearFocus()
+                                }
+                        )
+                    //Icon(
+                    //    imageVector = Phosphor.Check,
+                    //    contentDescription = null,
+                    //    modifier = Modifier
+                    //        .clickable {
+                    //            submit()
+                    //        }
+                    //)
+                } else {
+                    Icon(
+                        modifier = Modifier
+                            .clickable {
+                                editing = true
+                            },
+                        imageVector = Phosphor.Pencil,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.flatten()
+                    )
+                }
+            }
+        },
+        keyboardActions = KeyboardActions(
+            onDone = {
+                submit()
+            }
+        ),
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done,
+            autoCorrect = false
+        ),
+        onValueChange = {
+            input.value = it
+            if (submitEachChange)
+                submit(false)
         }
-
-    }
+    )
 }
 
 @Composable
@@ -277,20 +309,22 @@ fun TextInput(
     text: String,
     modifier: Modifier = Modifier,
     placeholder: String = "",
-    trailingIcon: @Composable () -> Unit = {},
-    editOnClick: Boolean = false,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    focusInitially: Boolean = false,
     submitEachChange: Boolean = false,
+    onClick: (() -> Unit)? = null,
     onSubmit: (String) -> Unit = {},
 ) {
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(text)) }
+    var textFieldValue by remember(text) { mutableStateOf(TextFieldValue(text)) }
 
     TextInput(
         text = textFieldValue,
         modifier = modifier,
         placeholder = placeholder,
         trailingIcon = trailingIcon,
-        editOnClick = editOnClick,
+        focusInitially = focusInitially,
         submitEachChange = submitEachChange,
+        onUnfocusedClick = onClick,
     ) {
         textFieldValue = it
         onSubmit(it.text)
@@ -301,13 +335,16 @@ fun TextInput(
 @Composable
 fun TextInputPreview() {
 
-    var text by remember { mutableStateOf("input text") }
-    var longtext by remember { mutableStateOf("input text which is too long for the space and causes wrapping which oushes the icon out") }
+    var textValue by remember { mutableStateOf(TextFieldValue("text value")) }
+    var text by remember { mutableStateOf("text") }
+    var longtext by remember { mutableStateOf("long text which is too long for the space and causes overflow which may push the icon out and other misbehaviours") }
 
-    Column {
-        TextInput(text = text, editOnClick = false) { text = it }
-        TextInput(text = text, editOnClick = true) { text = it }
-        TextInput(text = longtext, editOnClick = true) { text = it }
+    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+        TextInput(text = textValue) { textValue = it }
+        TextInput(text = textValue) { textValue = it }
+        TextInput(text = text) { text = it }
+        TextInput(text = text) { text = it }
+        TextInput(text = longtext, focusInitially = true) { longtext = it }
     }
 }
 
@@ -389,14 +426,14 @@ fun DevSettingsTab() {
                         modifier = Modifier
                             .size(ICON_SIZE_SMALL)
                             .clickable {
-                                search =
-                                    TextFieldValue("")     // keep on it's own line for better breakpoints
+                                search =            // keep on it's own line for easier breakpoints
+                                    TextFieldValue("")
                             }
                     )
             },
             submitEachChange = true,
             onSubmit = {
-                search = it                     // keep in it's own line for better breakpoints
+                search = it                         // keep in it's own line for easier breakpoints
             }
         )
 
@@ -1088,7 +1125,7 @@ fun DevTools(
                         expanded.value = false
                         try {
                             if (OABX.main?.navController != null)
-                                ;
+                            ;
                         } catch (e: Throwable) {
                             OABX.main?.restartApp()
                         }
