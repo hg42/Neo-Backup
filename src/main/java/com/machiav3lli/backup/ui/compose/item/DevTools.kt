@@ -413,7 +413,7 @@ fun DevSettingsTab() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
-            placeholder = "search",
+            placeholder = "search (and='+' or=',')",
             trailingIcon = {
                 if (search.text.isEmpty())
                     Icon(
@@ -437,7 +437,7 @@ fun DevSettingsTab() {
             },
             submitEachChange = true,
             onSubmit = {
-                search = it                         // keep in it's own line for easier breakpoints
+                search = it                        // keep in it's own line for easier breakpoints
             }
         )
 
@@ -448,15 +448,23 @@ fun DevSettingsTab() {
         ) {
             if (search.text.isEmpty())
                 DevPrefGroups()
-            else
+            else {
+                val alternates = search.text.split(',').map {
+                    it.split("+").filter { it.length >= 2 }
+                }.filter { it.isNotEmpty() }
                 PrefsGroup(
                     prefs =
                     Pref.prefGroups.values.flatten()
-                        .filter {
-                            it.key.contains(search.text, ignoreCase = true)
-                                    && it.group !in listOf("persist", "kill")
+                        .filter { pref ->
+                            pref.group !in listOf("persist", "kill") &&
+                                    alternates.any {
+                                        it.all {
+                                            pref.key.contains(it, ignoreCase = true)
+                                        }
+                                    }
                         }.toPersistentList()
                 )
+            }
         }
     }
 }
@@ -768,7 +776,9 @@ fun PluginsPagePreview() {
         }.toMap()
     )
 
-    PluginsPage()
+    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+        PluginsPage()
+    }
 }
 
 @Composable
