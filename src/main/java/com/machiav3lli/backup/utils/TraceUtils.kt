@@ -216,6 +216,10 @@ object TraceUtils {
 
     // helpers
 
+    fun <T> formatElements(elements: Collection<T>): String {
+        return "(${elements.size})${elements.map {"${it}"}}"
+    }
+
     fun formatBackups(backups: List<Backup>?): String {
         return "(${backups?.size ?: 0})${
             backups?.map {
