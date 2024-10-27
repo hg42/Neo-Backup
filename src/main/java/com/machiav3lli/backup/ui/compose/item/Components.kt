@@ -844,12 +844,12 @@ fun ScheduleFilters(
     }
     AnimatedVisibility(visible = item.updatedFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
-            when (item.launchableFilter) {
+            when (item.updatedFilter) {
                 UPDATED_FILTER_NEW -> Phosphor.Star
                 UPDATED_FILTER_NOT -> Phosphor.Clock
                 else               -> Phosphor.CircleWavyWarning // UPDATED_FILTER_UPDATED
             },
-            when (item.launchableFilter) {
+            when (item.updatedFilter) {
                 UPDATED_FILTER_NOT -> R.string.show_old_apps
                 UPDATED_FILTER_NEW -> R.string.show_new_apps
                 else               -> R.string.show_updated_apps // UPDATED_FILTER_UPDATED
@@ -859,12 +859,12 @@ fun ScheduleFilters(
     }
     AnimatedVisibility(visible = item.enabledFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
-            when (item.launchableFilter) {
+            when (item.enabledFilter) {
                 ENABLED_FILTER_DISABLED -> Phosphor.ProhibitInset
                 else                    -> Phosphor.Leaf // ENABLED_FILTER_ENABLED
             },
 
-            when (item.launchableFilter) {
+            when (item.enabledFilter) {
                 ENABLED_FILTER_DISABLED -> R.string.showDisabled
                 else                    -> R.string.show_enabled_apps // ENABLED_FILTER_ENABLED
             },
@@ -873,12 +873,12 @@ fun ScheduleFilters(
     }
     AnimatedVisibility(visible = item.latestFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
-            when (item.launchableFilter) {
+            when (item.latestFilter) {
                 LATEST_FILTER_NEW -> Phosphor.CircleWavyWarning
                 else              -> Phosphor.Clock // LATEST_FILTER_OLD
             },
 
-            when (item.launchableFilter) {
+            when (item.latestFilter) {
                 LATEST_FILTER_NEW -> R.string.show_new_backups
                 else              -> R.string.showOldBackups // LATEST_FILTER_OLD
             },
