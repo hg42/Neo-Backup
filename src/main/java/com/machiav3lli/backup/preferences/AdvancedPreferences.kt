@@ -43,6 +43,7 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
@@ -380,18 +381,14 @@ val pref_restoreTarCmd = BooleanPref(
 
 //---------------------------------------- developer settings - file handling
 
-val pref_allowShadowingDefault = BooleanPref(
-    key = "dev-file.allowShadowingDefault",
-    summaryId = R.string.prefs_allowshadowingdefault_summary,
-    defaultValue = false
-)
-
 val pref_shadowRootFile = BooleanPref(
     key = "dev-file.shadowRootFile",
     summaryId = R.string.prefs_shadowrootfile_summary,
     defaultValue = false,
-    enableIf = { pref_allowShadowingDefault.value }
-)
+) {
+    StorageFile.invalidateCache()
+    pref_pathBackupFolder.value = pref_pathBackupFolder.value
+}
 
 val pref_cacheUris = BooleanPref(
     key = "dev-file.cacheUris",

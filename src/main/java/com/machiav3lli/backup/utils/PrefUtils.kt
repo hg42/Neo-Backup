@@ -26,9 +26,11 @@ import androidx.biometric.BiometricManager
 import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.PREFS_SHARED_PRIVATE
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.persist_salt
 import com.machiav3lli.backup.preferences.pref_allowDowngrade
 import com.machiav3lli.backup.preferences.pref_appAccentColor
@@ -53,9 +55,10 @@ import com.machiav3lli.backup.preferences.pref_restoreDeviceProtectedData
 import com.machiav3lli.backup.preferences.pref_restoreExternalData
 import com.machiav3lli.backup.preferences.pref_restoreMediaData
 import com.machiav3lli.backup.preferences.pref_restoreObbData
+import com.machiav3lli.backup.preferences.pref_shadowRootFile
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -121,28 +124,62 @@ val backupDirConfigured: String
     @Throws(StorageLocationNotConfiguredException::class)
     get() {
         val location = pref_pathBackupFolder.value
-        if (location.isEmpty()) {
+        if (location.isEmpty())
             throw StorageLocationNotConfiguredException()
-        }
         return location
     }
 
-fun setBackupDir(value: Uri): String {
-    val fullUri = DocumentsContract
-        .buildDocumentUriUsingTree(value, DocumentsContract.getTreeDocumentId(value))
-    pref_pathBackupFolder.value = fullUri.toString()
-    //if (OABX.main != null) OABX.main?.refreshPackages()
-    //else
-    CoroutineScope(Dispatchers.IO).launch {
-        invalidateBackupLocation()
+fun backupFolderExists(uri: String? = null): Boolean {
+    try {
+        if (uri.isNullOrEmpty()) {
+            if (OABX.context.getBackupRoot().exists()) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            if (StorageFile.fromUri(uri).exists()) {
+                return true
+            } else {
+                return false
+            }
+        }
+    } catch (e: Throwable) {
+        return false
     }
-    return fullUri.toString()
 }
 
-val Context.canAccessExternalStorage: Boolean
+fun setBackupDir(uri: Uri): String {
+    val fullUri = try {
+        DocumentsContract
+            .buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+    } catch (e: Throwable) {
+        uri
+    }
+    val fullUriString = fullUri.toString()
+    if (pref_pathBackupFolder.value != fullUriString)
+        pref_pathBackupFolder.value = fullUriString
+    else {
+        if (fullUri.scheme == "file" || fullUri.scheme == null)
+            if (!pref_shadowRootFile.value) // prevent recursion
+                pref_shadowRootFile.value = true
+        MainScope().launch(Dispatchers.IO) {
+        invalidateBackupLocation()
+    }
+    }
+    return fullUriString
+}
+
+val Context.canReadExternalStorage: Boolean
     get() {
         val externalStorage = FileUtils.getExternalStorageDirectory(this)
-        return externalStorage?.let { it.canRead() && it.canWrite() } ?: false
+        return externalStorage?.canRead() ?: false
+    }
+
+val Context.canWriteExternalStorage: Boolean
+    get() {
+        val externalStorage = FileUtils.getExternalStorageDirectory(this)
+        return externalStorage?.canWrite() ?: false
     }
 
 val isBackupDeviceProtectedData: Boolean
