@@ -14,7 +14,6 @@ import com.machiav3lli.backup.PROP_NAME
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.ShellCommands
-import com.machiav3lli.backup.preferences.pref_allowShadowingDefault
 import com.machiav3lli.backup.preferences.pref_cacheFileLists
 import com.machiav3lli.backup.preferences.pref_cacheUris
 import com.machiav3lli.backup.preferences.pref_shadowRootFile
@@ -276,7 +275,7 @@ open class StorageFile {
         parent: StorageFile?,
         uri: Uri? = null,
         name: String? = null,
-        allowShadowing: Boolean = pref_allowShadowingDefault.value, // Storage files that should be shadowable should be explicitly declared as such
+        allowShadowing: Boolean = true, // mandatory usage of SAF is less used (e.g. for sharing)
     ) {
         this.parent = parent
         this._uri = uri
@@ -284,19 +283,22 @@ open class StorageFile {
         if (parent == null && uri != null) {
             if (pref_shadowRootFile.value && allowShadowing) {
                 try {
-                    val last =
-                    //uri.lastPathSegment // docs say: last segment of the decoded(!) path, not the encoded one
-                        // so make it explicit:
-                        URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
-                    Timber.i("SAF: last=$last uri=$uri")
-                    if (last.startsWith('/')) {
-                        val checkFile = RootFile(last)
+                    if (uri.scheme == "file" || uri.scheme == null) {
+                        val checkFile = RootFile(
+                            uri.path // should normally be there, even for file paths
+                                ?: Uri.decode(uri.toString())  // paranoid fallback in case it is not
+                        )
                         if (isWritablePath(checkFile)) {
-                            Timber.i("found direct RootFile shadow at $checkFile")
+                            Timber.i("found direct RootFile shadow at '$checkFile'")
                             file = checkFile
                         } else
-                            throw Exception("cannot use RootFile shadow at $last")
+                            throw Exception("cannot use RootFile '$checkFile'")
                     } else {
+                        val last =
+                        //uri.lastPathSegment // docs say: last segment of the decoded(!) path, not the encoded one
+                            // because this is not correct = not reliable, we make it explicit:
+                            URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
+                        Timber.i("StorageFile: last=$last uri=$uri")
                         var (storage, subPath) = last.split(":", limit = 2)
                         //val user = ShellCommands.currentProfile
                         val user_provider = (uri.authority ?: "").split("@", limit = 2)
@@ -329,7 +331,7 @@ open class StorageFile {
         parent: StorageFile?,
         uri: Uri?,
         name: String? = null,
-        allowShadowing: Boolean = pref_allowShadowingDefault.value, // Storage files that should be shadowable should be explicitly declared as such
+        allowShadowing: Boolean = true, // mandatory usage of SAF is less used (e.g. for sharing)
     ) {
         initializeFromUri(parent, uri, name, allowShadowing)
     }
@@ -814,6 +816,10 @@ open class StorageFile {
                     uri
                 )
             }
+        }
+
+        fun fromUri(uri: String): StorageFile {
+            return fromUri(Uri.parse(uri))
         }
 
         fun createDocument(
