@@ -283,7 +283,7 @@ Users tend to ask for using `RootFile` access instead. It is about toybox capabi
 Today SAF access is as fast as root access. Note: root file access could be faster, if it wouldn't use shell commands.
 For now there are no plans to put the machinery into a separate root service, that could use direct file access.
 
-If you want to try `RootFile`, you need to enable `allowShadowingDefault` and `shadowRootFile`.
+If you want to try `RootFile`, you need to enable `shadowRootFile`.
 This works by searching for parts of the shitty uri scheme (you see it in the setting for the backup directory) in certain places. If it is found, then it's used, otherwise it falls back to SAF.
 Note, this can completely lock up the app, because certain file location can block completely (not sure why).
 To change back the backup directory, you can clear data, or edit it in the shared_prefs folder or you could try to start the Preferences activity of NB.

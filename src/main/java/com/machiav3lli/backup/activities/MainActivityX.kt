@@ -37,6 +37,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.navigation.NavHostController
@@ -69,6 +70,7 @@ import com.machiav3lli.backup.preferences.pref_appTheme
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.ui.compose.ObservedEffect
 import com.machiav3lli.backup.ui.compose.item.DevTools
+import com.machiav3lli.backup.ui.compose.item.devToolsSearch
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
@@ -253,6 +255,9 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
                             }
+
+                            devToolsSearch.value = TextFieldValue("")   //TODO hg42 hide implementation details
+
                             runOnUiThread { showEncryptionDialog() }
                         }
                     }
@@ -413,7 +418,7 @@ class MainActivityX : BaseActivity() {
     }
 
     fun refreshPackagesAndBackups() {
-        CoroutineScope(Dispatchers.IO).launch {
+        MainScope().launch(Dispatchers.IO) {
             invalidateBackupLocation()
         }
     }
