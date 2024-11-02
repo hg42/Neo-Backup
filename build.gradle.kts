@@ -32,7 +32,7 @@ val jvmVersion = JavaVersion.VERSION_17
 
 android {
     namespace = "com.machiav3lli.backup"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
