@@ -268,19 +268,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            //versionNameSuffix = "-alpha01"
             isMinifyEnabled = true
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
             signingConfig = signingConfigs.getByName("hg42test")
-        }
-        create("neo") {
-            applicationIdSuffix = ".neo"
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
         }
         named("debug") {
             applicationIdSuffix = ".hg42.debug"
@@ -291,6 +282,14 @@ android {
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
             signingConfig = signingConfigs.getByName("hg42test")
+        }
+        create("neo") {
+            applicationIdSuffix = ".neo"
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
         create("pumpkin") {
             applicationIdSuffix = ".hg42"
@@ -361,7 +360,7 @@ android {
                 "/kotlin/**.kotlin_metadata",
                 "/META-INF/**.kotlin_module",
                 "/META-INF/**.pro",
-                //"/META-INF/**.version",     // comment out to enable layout inspector
+                "/META-INF/**.version",     // comment out to enable layout inspector
                 "/META-INF/LICENSE-notice.md",
                 "/META-INF/LICENSE.md"
             )
@@ -433,8 +432,10 @@ dependencies {
     // not yet necessary: implementation(libs.kotlin.reflect)
 
     // Koin
+    api(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)
+    implementation(libs.koin.compose)
     implementation(libs.koin.annotations)
     ksp(libs.koin.compiler)
 
@@ -473,6 +474,10 @@ dependencies {
     implementation(libs.compose.ui.tooling)
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material3.navigationsuite)
+    implementation(libs.compose.adaptive)
+    implementation(libs.compose.adaptive.layout)
+    implementation(libs.compose.adaptive.navigation)
     implementation(libs.compose.animation)
     implementation(libs.compose.navigation)
     implementation(libs.coil.compose)
