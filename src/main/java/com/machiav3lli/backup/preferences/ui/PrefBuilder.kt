@@ -10,7 +10,7 @@ fun PrefsBuilder(
     index: Int,
     size: Int,
 ) {
-    pref.ui?.let { ui ->
+    pref.UI?.let { ui ->
         ui(pref, onDialogPref, index, size)
     }
 }

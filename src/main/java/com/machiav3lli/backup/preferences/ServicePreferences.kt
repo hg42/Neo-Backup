@@ -74,35 +74,6 @@ fun ServicePrefsPage() {
             }
         }
     }
-
-    if (openDialog.value) {
-        BaseDialog(onDismiss = { openDialog.value = false }) {
-            when (dialogsPref) {                            //TODO hg42 encapsulate in pref
-
-                is ListPref     -> ListPrefDialogUI(
-                    pref = dialogsPref as ListPref,
-                    openDialogCustom = openDialog,
-                )
-
-                is EnumPref     -> EnumPrefDialogUI(
-                    pref = dialogsPref as EnumPref,
-                    openDialogCustom = openDialog
-                )
-
-                is PasswordPref -> StringPrefDialogUI(
-                    pref = dialogsPref as PasswordPref,
-                    isPrivate = true,
-                    confirm = true,
-                    openDialogCustom = openDialog
-                )
-
-                is StringPref   -> StringPrefDialogUI(
-                    pref = dialogsPref as StringPref,
-                    openDialogCustom = openDialog
-                )
-            }
-        }
-    }
 }
 
 fun LazyListScope.ServicePrefGroups(onPrefDialog: (Pref) -> Unit) {
@@ -137,21 +108,22 @@ val pref_encryption = BooleanPref(
     titleId = R.string.prefs_encryption,
     summaryId = R.string.prefs_encryption_summary,
     icon = Phosphor.Key,
-    iconTint = ColorUpdated,
+    iconTint = { ColorUpdated },
     defaultValue = false
 )
+
 
 val pref_password = PasswordPref(
     key = "srv.password",
     titleId = R.string.prefs_password,
     summaryId = R.string.prefs_password_summary,
     icon = Phosphor.Password,
-    iconTint = ColorUpdated,
+    iconTint = {
+        val pref = it as PasswordPref
+        if (pref.value.isNotEmpty()) Color.Green else Color.Gray
+    },
     defaultValue = "",
-) {
-    val pref = it as PasswordPref
-    pref.iconTint = if (pref.value.isNotEmpty()) Color.Green else Color.Red
-}
+)
 
 val kill_password = PasswordPref(   // make sure password is never saved in non-encrypted prefs
     key = "kill.password",
@@ -160,12 +132,13 @@ val kill_password = PasswordPref(   // make sure password is never saved in non-
 )
 val kill_password_set = run { kill_password.value = "" }
 
+
 val pref_backupDeviceProtectedData = BooleanPref(
     key = "srv-bkp.backupDeviceProtectedData",
     titleId = R.string.prefs_deviceprotecteddata,
     summaryId = R.string.prefs_deviceprotecteddata_summary,
     icon = Phosphor.ShieldCheckered,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = true
 )
 
@@ -174,7 +147,7 @@ val pref_backupExternalData = BooleanPref(
     titleId = R.string.prefs_externaldata,
     summaryId = R.string.prefs_externaldata_summary,
     icon = Phosphor.FloppyDisk,
-    iconTint = ColorExtDATA,
+    iconTint = { ColorExtDATA },
     defaultValue = true
 )
 
@@ -183,7 +156,7 @@ val pref_backupObbData = BooleanPref(
     titleId = R.string.prefs_obbdata,
     summaryId = R.string.prefs_obbdata_summary,
     icon = Phosphor.GameController,
-    iconTint = ColorOBB,
+    iconTint = { ColorOBB },
     defaultValue = true
 )
 
@@ -192,7 +165,7 @@ val pref_backupMediaData = BooleanPref(
     titleId = R.string.prefs_mediadata,
     summaryId = R.string.prefs_mediadata_summary,
     icon = Phosphor.PlayCircle,
-    iconTint = ColorMedia,
+    iconTint = { ColorMedia },
     defaultValue = true
 )
 
@@ -201,7 +174,7 @@ val pref_backupNoBackupData = BooleanPref(
     titleId = R.string.prefs_nobackupdata,
     summaryId = R.string.prefs_nobackupdata_summary,
     icon = Phosphor.ProhibitInset,
-    iconTint = ColorData,
+    iconTint = { ColorData },
     defaultValue = false,
     onChanged = { OABX.assets.updateExcludeFiles() },
 )
@@ -219,7 +192,7 @@ val pref_restoreDeviceProtectedData = BooleanPref(
     titleId = R.string.prefs_deviceprotecteddata_rst,
     summaryId = R.string.prefs_deviceprotecteddata_rst_summary,
     icon = Phosphor.ShieldCheckered,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = true
 )
 
@@ -228,7 +201,7 @@ val pref_restoreExternalData = BooleanPref(
     titleId = R.string.prefs_externaldata_rst,
     summaryId = R.string.prefs_externaldata_rst_summary,
     icon = Phosphor.FloppyDisk,
-    iconTint = ColorExtDATA,
+    iconTint = { ColorExtDATA },
     defaultValue = true
 )
 
@@ -237,7 +210,7 @@ val pref_restoreObbData = BooleanPref(
     titleId = R.string.prefs_obbdata_rst,
     summaryId = R.string.prefs_obbdata_rst_summary,
     icon = Phosphor.GameController,
-    iconTint = ColorOBB,
+    iconTint = { ColorOBB },
     defaultValue = true
 )
 
@@ -246,7 +219,7 @@ val pref_restoreMediaData = BooleanPref(
     titleId = R.string.prefs_mediadata_rst,
     summaryId = R.string.prefs_mediadata_rst_summary,
     icon = Phosphor.PlayCircle,
-    iconTint = ColorMedia,
+    iconTint = { ColorMedia },
     defaultValue = true
 )
 
@@ -255,7 +228,7 @@ val pref_restoreNoBackupData = BooleanPref(
     titleId = R.string.prefs_nobackupdata_rst,
     summaryId = R.string.prefs_nobackupdata_rst_summary,
     icon = Phosphor.ProhibitInset,
-    iconTint = ColorData,
+    iconTint = { ColorData },
     defaultValue = false,
     onChanged = { OABX.assets.updateExcludeFiles() },
 )
@@ -273,7 +246,7 @@ val pref_restorePermissions = BooleanPref(
     titleId = R.string.prefs_restorepermissions,
     summaryId = R.string.prefs_restorepermissions_summary,
     icon = Phosphor.ShieldStar,
-    iconTint = ColorAPK,
+    iconTint = { ColorAPK },
     defaultValue = true
 )
 
@@ -282,7 +255,7 @@ val pref_numBackupRevisions = IntPref(
     titleId = R.string.prefs_numBackupRevisions,
     summaryId = R.string.prefs_numBackupRevisions_summary,
     icon = Phosphor.Hash,
-    iconTint = ColorSpecial,
+    iconTint = { ColorSpecial },
     entries = ((0..9) + (10..20 step 2) + (50..200 step 50)).toList(),
     defaultValue = 2
 )
@@ -292,7 +265,7 @@ val pref_compressionType = ListPref(
     titleId = R.string.prefs_compression_type,
     summaryId = R.string.prefs_compression_type_summary,
     icon = Phosphor.FileZip,
-    iconTint = ColorExodus,
+    iconTint = { ColorExodus },
     entries = COMPRESSION_TYPES,
     defaultValue = "zst"
 )
@@ -302,7 +275,7 @@ val pref_compressionLevel = IntPref(
     titleId = R.string.prefs_compression_level,
     summaryId = R.string.prefs_compression_level_summary,
     icon = Phosphor.FileZip,
-    iconTint = ColorExodus,
+    iconTint = { ColorExodus },
     entries = (0..9).toList(),
     defaultValue = 2
 )
@@ -319,6 +292,6 @@ val pref_installationPackage = StringPref(
     key = "srv.installationPackage",
     titleId = R.string.prefs_installerpackagename,
     icon = Phosphor.Textbox,
-    iconTint = ColorOBB,
+    iconTint = { ColorOBB },
     defaultValue = SystemUtils.packageName
 )

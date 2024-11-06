@@ -52,9 +52,7 @@ val Context.isStorageDirSetAndOk: Boolean
             if (storageDirPath.isEmpty()) {
                 return false
             }
-            //val storageDir = StorageFile.fromUri(this, Uri.parse(storageDirPath))
-            //storageDir.exists()
-            getBackupRoot().exists()  //TODO kind of similar, but throws an exception "root not accessible" in some cases
+            backupFolderExists()
         } catch (e: Throwable) {
             false
         }
