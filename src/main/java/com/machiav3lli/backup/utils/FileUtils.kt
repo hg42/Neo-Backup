@@ -19,14 +19,14 @@ package com.machiav3lli.backup.utils
 
 import android.content.Context
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
-import com.machiav3lli.backup.entity.Package
 import java.io.File
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
@@ -76,15 +76,15 @@ object FileUtils {
     )
     fun getBackupDirUri(context: Context): Uri {
         if (backupLocation == null) {
-            val storageRoot = backupDirConfigured
-            if (storageRoot.isEmpty()) {
+            val storagePath = backupDirConfigured
+            if (storagePath.isEmpty()) {
                 throw StorageLocationNotConfiguredException()
             }
-            val storageRootDoc = DocumentFile.fromTreeUri(context, Uri.parse(storageRoot))
-            if (storageRootDoc == null || !storageRootDoc.exists()) {
-                throw BackupLocationInAccessibleException("Cannot access the root location.")
+            val storageDir = StorageFile.fromUri(storagePath)
+            if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
+                throw BackupLocationInAccessibleException("Cannot access the root location '$storagePath'")
             }
-            backupLocation = storageRootDoc.uri
+            backupLocation = storageDir.uri
         }
         return backupLocation as Uri
     }

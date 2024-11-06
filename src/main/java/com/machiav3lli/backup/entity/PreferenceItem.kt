@@ -5,10 +5,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.dialogs.EnumPrefDialogUI
+import com.machiav3lli.backup.dialogs.ListPrefDialogUI
+import com.machiav3lli.backup.dialogs.StringPrefDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.preferences.publicPreferences
 import com.machiav3lli.backup.preferences.traceDebug
@@ -65,9 +70,9 @@ open class Pref(
     @StringRes val titleId: Int,
     @StringRes val summaryId: Int,
     var summary: String? = null,
-    val ui: PrefUI? = null,
+    val UI: PrefUI? = null,
     val icon: ImageVector? = null,
-    var iconTint: Color?,
+    var iconTint: ((Pref) -> Color)? = null,
     val enableIf: (() -> Boolean)? = null,
     val onChanged: ((Pref) -> Unit)? = null,
     var group: String = "",
@@ -296,11 +301,9 @@ class BooleanPref(
     @StringRes summaryId: Int = -1,
     @StringRes titleId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        BooleanPreference(pref = pref as BooleanPref, index = index, groupSize = groupSize)
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -310,7 +313,9 @@ class BooleanPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        BooleanPreference(pref = pref as BooleanPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -338,11 +343,9 @@ class IntPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        IntPreference(pref = pref as IntPref, index = index, groupSize = groupSize)
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: List<Int>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -353,7 +356,9 @@ class IntPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        IntPreference(pref = pref as IntPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -381,13 +386,9 @@ open class StringPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        StringPreference(pref = pref as StringPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
-        }
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -397,7 +398,20 @@ open class StringPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
+        StringPreference(pref = pref as StringPref, index = index, groupSize = groupSize) {
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
+                StringPrefDialogUI(
+                    pref = pref,
+                    openDialogCustom = openDialog
+                )
+            }
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -425,11 +439,9 @@ class StringEditPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        StringEditPreference(pref = pref as StringEditPref, index = index, groupSize = groupSize)
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -439,7 +451,9 @@ class StringEditPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        StringEditPreference(pref = pref as StringEditPref, index = index, groupSize = groupSize)
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -454,13 +468,9 @@ class PasswordPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
-        }
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -470,7 +480,22 @@ class PasswordPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
+        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize) {
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
+                StringPrefDialogUI(
+                    pref = pref,
+                    isPrivate = true,
+                    confirm = true,
+                    openDialogCustom = openDialog
+                )
+            }
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -485,13 +510,9 @@ class ListPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        ListPreference(pref = pref as ListPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
-        }
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: Map<String, String>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -502,12 +523,26 @@ class ListPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
+        ListPreference(pref = pref as ListPref, index = index, groupSize = groupSize) {
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
+                ListPrefDialogUI(
+                    pref = pref,
+                    openDialogCustom = openDialog,
+                )
+            }
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
     onChanged = onChanged
 )
+
 
 class EnumPref(
     key: String,
@@ -516,13 +551,9 @@ class EnumPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        EnumPreference(pref = pref as EnumPref, index = index, groupSize = groupSize) {
-            onDialogUI(pref)
-        }
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     val entries: Map<Int, Int>,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
@@ -533,7 +564,20 @@ class EnumPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        val openDialog = remember { mutableStateOf(false) }
+        EnumPreference(pref = pref as EnumPref, index = index, groupSize = groupSize) {
+            openDialog.value = true
+        }
+        if (openDialog.value) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
+                EnumPrefDialogUI(
+                    pref = pref as EnumPref,
+                    openDialogCustom = openDialog,
+                )
+            }
+        }
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
@@ -554,15 +598,16 @@ class EnumPref(
     override fun toString(): String = value.toString()
 }
 
+
 class LinkPref(
     key: String,
     private: Boolean = false,
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI? = null,
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : Pref(
@@ -572,12 +617,13 @@ class LinkPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI,
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
     onChanged = onChanged
 )
+
 
 class LaunchPref(
     key: String,
@@ -585,17 +631,9 @@ class LaunchPref(
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
     summary: String? = null,
-    ui: PrefUI = { pref, onDialogUI, index, groupSize ->
-        LaunchPreference(
-            pref = pref as LaunchPref,
-            index = index,
-            groupSize = groupSize,
-            summary = pref.summary,
-            onClick = pref.onClick
-        )
-    },
+    UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
     val onClick: () -> Unit = {},
@@ -606,7 +644,15 @@ class LaunchPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = ui,
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+        LaunchPreference(
+            pref = pref as LaunchPref,
+            index = index,
+            groupSize = groupSize,
+            summary = pref.summary,
+            onClick = pref.onClick
+        )
+    },
     icon = icon,
     iconTint = iconTint,
     enableIf = enableIf,
