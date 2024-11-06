@@ -203,7 +203,7 @@ class SuCommandPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -213,7 +213,7 @@ class SuCommandPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    ui = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI, index, groupSize ->
         SuCommandPreference(pref = pref as SuCommandPref, index = index, groupSize = groupSize)
     },
     icon = icon,
@@ -236,7 +236,17 @@ val pref_suCommand = SuCommandPref(
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
     summary = suCommand_summary,
     icon = Phosphor.Hash,
-    iconTint = Color.Gray,
+    iconTint = {
+        val pref = it as SuCommandPref
+        if (isLikeRoot == true) {
+            if (pref.value == suCommand)
+                Color.Green
+            else
+                Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+        } else {
+            Color.Red
+        }
+    },
     defaultValue = suCommand_default,
 ) {
     val pref = it as SuCommandPref
@@ -247,14 +257,6 @@ val pref_suCommand = SuCommandPref(
             findSuCommand()
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
-    }
-    pref.iconTint = if (isLikeRoot == true) {
-        if (pref.value == suCommand)
-            Color.Green
-        else
-            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
-    } else {
-        Color.Red
     }
     pref.summary = suCommand_summary
     traceDebug { "summary: ${pref.summary}" }
@@ -609,7 +611,7 @@ val pref_enableSpecialBackups = BooleanPref(
     titleId = R.string.prefs_enablespecial,
     summaryId = R.string.prefs_enablespecial_summary,
     icon = Phosphor.AsteriskSimple,
-    iconTint = ColorSpecial,
+    iconTint = { ColorSpecial },
     defaultValue = false,
     onChanged = {
         NeoPrefs.getInstance().let {
@@ -623,7 +625,7 @@ val pref_disableVerification = BooleanPref(
     titleId = R.string.prefs_disableverification,
     summaryId = R.string.prefs_disableverification_summary,
     icon = Phosphor.AndroidLogo,
-    iconTint = ColorUpdated,
+    iconTint = { ColorUpdated },
     defaultValue = true
 )
 
@@ -632,7 +634,7 @@ val pref_giveAllPermissions = BooleanPref(
     titleId = R.string.prefs_restoreallpermissions,
     summaryId = R.string.prefs_restoreallpermissions_summary,
     icon = Phosphor.ShieldStar,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = false
 )
 
