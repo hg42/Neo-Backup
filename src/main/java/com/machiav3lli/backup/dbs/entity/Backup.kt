@@ -24,9 +24,10 @@ import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
-import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.getBackupRoot
@@ -308,20 +309,26 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                     if (propertiesFile != null) {
                         if (propertiesFile.name == BACKUP_INSTANCE_PROPERTIES_INDIR) {
                             propertiesFile.parent?.name
-                        } else {
+                        } else if (pref_flatStructure.value) {
                             val baseName = propertiesFile.name?.removeSuffix(".$PROP_NAME")
                             baseName?.let { dirName ->
                                 propertiesFile.parent?.findFile(dirName)?.name
                             }
+                        } else {
+                            propertiesFile.parent?.name
                         }
                     } else {
                         directory.name?.let { name ->
-                            if (regexPackageFolder.matches(name)) {
-                                name
-                            } else {
-                                regexPackageFolder.find(name)?.let { match ->
-                                    match.groups[0]?.value
+                            if (pref_flatStructure.value) {
+                                if (regexPackageFolder.matches(name)) {
+                                    name
+                                } else {
+                                    regexPackageFolder.find(name)?.let { match ->
+                                        match.groups[0]?.value
+                                    }
                                 }
+                            } else {
+                                directory.parent?.name
                             }
                         }
                     }
