@@ -15,11 +15,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import com.android.build.api.variant.BuildConfigField
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import com.android.build.gradle.internal.core.InternalBaseVariant
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import com.android.build.api.variant.BuildConfigField
-import com.android.build.gradle.internal.api.BaseVariantImpl
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -278,8 +278,6 @@ android {
             applicationIdSuffix = ".hg42.debug"
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
-            defaultConfig.versionCode = 777777777
-            defaultConfig.versionName = "$major.$minor.$revision.777777-hg42-DEBUG"
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
             signingConfig = signingConfigs.getByName("hg42test")
@@ -368,19 +366,25 @@ android {
         }
     }
 
-    fun <T : BaseVariantImpl> T.setOutputFileName() {
-        outputs.all {
-            (this as? BaseVariantOutputImpl)?.let {
-                it.outputFileName = "nb-${buildName(it.name)}.apk"
-                println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+    fun manipulations(variant: InternalBaseVariant) {
+        (variant as? com.android.build.gradle.internal.api.BaseVariantImpl)?.let {
+            it.outputs.all {
+                (this as? BaseVariantOutputImpl)?.let {
+                    it.outputFileName = "nb-${buildName(it.name)}.apk"
+                    println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+                }
             }
+            //if (it.buildType.name == "debug") {
+            //    it.generateBuildConfig.versionCode = 777777777
+            //    it.generateBuildConfig.versionName = "8.3.8.777777-hg42-DEBUG"
+            //}
         }
     }
     testVariants.all {
-        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+        manipulations(this)
     }
     applicationVariants.all {
-        (this as? com.android.build.gradle.internal.api.BaseVariantImpl)?.setOutputFileName()
+        manipulations(this)
     }
 }
 
