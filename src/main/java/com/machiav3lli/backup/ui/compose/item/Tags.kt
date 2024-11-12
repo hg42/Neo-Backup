@@ -3,20 +3,18 @@ package com.machiav3lli.backup.ui.compose.item
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -33,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -52,14 +49,11 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.preferences.pref_useNoteIcon
-import com.machiav3lli.backup.ui.compose.balancedWrap
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.NotePencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.PlusCircle
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.icons.phosphor.XCircle
-import com.machiav3lli.backup.ui.compose.ifThen
-import com.machiav3lli.backup.ui.compose.ifThenElse
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -131,46 +125,41 @@ fun NoteTagItem(
     onNote: ((Backup) -> Unit)? = null,
 ) {
     val note = item.note
-    // with useNoteIcon enabled, show edit icon or chip with note
-    // with useNoteIcon disabled, show filled chip "edit note" or chip with note
-    // with onNote not set, disable editing (nobody reacts on the the change)
-    val fillChip = if (useIcon) true else note.isEmpty() && (onNote != null)
-    val showNode = note.isNotEmpty()
-    val showIcon = useIcon && note.isEmpty() && (onNote != null)
-    val showBadge = if (useIcon) note.isNotEmpty() else note.isNotEmpty() || (onNote != null)
+    val fillChip = note.isEmpty() && (onNote != null)
 
-    if (showIcon) {
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .clickable { onNote?.let { it(item) } },
-            imageVector = Phosphor.NotePencil,
-            contentDescription = stringResource(id = R.string.edit_note),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+    if (fillChip) {
+        RoundButton(
+            icon = Phosphor.NotePencil,
+            description = stringResource(id = R.string.edit_note),
+            onClick = { onNote?.let { it(item) } }
         )
-    } else if (showBadge) {
-        Badge(
-            modifier = modifier
-                // a max width doesn't make sense, restriction depends on outside,
-                // why shorten the note, if there is enough space? and 128.dp is a random value
-                .ifThen(note.isNotEmpty()) { balancedWrap() }
-                .clickable(onClick = { onNote?.let { it(item) } })
-                .ifThenElse(fillChip,
-                    { clip(MaterialTheme.shapes.medium) },
-                    {
-                        border(
-                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            MaterialTheme.shapes.medium
-                        )
-                    }
-                ),
-            containerColor = (
-                    if (fillChip) MaterialTheme.colorScheme.primary
-                    else Color.Transparent),
-            contentColor = (
-                    if (fillChip) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurface),
-        ) {
+        // why the hell? why is it more important than the other buttons?
+        //FilledTonalIconButton(
+        //    colors = IconButtonDefaults.filledTonalIconButtonColors(
+        //        containerColor = MaterialTheme.colorScheme.primary,
+        //        contentColor = MaterialTheme.colorScheme.onPrimary,
+        //    ),
+        //    onClick = { onNote?.let { it(item) } },
+        //) {
+        //    Icon(
+        //        modifier = Modifier
+        //            .size(24.dp)
+        //            .clickable { onNote?.let { it(item) } },
+        //        imageVector = Phosphor.NotePencil,
+        //        contentDescription = stringResource(id = R.string.edit_note),
+        //    )
+        //}
+    } else InputChip(
+        modifier = modifier
+            .defaultMinSize(minWidth = 1.dp),
+        selected = fillChip,
+        colors = InputChipDefaults.inputChipColors(
+            containerColor = Color.Transparent,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        label = {
             Text(
                 modifier = Modifier
                     .padding(2.dp)
@@ -180,9 +169,9 @@ fun NoteTagItem(
                 maxLines = maxLines,
                 overflow = TextOverflow.Ellipsis,
             )
-            //TODO hg42 Tooltip(text = tag, openPopup = ???)
-        }
-    }
+        },
+        onClick = { onNote?.let { it(item) } },
+    )
 }
 
 @Composable
@@ -264,7 +253,6 @@ fun NoteTagItemPreview() {
 
     var note by remember { mutableStateOf("note text") }
     var maxLines by remember { mutableStateOf(1) }
-    var useIcon by remember { mutableStateOf(pref_useNoteIcon.value) }
 
     val packageInfo = PackageInfo(
         packageName = "com.machiav3lli.backup",
@@ -310,44 +298,23 @@ fun NoteTagItemPreview() {
                 note = "a very very very long note text\nmultiple\nlines"
                 maxLines = 2
             }
-            ActionButton("icon") {
-                useIcon = !useIcon
-                pref_useNoteIcon.value = useIcon
-            }
         }
         Text("\ntext:\n")
         Row(modifier = Modifier.padding(4.dp)) {
             Text("Backup: ")
-            NoteTagItem(useIcon = false, item = backup_with_note, maxLines = maxLines, onNote = {})
+            NoteTagItem(item = backup_with_note, maxLines = maxLines, onNote = {})
         }
         Row(modifier = Modifier.padding(4.dp)) {
             Text("   empty: ")
-            NoteTagItem(useIcon = false, item = backup, maxLines = maxLines, onNote = {})
+            NoteTagItem(item = backup, maxLines = maxLines, onNote = {})
         }
         Row(modifier = Modifier.padding(4.dp)) {
             Text("Restore: ")
-            NoteTagItem(useIcon = false, item = backup_with_note, maxLines = maxLines)
+            NoteTagItem(item = backup_with_note, maxLines = maxLines)
         }
         Row(modifier = Modifier.padding(4.dp)) {
             Text("   empty: ")
-            NoteTagItem(useIcon = false, item = backup, maxLines = maxLines)
-        }
-        Text("\nicon:\n")
-        Row(modifier = Modifier.padding(4.dp)) {
-            Text("Backup: ")
-            NoteTagItem(useIcon = true, item = backup_with_note, maxLines = maxLines, onNote = {})
-        }
-        Row(modifier = Modifier.padding(4.dp)) {
-            Text("   empty: ")
-            NoteTagItem(useIcon = true, item = backup, maxLines = maxLines, onNote = {})
-        }
-        Row(modifier = Modifier.padding(4.dp)) {
-            Text("Restore: ")
-            NoteTagItem(useIcon = true, item = backup_with_note, maxLines = maxLines)
-        }
-        Row(modifier = Modifier.padding(4.dp)) {
-            Text("   empty: ")
-            NoteTagItem(useIcon = true, item = backup, maxLines = maxLines)
+            NoteTagItem(item = backup, maxLines = maxLines)
         }
     }
 }
