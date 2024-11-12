@@ -1,37 +1,37 @@
 [versions]
 
-activity = "1.9.1"
-agp = "8.6.0"
+activity = "1.9.3"
+agp = "8.7.2"
 biometric = "1.2.0-alpha05"
 coil = "2.7.0"
-commons-compress = "1.26.2"
-commons-io = "2.16.1"
-compose = "1.6.8"
-compose-bom = "2024.06.00"
-compose-accompanist = "0.34.0"
+commons-compress = "1.27.1"
+commons-io = "2.17.0"
+compose = "1.7.5"
+compose-bom = "2024.10.01"
+compose-accompanist = "0.36.0"
 compose-markdown = "0.5.0"
-coroutines = "1.8.1"
+coroutines = "1.9.0"
 datastore = "1.1.1"
-immutables = "0.3.7"
-kaml = "0.61.0"
-koin = "3.5.6"
-koin-ksp = "1.3.1"
-kotlin = "2.0.0"
-ksp = "2.0.0-1.0.24"
+immutables = "0.3.8"
+kaml = "0.63.0"
+koin = "4.0.0"
+koin-ksp = "1.4.0"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.27"
 libsu = "6.0.0"
-lifecycle = "2.8.4"
+lifecycle = "2.8.7"
 material = "1.12.0"
-navigation = "2.7.7"
+navigation = "2.8.3"
 preference = "1.2.1"
 room = "2.6.1"
 security = "1.1.0-alpha06"
 semver = "4.2.1"
-serialization = "1.7.1"
+serialization = "1.7.3"
 test = "1.6.1"
 test-rules = "1.6.1"
 test-ext = "1.2.1"
 timber = "5.0.1"
-work = "2.9.1"
+work = "2.10.0"
 zstd-jni = "1.5.6-4"
 
 ######################################## hg42
@@ -52,8 +52,11 @@ datastore-preferences = { module = "androidx.datastore:datastore-preferences", v
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
-koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
-koin-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koin" }
+koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin" }
+koin-core = { group = "io.insert-koin", name = "koin-core" }
+koin-android = { group = "io.insert-koin", name = "koin-android" }
+koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose" }
+koin-startup = { group = "io.insert-koin", name = "koin-androidx-startup" }
 koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin-ksp" }
 koin-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin-ksp" }
 
@@ -86,6 +89,10 @@ compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material3-navigationsuite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite" }
+compose-adaptive = { module = "androidx.compose.material3.adaptive:adaptive" }
+compose-adaptive-layout = { module = "androidx.compose.material3.adaptive:adaptive-layout" }
+compose-adaptive-navigation = { module = "androidx.compose.material3.adaptive:adaptive-navigation" }
 compose-animation = { module = "androidx.compose.animation:animation" }
 compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "compose-accompanist" }
