@@ -31,6 +31,7 @@ import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.PREFS_SHARED_PRIVATE
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.preferences.persist_salt
 import com.machiav3lli.backup.preferences.pref_allowDowngrade
 import com.machiav3lli.backup.preferences.pref_appAccentColor
@@ -131,22 +132,17 @@ val backupDirConfigured: String
 
 fun backupFolderExists(uri: String? = null): Boolean {
     try {
-        if (uri.isNullOrEmpty()) {
-            if (OABX.context.getBackupRoot().exists()) {
+        if (OABX.context.getBackupRoot().exists())
+            return true
+        uri?.let {
+            if (StorageFile.fromUri(it).exists())
                 return true
-            } else {
-                return false
-            }
-        } else {
-            if (StorageFile.fromUri(uri).exists()) {
-                return true
-            } else {
-                return false
-            }
         }
     } catch (e: Throwable) {
+        logException(e)
         return false
     }
+    return false
 }
 
 fun setBackupDir(uri: Uri): String {
