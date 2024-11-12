@@ -48,6 +48,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TrashSimple
 import java.time.LocalDateTime
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BackupItem_headlineContent(
     item: Backup,
@@ -173,6 +174,7 @@ fun BackupItem_supportingContent(item: Backup) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BackupItem(
     item: Backup,
