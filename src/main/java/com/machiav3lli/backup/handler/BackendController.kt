@@ -46,15 +46,15 @@ import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.Package.Companion.invalidateBackupCacheForPackage
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.Package.Companion.invalidateBackupCacheForPackage
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
 import com.machiav3lli.backup.preferences.pref_earlyEmptyBackups
 import com.machiav3lli.backup.preferences.pref_lookForEmptyBackups
-import com.machiav3lli.backup.traceBackupsScan
-import com.machiav3lli.backup.traceBackupsScanAll
-import com.machiav3lli.backup.traceTiming
+import com.machiav3lli.backup.preferences.traceBackupsScan
+import com.machiav3lli.backup.preferences.traceBackupsScanAll
+import com.machiav3lli.backup.preferences.traceTiming
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.TraceUtils
@@ -220,7 +220,7 @@ suspend fun scanBackups(
         if (damagedOp != null)
             renameDamagedToERROR(dir, "no-props")
         else
-            onInvalidBackup(dir, file, null, "no props")
+            onInvalidBackup(dir, file, null, "no-props")
     }
 
     suspend fun handleEmptyBackup(
@@ -272,8 +272,8 @@ suspend fun scanBackups(
     }
 
    suspend fun handleDirectory(
-        file: StorageFile,
-        collector: FlowCollector<StorageFile>? = null
+       file: StorageFile,
+       collector: FlowCollector<StorageFile>? = null
     ): Boolean {
 
         hitBusy()
@@ -559,8 +559,6 @@ fun Context.findBackups(
                                         backupsMap.getOrPut(backup.packageName) { mutableListOf() }
                                             .add(backup)
                                     }
-                                } ?: run {
-                                    throw Exception("props file ${props.path} not loaded")
                                 }
                         },
                         onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
@@ -572,9 +570,6 @@ fun Context.findBackups(
                                         backupsMap.getOrPut(backup.packageName) { mutableListOf() }
                                             .add(backup)
                                     }
-                                }
-                                ?: run {
-                                    throw Exception("props file${if (props != null) " ${props.path}" else ""} not loaded")
                                 }
                         }
                     )
@@ -632,7 +627,7 @@ fun Context.getPackageInfoList(filter: Int): List<PackageInfo> =
     packageManager.getInstalledPackageInfosWithPermissions()
         .filter { packageInfo: PackageInfo ->
             val isSystem =
-                packageInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == ApplicationInfo.FLAG_SYSTEM
+                (packageInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM == ApplicationInfo.FLAG_SYSTEM
             val isIgnored = packageInfo.packageName.matches(ignoredPackages)
             if (isIgnored)
                 Timber.i("ignored package: ${packageInfo.packageName}")
@@ -889,6 +884,6 @@ fun Context.getSpecial(packageName: String) =
 
 val PackageInfo.grantedPermissions: List<String>
     get() = requestedPermissions?.filterIndexed { index, perm ->
-        requestedPermissionsFlags[index] and PackageInfo.REQUESTED_PERMISSION_GRANTED == PackageInfo.REQUESTED_PERMISSION_GRANTED &&
+        (requestedPermissionsFlags?.getOrNull(index) ?: 0) and PackageInfo.REQUESTED_PERMISSION_GRANTED == PackageInfo.REQUESTED_PERMISSION_GRANTED &&
                 perm !in IGNORED_PERMISSIONS
     }.orEmpty()

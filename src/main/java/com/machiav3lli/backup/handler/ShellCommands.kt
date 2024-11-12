@@ -23,7 +23,7 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.utils.FileUtils
 import timber.log.Timber
 import java.io.File

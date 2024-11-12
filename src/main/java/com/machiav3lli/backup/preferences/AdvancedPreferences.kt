@@ -33,14 +33,20 @@ import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isRelease
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.entity.BooleanPref
+import com.machiav3lli.backup.entity.IntPref
+import com.machiav3lli.backup.entity.LaunchPref
+import com.machiav3lli.backup.entity.Pref
+import com.machiav3lli.backup.entity.PrefUI
+import com.machiav3lli.backup.entity.StringPref
 import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
-import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
@@ -55,14 +61,7 @@ import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
 import com.machiav3lli.backup.ui.compose.theme.ColorSpecial
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
-import com.machiav3lli.backup.ui.item.BooleanPref
-import com.machiav3lli.backup.ui.item.IntPref
-import com.machiav3lli.backup.ui.item.LaunchPref
-import com.machiav3lli.backup.ui.item.Pref
-import com.machiav3lli.backup.ui.item.PrefUI
-import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
-import com.machiav3lli.backup.utils.sortFilterModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -112,11 +111,7 @@ fun AdvancedPrefsPage() {
         ) {
             item {
                 PrefsGroup(prefs = prefs) { pref ->
-                    if (pref == pref_enableSpecialBackups) {        //TODO hg42 encapsulate in pref
-                        val newModel = sortFilterModel
-                        newModel.mainFilter = newModel.mainFilter and MAIN_FILTER_DEFAULT
-                        sortFilterModel = newModel
-                    }
+                    // TODO do things
                 }
             }
             item {
@@ -192,7 +187,6 @@ fun SuCommandPreference(
             TextInput(
                 pref.value,
                 modifier = Modifier.fillMaxWidth(),
-                editOnClick = true
             ) {
                 pref.value = it
             }
@@ -209,7 +203,7 @@ class SuCommandPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -228,7 +222,8 @@ class SuCommandPref(
     onChanged = onChanged
 )
 
-val suCommand_summary get() = """
+val suCommand_summary
+    get() = """
         the command used to elevate the shell to a 'root' shell (in our sense),
         the whole command must be a shell, reading commands from stdin and executing them,
         there are also builtin fallback commands
@@ -241,7 +236,17 @@ val pref_suCommand = SuCommandPref(
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
     summary = suCommand_summary,
     icon = Phosphor.Hash,
-    iconTint = Color.Gray,
+    iconTint = {
+        val pref = it as SuCommandPref
+        if (isLikeRoot == true) {
+            if (pref.value == suCommand)
+                Color.Green
+            else
+                Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+        } else {
+            Color.Red
+        }
+    },
     defaultValue = suCommand_default,
 ) {
     val pref = it as SuCommandPref
@@ -253,17 +258,9 @@ val pref_suCommand = SuCommandPref(
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
     }
-    pref.iconTint = if (isLikeRoot == true) {
-        if (pref.value == suCommand)
-            Color.Green
-        else
-            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
-    } else {
-        Color.Red
-    }
     pref.summary = suCommand_summary
-    traceDebug  { "summary: ${pref.summary}" }
-    traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
+    traceDebug { "summary: ${pref.summary}" }
+    traceDebug { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
     pref.dirty.value = true
 }
 
@@ -330,25 +327,13 @@ val pref_showInfoLogBar = BooleanPref(
     defaultValue = false
 )
 
-val pref_useAlarmClock = BooleanPref(
-    key = "dev-adv.useAlarmClock",
-    summaryId = R.string.prefs_usealarmclock_summary,
-    defaultValue = false
-)
-
-val pref_useExactAlarm = BooleanPref(
-    key = "dev-adv.useExactAlarm",
-    summaryId = R.string.prefs_useexactalarm_summary,
-    defaultValue = false
-)
-
 val pref_backupPauseApps = BooleanPref(
     key = "dev-adv.backupPauseApps",
     summary = """
         pause apps during backups to avoid inconsistencies caused
         by ongoing file changes or other conflicts (doesn't seem to have big benefits)
         """.trimIndent().replace("\n", " ").trim(),
-    defaultValue = true
+    defaultValue = false
 )
 
 val pref_backupSuspendApps = BooleanPref(
@@ -398,18 +383,14 @@ val pref_restoreTarCmd = BooleanPref(
 
 //---------------------------------------- developer settings - file handling
 
-val pref_allowShadowingDefault = BooleanPref(
-    key = "dev-file.allowShadowingDefault",
-    summaryId = R.string.prefs_allowshadowingdefault_summary,
-    defaultValue = false
-)
-
 val pref_shadowRootFile = BooleanPref(
     key = "dev-file.shadowRootFile",
     summaryId = R.string.prefs_shadowrootfile_summary,
     defaultValue = false,
-    enableIf = { pref_allowShadowingDefault.value }
-)
+) {
+    StorageFile.invalidateCache()
+    pref_pathBackupFolder.value = pref_pathBackupFolder.value
+}
 
 val pref_cacheUris = BooleanPref(
     key = "dev-file.cacheUris",
@@ -425,15 +406,6 @@ val pref_cacheFileLists = BooleanPref(
 
 
 //---------------------------------------- developer settings - implementation alternatives
-
-val pref_useNoteIcon = BooleanPref(
-    key = "dev-alt.useNoteIcon",
-    summary = """
-        use icon instead of 'edit note' button and color note background
-        to emphasize the note instead of the always existent edit button
-        """.trimIndent().replace("\n", " ").trim(),
-    defaultValue = false
-)
 
 val pref_paranoidBackupLists = BooleanPref(
     key = "dev-alt.paranoidBackupLists",
@@ -639,8 +611,13 @@ val pref_enableSpecialBackups = BooleanPref(
     titleId = R.string.prefs_enablespecial,
     summaryId = R.string.prefs_enablespecial_summary,
     icon = Phosphor.AsteriskSimple,
-    iconTint = ColorSpecial,
-    defaultValue = false
+    iconTint = { ColorSpecial },
+    defaultValue = false,
+    onChanged = {
+        NeoPrefs.getInstance().let {
+            it.mainFilterHome.value = it.mainFilterHome.value and MAIN_FILTER_DEFAULT
+        }
+    }
 )
 
 val pref_disableVerification = BooleanPref(
@@ -648,7 +625,7 @@ val pref_disableVerification = BooleanPref(
     titleId = R.string.prefs_disableverification,
     summaryId = R.string.prefs_disableverification_summary,
     icon = Phosphor.AndroidLogo,
-    iconTint = ColorUpdated,
+    iconTint = { ColorUpdated },
     defaultValue = true
 )
 
@@ -657,7 +634,7 @@ val pref_giveAllPermissions = BooleanPref(
     titleId = R.string.prefs_restoreallpermissions,
     summaryId = R.string.prefs_restoreallpermissions_summary,
     icon = Phosphor.ShieldStar,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = false
 )
 
@@ -687,16 +664,6 @@ val persist_ignoreBatteryOptimization = BooleanPref(
     defaultValue = false
 )
 
-val persist_sortFilter = StringPref(
-    key = "persist.sortFilter",
-    defaultValue = ""
-)
-
-val persist_specialFilters = StringPref(
-    key = "persist.specialFilters",
-    defaultValue = ""
-)
-
 val persist_salt = StringPref(
     key = "persist.salt",
     defaultValue = ""
@@ -707,7 +674,6 @@ val persist_skippedEncryptionCounter = IntPref(
     entries = (0..100).toList(),
     defaultValue = 0
 )
-
 
 //----------------------------------------
 

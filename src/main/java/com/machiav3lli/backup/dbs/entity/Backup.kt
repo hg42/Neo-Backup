@@ -22,15 +22,15 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.getBackupRoot
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.FileNotFoundException
@@ -39,7 +39,7 @@ import java.time.LocalDateTime
 
 @Entity(primaryKeys = ["packageName", "backupDate"])
 @Serializable
-data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
+data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class) constructor(
     var backupVersionCode: Int = 0,
     var packageName: String,
     var packageLabel: String,
@@ -86,7 +86,7 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
         persistent: Boolean = false,
         note: String = "",
     ) : this(
-        backupVersionCode = BuildConfig.MAJOR * 1000 + BuildConfig.MINOR,
+        backupVersionCode = SystemUtils.backupVersionCode,
         packageName = base.packageName,
         packageLabel = base.packageLabel,
         versionName = base.versionName,
@@ -249,7 +249,7 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
             return field
         }
 
-    val tag: String
+    val directoryTag: String
         get() {
             val pkg = "📦" // "📁"
             return (dir?.path
@@ -273,6 +273,9 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
 
                 serialized = propertiesFile.readText()
 
+                if (serialized.isEmpty())
+                    return createInvalidFrom(propertiesFile, why = "empty-props")
+
                 val backup = fromSerialized(serialized)
 
                 //TODO bug: list serialization (jsonPretty, yaml) adds a space in front of each value
@@ -285,14 +288,12 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
 
             } catch (e: FileNotFoundException) {
                 logException(e, "Cannot open ${propertiesFile.path}", backTrace = false)
-                return null
             } catch (e: IOException) {
                 logException(e, "Cannot read ${propertiesFile.path}", backTrace = false)
-                return null
             } catch (e: Throwable) {
                 logException(e, "file: ${propertiesFile.path} =\n$serialized", backTrace = false)
-                return null
             }
+            return null
         }
 
         fun createInvalidFrom(
@@ -301,67 +302,69 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
             packageName: String? = null,
             why: String? = null,
         ): Backup? {
+
             try {
 
                 val packageNameFixed = packageName ?: run {
                     if (propertiesFile != null) {
                         if (propertiesFile.name == BACKUP_INSTANCE_PROPERTIES_INDIR) {
                             propertiesFile.parent?.name
-                        } else {
+                        } else if (pref_flatStructure.value) {
                             val baseName = propertiesFile.name?.removeSuffix(".$PROP_NAME")
                             baseName?.let { dirName ->
                                 propertiesFile.parent?.findFile(dirName)?.name
                             }
+                        } else {
+                            propertiesFile.parent?.name
                         }
                     } else {
                         directory.name?.let { name ->
-                            if (regexPackageFolder.matches(name)) {
-                                name
-                            } else {
-                                regexPackageFolder.find(name)?.let { match ->
-                                    match.groups[0]?.value
+                            if (pref_flatStructure.value) {
+                                if (regexPackageFolder.matches(name)) {
+                                    name
+                                } else {
+                                    regexPackageFolder.find(name)?.let { match ->
+                                        match.groups[0]?.value
+                                    }
                                 }
+                            } else {
+                                directory.parent?.name
                             }
                         }
                     }
                 } ?: ""
 
-                val backup = Backup(
-                    base = PackageInfo(
-                        packageName = "...$packageNameFixed",
-                        versionName = "INVALID" + if (why != null) ": $why" else "",
-                        versionCode = 0,
-                    ),
-                    backupDate = LocalDateTime.parse("2000-01-01T00:00:00"),
-                    hasApk = false,
-                    hasAppData = false,
-                    hasDevicesProtectedData = false,
-                    hasExternalData = false,
-                    hasObbData = false,
-                    hasMediaData = false,
-                    compressionType = null,
-                    cipherType = null,
-                    iv = null,
-                    cpuArch = "",
-                    permissions = emptyList(),
-                    persistent = false,
-                    note = "INVALID",
-                    size = 0,
+                val backup = fromSerialized(
+                    "{\n" +
+                            "    \"backupVersionCode\": ${
+                                    com.machiav3lli.backup.BuildConfig.MAJOR * 1000 +
+                                            com.machiav3lli.backup.BuildConfig.MINOR
+                            },\n" +
+                            "    \"packageName\": \"...$packageNameFixed\",\n" +
+                            "    \"packageLabel\": \"? INVALID BACKUP\",\n" +
+                            "    \"versionName\": \"${"INVALID" + if (why != null) ": $why" else ""}\",\n" +
+                            "    \"versionCode\": 0,\n" +
+                            //"    \"sourceDir\": \"/data/app/~~oXzw9ZEl326kQh4Ay1vHJQ==/org.woheller69.weather-gWQaSUpYxRgFVvgMTqNb9A==/base.apk\",\n" +
+                            "    \"splitSourceDirs\": [],\n" +
+                            "    \"backupDate\": \"2000-01-01T00:00:00\",\n" +
+                            "    \"hasApk\": false,\n" +
+                            "    \"hasAppData\": false,\n" +
+                            "    \"hasDevicesProtectedData\": false,\n" +
+                            "    \"hasExternalData\": false,\n" +
+                            "    \"compressionType\": \"zst\",\n" +
+                            //"    \"iv\": [],\n" +
+                            "    \"cpuArch\": \"\",\n" +
+                            "    \"size\": 0\n" +
+                            "}"
                 )
-                backup.apply {
-                    file = propertiesFile
-                    dir = directory
-                    packageLabel = "? INVALID BACKUP"
-                    backupVersionCode = -1
-                    profileId = 0
-                    isSystem = false
-                }
+
+                backup.file = propertiesFile
 
                 return backup
 
             } catch (e: Throwable) {
                 logException(e,
-                    "creating invalid backup item also failed for directory ${
+                    "creating invalid backup item also failed, for directory ${
                         directory.path
                     }${
                         if (propertiesFile != null)
@@ -371,8 +374,8 @@ data class Backup @OptIn(ExperimentalSerializationApi::class) constructor(
                     }",
                     backTrace = false
                 )
-                return null
             }
+            return null
         }
     }
 }

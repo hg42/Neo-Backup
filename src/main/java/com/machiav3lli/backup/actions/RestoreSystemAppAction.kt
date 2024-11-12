@@ -25,7 +25,7 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.tasks.AppActionWork
 import org.apache.commons.io.IOUtils
 import timber.log.Timber

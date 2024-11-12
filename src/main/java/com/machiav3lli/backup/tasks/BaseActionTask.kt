@@ -27,8 +27,8 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logErrors
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.showNotification
-import com.machiav3lli.backup.items.ActionResult
-import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.entity.ActionResult
+import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.utils.showActionResult
 import java.lang.ref.WeakReference
 import java.util.concurrent.CountDownLatch
@@ -71,7 +71,7 @@ abstract class BaseActionTask(
                         ?: ""
                 )
             }
-            if (!(result?.succeeded ?: false))
+            if (result?.succeeded != true)
                 OABX.lastErrorPackage = app.packageName
             mainActivityX.updatePackage(app.packageName)
             mainActivityX.dismissSnackBar()

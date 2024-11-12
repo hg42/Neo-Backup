@@ -49,8 +49,8 @@ fun PackagesListDialogUI(
         if (b1 != b2)
             if (b1) -1 else 1
         else {
-            val l1 = pi1.applicationInfo.loadLabel(pm).toString()
-            val l2 = pi2.applicationInfo.loadLabel(pm).toString()
+            val l1 = pi1.applicationInfo?.loadLabel(pm).toString()
+            val l2 = pi2.applicationInfo?.loadLabel(pm).toString()
             l1.compareTo(l2, ignoreCase = true)
         }
     }
@@ -77,7 +77,7 @@ fun PackagesListDialogUI(
     }
     packagePairs.addAll(
         packageInfos.map { packageInfo ->
-            Pair(packageInfo.packageName, packageInfo.applicationInfo.loadLabel(pm).toString())
+            Pair(packageInfo.packageName, packageInfo.applicationInfo?.loadLabel(pm).toString())
         }
     )
 

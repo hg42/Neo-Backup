@@ -78,8 +78,6 @@ val Phosphor.NotePencil: ImageVector
 
 private var _note_pencil: ImageVector? = null
 
-
-
 @Preview
 @Composable
 fun NotePencilPreview() {

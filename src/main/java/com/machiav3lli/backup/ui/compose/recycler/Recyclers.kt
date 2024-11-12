@@ -3,6 +3,7 @@ package com.machiav3lli.backup.ui.compose.recycler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -15,9 +16,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.imageLoader
 import com.machiav3lli.backup.dbs.entity.Schedule
-import com.machiav3lli.backup.items.Log
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.ChipItem
+import com.machiav3lli.backup.entity.InfoChipItem
+import com.machiav3lli.backup.entity.Log
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.pref_multilineInfoChips
 import com.machiav3lli.backup.preferences.pref_singularBackupRestore
 import com.machiav3lli.backup.ui.compose.item.BatchPackageItem
@@ -27,8 +30,8 @@ import com.machiav3lli.backup.ui.compose.item.LogItem
 import com.machiav3lli.backup.ui.compose.item.MainPackageItem
 import com.machiav3lli.backup.ui.compose.item.RestorePackageItem
 import com.machiav3lli.backup.ui.compose.item.ScheduleItem
+import com.machiav3lli.backup.ui.compose.item.SelectionChip
 import com.machiav3lli.backup.ui.compose.item.UpdatedPackageItem
-import com.machiav3lli.backup.ui.item.InfoChipItem
 
 @Composable
 fun HomePackageRecycler(
@@ -126,13 +129,14 @@ fun ScheduleRecycler(
     modifier: Modifier = Modifier,
     productsList: List<Schedule>?,
     onClick: (Schedule) -> Unit = {},
+    onRun: (Schedule) -> Unit = {},
     onCheckChanged: (Schedule, Boolean) -> Unit = { _: Schedule, _: Boolean -> },
 ) {
     InnerBackground(modifier) {
         VerticalItemList(
             list = productsList
         ) {
-            ScheduleItem(it, onClick, onCheckChanged)
+            ScheduleItem(it, onClick, onRun, onCheckChanged)
         }
     }
 }
@@ -188,10 +192,83 @@ fun InfoChipsBlock(
     else LazyRow(
         modifier = modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp),
     ) {
         items(list) { chip ->
             InfoChip(item = chip)
+        }
+    }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SelectableChipGroup(
+    //TODO hg42 move to item/Components.kt ?
+    modifier: Modifier = Modifier,
+    list: List<ChipItem>,
+    selectedFlag: Int,
+    onClick: (Int) -> Unit,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        list.forEach { item ->
+            SelectionChip(
+                item = item,
+                isSelected = item.flag == selectedFlag,
+            ) {
+                onClick(item.flag)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun MultiSelectableChipGroup(
+    //TODO hg42 move to item/Components.kt ?
+    modifier: Modifier = Modifier,
+    list: List<ChipItem>,
+    selectedFlags: Int,
+    onClick: (Int, Int) -> Unit,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        list.forEach { item ->
+            SelectionChip(
+                item = item,
+                isSelected = item.flag and selectedFlags != 0,
+            ) {
+                onClick(selectedFlags xor item.flag, item.flag)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun MultiSelectableChipGroup(
+    modifier: Modifier = Modifier,
+    list: Set<String>,
+    selected: Set<String>,
+    onClick: (Set<String>) -> Unit,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        list.forEach { item ->
+            SelectionChip(
+                label = item,
+                isSelected = item in selected,
+            ) {
+                onClick(if (item in selected) selected - item else selected + item)
+            }
         }
     }
 }

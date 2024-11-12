@@ -6,11 +6,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.expandVertically
@@ -19,61 +14,37 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -85,8 +56,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -96,12 +65,11 @@ import coil.compose.rememberAsyncImagePainter
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.size.Size
-import com.machiav3lli.backup.ENABLED_FILTER_DISABLED
+import com.machiav3lli.backup.EnabledFilter
 import com.machiav3lli.backup.ICON_SIZE_LARGE
-import com.machiav3lli.backup.ICON_SIZE_MEDIUM
 import com.machiav3lli.backup.ICON_SIZE_SMALL
-import com.machiav3lli.backup.LATEST_FILTER_NEW
-import com.machiav3lli.backup.LAUNCHABLE_FILTER_NOT
+import com.machiav3lli.backup.LatestFilter
+import com.machiav3lli.backup.LaunchableFilter
 import com.machiav3lli.backup.MAIN_FILTER_SPECIAL
 import com.machiav3lli.backup.MAIN_FILTER_SYSTEM
 import com.machiav3lli.backup.MAIN_FILTER_USER
@@ -111,22 +79,15 @@ import com.machiav3lli.backup.MODE_DATA_DE
 import com.machiav3lli.backup.MODE_DATA_EXT
 import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.SPECIAL_FILTER_ALL
-import com.machiav3lli.backup.UPDATED_FILTER_NEW
-import com.machiav3lli.backup.UPDATED_FILTER_NOT
+import com.machiav3lli.backup.UpdatedFilter
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Schedule
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.preferences.pref_busyIconScale
-import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
-import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowSquareOut
-import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
-import com.machiav3lli.backup.ui.compose.icons.phosphor.Checks
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CircleWavyWarning
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Clock
 import com.machiav3lli.backup.ui.compose.icons.phosphor.DiamondsFour
@@ -140,7 +101,6 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldCheckered
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Spinner
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Star
 import com.machiav3lli.backup.ui.compose.icons.phosphor.User
-import com.machiav3lli.backup.ui.compose.ifThen
 import com.machiav3lli.backup.ui.compose.theme.ColorAPK
 import com.machiav3lli.backup.ui.compose.theme.ColorData
 import com.machiav3lli.backup.ui.compose.theme.ColorDeData
@@ -154,7 +114,6 @@ import com.machiav3lli.backup.ui.compose.theme.ColorSystem
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
 import com.machiav3lli.backup.ui.compose.theme.ColorUser
 import kotlinx.coroutines.delay
-import kotlin.math.max
 
 @Composable
 fun ButtonIcon(
@@ -297,131 +256,6 @@ fun placeholderIconPainter(
 )
 
 @Composable
-fun ActionButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    positive: Boolean = true,
-    iconOnSide: Boolean = false,
-    icon: ImageVector? = null,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        modifier = modifier,
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = if (positive) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.tertiary
-        ),
-        onClick = onClick
-    ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            text = text,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleSmall
-        )
-        if (icon != null) {
-            if (iconOnSide) Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                imageVector = icon,
-                contentDescription = text
-            )
-        }
-    }
-}
-
-@Composable
-fun ElevatedActionButton(
-    modifier: Modifier = Modifier,
-    text: String,
-    positive: Boolean = true,
-    icon: ImageVector? = null,
-    fullWidth: Boolean = false,
-    enabled: Boolean = true,
-    colored: Boolean = true,
-    withText: Boolean = text.isNotEmpty(),
-    onClick: () -> Unit,
-) {
-    ElevatedButton(
-        modifier = modifier,
-        colors = ButtonDefaults.elevatedButtonColors(
-            contentColor = when {
-                !colored -> MaterialTheme.colorScheme.onSurface
-                positive -> MaterialTheme.colorScheme.onPrimaryContainer
-                else     -> MaterialTheme.colorScheme.onTertiaryContainer
-            },
-            containerColor = when {
-                !colored -> MaterialTheme.colorScheme.surfaceContainer
-                positive -> MaterialTheme.colorScheme.primaryContainer
-                else     -> MaterialTheme.colorScheme.tertiaryContainer
-            }
-        ),
-        enabled = enabled,
-        onClick = onClick
-    ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text
-            )
-        }
-        if (withText)
-            Text(
-                modifier = when {
-                    fullWidth -> Modifier.weight(1f)
-                    else      -> Modifier.padding(start = 8.dp)
-                },
-                text = text,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleSmall
-            )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CardButton(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    description: String,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    val showTooltip = remember { mutableStateOf(false) }
-
-    ListItem(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = { showTooltip.value = true },
-                enabled = enabled,
-            ),
-        colors = ListItemDefaults.colors(
-            leadingIconColor = contentColor,
-            headlineColor = contentColor,
-            containerColor = containerColor,
-        ),
-        leadingContent = {
-            Icon(imageVector = icon, contentDescription = description)
-        },
-        headlineContent = {
-            Text(
-                text = description,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 2,
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            if (showTooltip.value) {
-                Tooltip(description, showTooltip)
-            }
-        }
-    )
-}
-
-@Composable
 fun Tooltip(
     text: String,
     openPopup: MutableState<Boolean>,
@@ -454,291 +288,6 @@ fun Tooltip(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
             }
-        }
-    }
-}
-
-@Composable
-fun RoundButton(
-    modifier: Modifier = Modifier,
-    size: Dp = ICON_SIZE_SMALL,
-    icon: ImageVector,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    description: String = "",
-    onClick: () -> Unit,
-) {
-    IconButton(
-        modifier = modifier,
-        onClick = onClick
-    ) {
-        Icon(
-            modifier = Modifier.size(size),
-            imageVector = icon,
-            tint = tint,
-            contentDescription = description
-        )
-    }
-}
-
-@Composable
-fun RefreshButton(
-    modifier: Modifier = Modifier,
-    size: Dp = ICON_SIZE_SMALL,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    hideIfNotBusy: Boolean = false,
-    onClick: () -> Unit = {},
-) {
-    val isBusy by remember { OABX.busy }
-
-    if (hideIfNotBusy && isBusy.not())
-        return
-
-    val (angle, scale) = if (isBusy) {
-        val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransition")
-
-        // Animate from 0f to 1f
-        val animationProgress by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = pref_busyIconTurnTime.value,
-                    easing = LinearEasing
-                )
-            ), label = "animationProgress"
-        )
-        val angle = 360f * animationProgress
-        val scale = 0.01f * pref_busyIconScale.value
-        angle to scale
-    } else {
-        0f to 1f
-    }
-
-    RoundButton(
-        description = stringResource(id = R.string.refresh),
-        icon = Phosphor.ArrowsClockwise,
-        size = size,
-        tint = if (isBusy) Color.Red else tint,
-        modifier = modifier
-            .scale(scale)
-            .rotate(angle),
-        onClick = onClick
-    )
-}
-
-
-@Preview
-@Composable
-fun RefreshButtonPreview() {
-    OABX.fakeContext = LocalContext.current.applicationContext
-    
-    val level by remember { OABX.busyLevel }
-    val factor = 1.0 / max(1, level)
-
-    Column {
-        Text("factor: $factor")
-        Text("level: $level")
-        Text("time: ${(pref_busyIconTurnTime.value * factor).toInt()}")
-        Row {
-            RefreshButton()
-            ActionButton(text = "hit") {
-                OABX.hitBusy()
-            }
-            ActionButton(text = "begin") {
-                OABX.beginBusy()
-            }
-            ActionButton(text = "end") {
-                OABX.endBusy()
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun StateChip(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    text: String,
-    color: Color,
-    index: Int,
-    count: Int,
-    checked: Boolean,
-    onClick: () -> Unit,
-) {
-    val openPopup = remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(
-        topStart = if (index == 0) MaterialTheme.shapes.extraLarge.topStart
-        else MaterialTheme.shapes.extraSmall.topStart,
-        bottomStart = if (index == 0) MaterialTheme.shapes.extraLarge.topStart
-        else MaterialTheme.shapes.extraSmall.topStart,
-        topEnd = if (index == count - 1) MaterialTheme.shapes.extraLarge.topStart
-        else MaterialTheme.shapes.extraSmall.topStart,
-        bottomEnd = if (index == count - 1) MaterialTheme.shapes.extraLarge.topStart
-        else MaterialTheme.shapes.extraSmall.topStart,
-    )
-
-    Surface(
-        modifier = modifier
-            .defaultMinSize(minWidth = 56.dp, minHeight = 1.dp)
-            .clip(shape)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = { openPopup.value = true }
-            ),
-        contentColor = if (checked) MaterialTheme.colorScheme.surfaceContainerLowest else color,
-        color = if (checked) color else Color.Transparent,
-        shape = shape,
-        border = BorderStroke(1.dp, color),
-    ) {
-        Icon(
-            modifier = Modifier.padding(8.dp),
-            imageVector = icon,
-            contentDescription = text,
-        )
-
-        if (openPopup.value) {
-            Tooltip(text, openPopup)
-        }
-    }
-}
-
-@Composable
-fun CheckChip(
-    modifier: Modifier = Modifier,
-    checked: Boolean,
-    textId: Int,
-    checkedTextId: Int,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val (checked, check) = remember(checked) { mutableStateOf(checked) }   //TODO hg42 should probably be removed like for MultiChips
-
-    FilterChip(
-        modifier = modifier,
-        selected = checked,
-        colors = FilterChipDefaults.filterChipColors(
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            iconColor = MaterialTheme.colorScheme.onSurface,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            containerColor = Color.Transparent,
-            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        shape = MaterialTheme.shapes.medium,
-        leadingIcon = {
-            if (checked) ButtonIcon(Phosphor.Checks, R.string.enabled)
-        },
-        onClick = {
-            onCheckedChange(!checked)
-            check(!checked)
-        },
-        label = {
-            Row(modifier = Modifier.padding(vertical = 10.dp)) {
-                Text(text = stringResource(id = if (checked) checkedTextId else textId))
-            }
-        }
-    )
-}
-
-@Composable
-fun ActionChip(
-    modifier: Modifier = Modifier,
-    text: String = "",
-    icon: ImageVector? = null,
-    positive: Boolean,
-    fullWidth: Boolean = false,
-    onClick: () -> Unit = {},
-) {
-    AssistChip(
-        modifier = modifier,
-        label = {
-            Text(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .ifThen(fullWidth) {
-                        fillMaxWidth()
-                    },
-                text = text,
-                textAlign = TextAlign.Center,
-            )
-        },
-        leadingIcon = {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = text
-                )
-            }
-        },
-        shape = MaterialTheme.shapes.large,
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (positive) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.tertiaryContainer,
-            labelColor = if (positive) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.onTertiaryContainer,
-            leadingIconContentColor = if (positive) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.onTertiaryContainer,
-        ),
-        border = null,
-        onClick = onClick
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwitchChip(
-    firstTextId: Int,
-    firstIcon: ImageVector,
-    secondTextId: Int,
-    secondIcon: ImageVector,
-    firstSelected: Boolean = true,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val colors = SegmentedButtonDefaults.colors(
-        inactiveContainerColor = Color.Transparent,
-        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        activeBorderColor = Color.Transparent,
-        inactiveBorderColor = Color.Transparent,
-    )
-    var firstSelected by remember { mutableStateOf(firstSelected) }
-
-    SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.medium)
-            .padding(horizontal = 6.dp)
-            .fillMaxWidth(),
-    ) {
-        SegmentedButton(
-            modifier = Modifier.weight(1f),
-            selected = firstSelected,
-            shape = MaterialTheme.shapes.small,
-            colors = colors,
-            icon = {
-                ButtonIcon(firstIcon, firstTextId)
-            },
-            onClick = {
-                onCheckedChange(true)
-                firstSelected = true
-            }
-        ) {
-            Text(text = stringResource(id = firstTextId))
-        }
-        SegmentedButton(
-            modifier = Modifier.weight(1f),
-            selected = !firstSelected,
-            shape = MaterialTheme.shapes.small,
-            colors = colors,
-            icon = {
-                ButtonIcon(secondIcon, secondTextId)
-            },
-            onClick = {
-                onCheckedChange(false)
-                firstSelected = false
-            }
-        ) {
-            Text(text = stringResource(id = secondTextId))
         }
     }
 }
@@ -1005,7 +554,6 @@ fun BackupLabels(
     }
 }
 
-
 @Composable
 fun ScheduleTypes(item: Schedule) {
     AnimatedVisibility(visible = item.mode and MODE_DATA_MEDIA == MODE_DATA_MEDIA) {
@@ -1046,7 +594,6 @@ fun ScheduleTypes(item: Schedule) {
     }
 }
 
-
 @Composable
 fun ScheduleFilters(
     item: Schedule,
@@ -1069,59 +616,59 @@ fun ScheduleFilters(
             tint = ColorSpecial
         )
     }
-    AnimatedVisibility(visible = item.launchableFilter != SPECIAL_FILTER_ALL) {
+    AnimatedVisibility(visible = item.launchableFilter != LaunchableFilter.ALL.ordinal) {
         ButtonIcon(
             when (item.launchableFilter) {
-                LAUNCHABLE_FILTER_NOT -> Phosphor.ProhibitInset
-                else                  -> Phosphor.ArrowSquareOut // LAUNCHABLE_FILTER_LAUNCHABLE
+                LaunchableFilter.NOT.ordinal -> Phosphor.ProhibitInset
+                else                         -> Phosphor.ArrowSquareOut // LaunchableFilter.LAUNCHABLE
             },
 
             when (item.launchableFilter) {
-                LAUNCHABLE_FILTER_NOT -> R.string.radio_notlaunchable
-                else                  -> R.string.radio_launchable // LAUNCHABLE_FILTER_LAUNCHABLE
+                LaunchableFilter.NOT.ordinal -> R.string.radio_notlaunchable
+                else                         -> R.string.radio_launchable // LaunchableFilter.LAUNCHABLE
             },
             tint = ColorOBB,
         )
     }
-    AnimatedVisibility(visible = item.updatedFilter != SPECIAL_FILTER_ALL) {
+    AnimatedVisibility(visible = item.updatedFilter != UpdatedFilter.ALL.ordinal) {
         ButtonIcon(
-            when (item.launchableFilter) {
-                UPDATED_FILTER_NEW -> Phosphor.Star
-                UPDATED_FILTER_NOT -> Phosphor.Clock
-                else               -> Phosphor.CircleWavyWarning // UPDATED_FILTER_UPDATED
+            when (item.updatedFilter) {
+                UpdatedFilter.NEW.ordinal -> Phosphor.Star
+                UpdatedFilter.NOT.ordinal -> Phosphor.Clock
+                else                      -> Phosphor.CircleWavyWarning // UpdatedFilter.UPDATED
             },
-            when (item.launchableFilter) {
-                UPDATED_FILTER_NOT -> R.string.show_old_apps
-                UPDATED_FILTER_NEW -> R.string.show_new_apps
-                else               -> R.string.show_updated_apps // UPDATED_FILTER_UPDATED
+            when (item.updatedFilter) {
+                UpdatedFilter.NOT.ordinal -> R.string.show_old_apps
+                UpdatedFilter.NEW.ordinal -> R.string.show_new_apps
+                else                      -> R.string.show_updated_apps // UpdatedFilter.UPDATED
             },
             tint = ColorUpdated,
         )
     }
-    AnimatedVisibility(visible = item.enabledFilter != SPECIAL_FILTER_ALL) {
+    AnimatedVisibility(visible = item.enabledFilter != EnabledFilter.ALL.ordinal) {
         ButtonIcon(
-            when (item.launchableFilter) {
-                ENABLED_FILTER_DISABLED -> Phosphor.ProhibitInset
-                else                    -> Phosphor.Leaf // ENABLED_FILTER_ENABLED
+            when (item.enabledFilter) {
+                EnabledFilter.DISABLED.ordinal -> Phosphor.ProhibitInset
+                else                           -> Phosphor.Leaf // EnabledFilter.ENABLED
             },
 
-            when (item.launchableFilter) {
-                ENABLED_FILTER_DISABLED -> R.string.showDisabled
-                else                    -> R.string.show_enabled_apps // ENABLED_FILTER_ENABLED
+            when (item.enabledFilter) {
+                EnabledFilter.DISABLED.ordinal -> R.string.showDisabled
+                else                           -> R.string.show_enabled_apps // EnabledFilter.ENABLED
             },
             tint = ColorDeData,
         )
     }
-    AnimatedVisibility(visible = item.latestFilter != SPECIAL_FILTER_ALL) {
+    AnimatedVisibility(visible = item.latestFilter != LatestFilter.ALL.ordinal) {
         ButtonIcon(
-            when (item.launchableFilter) {
-                LATEST_FILTER_NEW -> Phosphor.CircleWavyWarning
-                else              -> Phosphor.Clock // LATEST_FILTER_OLD
+            when (item.latestFilter) {
+                LatestFilter.NEW.ordinal -> Phosphor.CircleWavyWarning
+                else                     -> Phosphor.Clock // LatestFilter.OLD
             },
 
-            when (item.launchableFilter) {
-                LATEST_FILTER_NEW -> R.string.show_new_backups
-                else              -> R.string.showOldBackups // LATEST_FILTER_OLD
+            when (item.latestFilter) {
+                LatestFilter.NEW.ordinal -> R.string.show_new_backups
+                else                     -> R.string.showOldBackups // LatestFilter.OLD
             },
             tint = ColorExodus,
         )

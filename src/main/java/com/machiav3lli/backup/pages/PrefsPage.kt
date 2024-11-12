@@ -18,13 +18,13 @@
 package com.machiav3lli.backup.pages
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -33,32 +33,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.sheets.HelpSheet
-import com.machiav3lli.backup.ui.compose.blockBorder
+import com.machiav3lli.backup.ui.compose.blockBorderBottom
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Info
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.ui.navigation.PagerNavBar
+import com.machiav3lli.backup.ui.navigation.NeoNavigationSuiteScaffold
 import com.machiav3lli.backup.ui.navigation.SlidePager
 import com.topjohnwu.superuser.Shell
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrefsPage(
     navController: NavHostController,
     pageIndex: Int = 0,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pages = persistentListOf(
         NavItem.UserPrefs,
@@ -72,12 +70,18 @@ fun PrefsPage(
 
     Shell.getShell()
 
+    val onDismiss: () -> Unit = {
+        scope.launch {
+            scaffoldState.bottomSheetState.partialExpand()
+        }
+    }
+
     BackHandler {
-        navController.navigateUp()
+        if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) onDismiss()
+        else navController.navigateUp()
     }
 
     FullScreenBackground {
-
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
             sheetPeekHeight = 0.dp,
@@ -85,39 +89,42 @@ fun PrefsPage(
             contentColor = MaterialTheme.colorScheme.onBackground,
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             sheetContent = {
-                HelpSheet {
-                    scope.launch {
-                        scaffoldState.bottomSheetState.partialExpand()
-                    }
-                }
+                HelpSheet(onDismiss)
             }
         ) {
-            Scaffold(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                topBar = {
-                    TopBar(title = stringResource(id = currentPage.title)) {
-                        RoundButton(
-                            icon = Phosphor.Info,
-                            description = stringResource(id = R.string.help),
-                        ) {
-                            scope.launch {
-                                scaffoldState.bottomSheetState.expand()
+            NeoNavigationSuiteScaffold(
+                pages = pages,
+                selectedPage = currentPage,
+                onItemClick = { index ->
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                }
+            ) {
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    topBar = {
+                        TopBar(title = stringResource(id = currentPage.title)) {
+                            RoundButton(
+                                icon = Phosphor.Info,
+                                description = stringResource(id = R.string.help),
+                            ) {
+                                scope.launch {
+                                    scaffoldState.bottomSheetState.expand()
+                                }
                             }
                         }
-                    }
-                },
-                bottomBar = {
-                    PagerNavBar(pageItems = pages, pagerState = pagerState)
+                    },
+                ) { paddingValues ->
+                    SlidePager(
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .blockBorderBottom(),
+                        pagerState = pagerState,
+                        pageItems = pages,
+                    )
                 }
-            ) { paddingValues ->
-                SlidePager(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .blockBorder(),
-                    pagerState = pagerState,
-                    pageItems = pages,
-                )
             }
         }
     }

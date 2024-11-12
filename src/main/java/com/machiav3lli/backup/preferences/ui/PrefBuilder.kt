@@ -1,7 +1,7 @@
 package com.machiav3lli.backup.preferences.ui
 
 import androidx.compose.runtime.Composable
-import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.entity.Pref
 
 @Composable
 fun PrefsBuilder(

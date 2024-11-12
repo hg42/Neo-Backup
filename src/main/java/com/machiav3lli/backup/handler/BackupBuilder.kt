@@ -18,9 +18,7 @@
 package com.machiav3lli.backup.handler
 
 import android.os.Build
-import com.machiav3lli.backup.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
-import com.machiav3lli.backup.DATE_TIME_AS_VERSION_CODE_FORMATTER
 import com.machiav3lli.backup.backupInstanceDir
 import com.machiav3lli.backup.backupInstanceDirFlat
 import com.machiav3lli.backup.backupInstanceProps
@@ -28,10 +26,12 @@ import com.machiav3lli.backup.backupInstancePropsFlat
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
-import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.items.UndeterminedStorageFile
+import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.entity.UndeterminedStorageFile
 import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.preferences.pref_propertiesInDir
+import com.machiav3lli.backup.utils.BACKUP_DATE_TIME_FORMATTER
+import com.machiav3lli.backup.utils.DATE_TIME_AS_VERSION_CODE_FORMATTER
 import timber.log.Timber
 import java.io.IOException
 import java.time.LocalDateTime

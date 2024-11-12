@@ -24,9 +24,9 @@ import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.items.ActionResult
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.ActionResult
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.CryptoSetupException
 import timber.log.Timber

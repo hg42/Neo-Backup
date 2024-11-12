@@ -7,9 +7,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.items.RootFile
-import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.items.getCursorString
+import com.machiav3lli.backup.entity.RootFile
+import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.entity.getCursorString
 import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

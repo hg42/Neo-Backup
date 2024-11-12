@@ -19,23 +19,13 @@ package com.machiav3lli.backup.utils
 
 import android.content.Context
 import android.content.Intent
-import com.machiav3lli.backup.ENABLED_FILTER_DISABLED
-import com.machiav3lli.backup.ENABLED_FILTER_ENABLED
-import com.machiav3lli.backup.INSTALLED_FILTER_INSTALLED
-import com.machiav3lli.backup.INSTALLED_FILTER_NOT
-import com.machiav3lli.backup.LATEST_FILTER_NEW
-import com.machiav3lli.backup.LATEST_FILTER_OLD
-import com.machiav3lli.backup.LAUNCHABLE_FILTER_LAUNCHABLE
-import com.machiav3lli.backup.LAUNCHABLE_FILTER_NOT
+import com.machiav3lli.backup.EnabledFilter
+import com.machiav3lli.backup.InstalledFilter
+import com.machiav3lli.backup.LatestFilter
+import com.machiav3lli.backup.LaunchableFilter
 import com.machiav3lli.backup.MAIN_FILTER_SPECIAL
 import com.machiav3lli.backup.MAIN_FILTER_SYSTEM
 import com.machiav3lli.backup.MAIN_FILTER_USER
-import com.machiav3lli.backup.MAIN_SORT_APPDATASIZE
-import com.machiav3lli.backup.MAIN_SORT_APPSIZE
-import com.machiav3lli.backup.MAIN_SORT_BACKUPDATE
-import com.machiav3lli.backup.MAIN_SORT_BACKUPSIZE
-import com.machiav3lli.backup.MAIN_SORT_DATASIZE
-import com.machiav3lli.backup.MAIN_SORT_PACKAGENAME
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.MODE_DATA
 import com.machiav3lli.backup.MODE_DATA_DE
@@ -45,14 +35,12 @@ import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.MODE_NONE
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.SPECIAL_FILTER_ALL
-import com.machiav3lli.backup.UPDATED_FILTER_NEW
-import com.machiav3lli.backup.UPDATED_FILTER_NOT
-import com.machiav3lli.backup.UPDATED_FILTER_UPDATED
+import com.machiav3lli.backup.Sort
+import com.machiav3lli.backup.UpdatedFilter
 import com.machiav3lli.backup.dbs.entity.AppExtras
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.SortFilterModel
-import com.machiav3lli.backup.items.SpecialFilter
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.SortFilterModel
+import com.machiav3lli.backup.entity.SpecialFilter
 import com.machiav3lli.backup.possibleMainFilters
 import com.machiav3lli.backup.preferences.pref_oldBackups
 import java.text.Collator
@@ -109,6 +97,27 @@ fun filterPackages(
 
 //---------------------------------------- filters for activity
 
+fun List<Package>.applySearchAndFilter(
+    context: Context,
+    query: String,
+    extras: Map<String, AppExtras>,
+    filter: SortFilterModel,
+): List<Package> {
+    return filter { item ->
+        query.isEmpty() || (
+                (extras[item.packageName]?.customTags ?: emptySet()).plus(
+                    listOfNotNull(
+                        item.packageName,
+                        item.packageLabel,
+                        extras[item.packageName]?.note
+                    )
+                )
+                    .any { it.contains(query, ignoreCase = true) }
+                )
+    }
+        .applyFilter(filter, context)
+}
+
 fun List<Package>.applyFilter(filter: SortFilterModel, context: Context): List<Package> {
     val predicate: (Package) -> Boolean = {
         (if (filter.mainFilter and MAIN_FILTER_SYSTEM == MAIN_FILTER_SYSTEM) it.isSystem && !it.isSpecial else false)
@@ -141,41 +150,41 @@ private fun List<Package>.applySpecialFilter(
 ): List<Package> {
     val predicate: (Package) -> Boolean
     var launchableAppsList = listOf<String>()
-    if (specialFilter.launchableFilter != SPECIAL_FILTER_ALL) {
+    if (specialFilter.launchableFilter != LaunchableFilter.ALL.ordinal) {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
         launchableAppsList = context.packageManager.queryIntentActivities(mainIntent, 0)
             .map { it.activityInfo.packageName }
     }
     val days = pref_oldBackups.value
     val installedPredicate = when (specialFilter.installedFilter) {
-        INSTALLED_FILTER_INSTALLED -> Package::isInstalled
-        INSTALLED_FILTER_NOT       -> { appInfo: Package -> !appInfo.isInstalled }
-        else                       -> { _: Package -> true }
+        InstalledFilter.INSTALLED.ordinal -> Package::isInstalled
+        InstalledFilter.NOT.ordinal       -> { appInfo: Package -> !appInfo.isInstalled }
+        else                              -> { _: Package -> true }
     }
     val launchablePredicate = when (specialFilter.launchableFilter) {
-        LAUNCHABLE_FILTER_LAUNCHABLE -> { appInfo: Package ->
+        LaunchableFilter.LAUNCHABLE.ordinal -> { appInfo: Package ->
             launchableAppsList.contains(appInfo.packageName)
         }
 
-        LAUNCHABLE_FILTER_NOT        -> { appInfo: Package ->
+        LaunchableFilter.NOT.ordinal        -> { appInfo: Package ->
             !launchableAppsList.contains(appInfo.packageName)
         }
 
-        else                         -> { _: Package -> true }
+        else                                -> { _: Package -> true }
     }
     val updatedPredicate = when (specialFilter.updatedFilter) {
-        UPDATED_FILTER_UPDATED -> Package::isUpdated
-        UPDATED_FILTER_NEW     -> Package::isNew
-        UPDATED_FILTER_NOT     -> { appInfo: Package -> !appInfo.isUpdated }
-        else                   -> { _: Package -> true }
+        UpdatedFilter.UPDATED.ordinal -> Package::isUpdated
+        UpdatedFilter.NEW.ordinal     -> Package::isNew
+        UpdatedFilter.NOT.ordinal     -> { appInfo: Package -> !appInfo.isUpdated }
+        else                          -> { _: Package -> true }
     }
     val enabledPredicate = when (specialFilter.enabledFilter) {
-        ENABLED_FILTER_ENABLED  -> { appInfo: Package -> !appInfo.isDisabled }
-        ENABLED_FILTER_DISABLED -> Package::isDisabled
-        else                    -> { _: Package -> true }
+        EnabledFilter.ENABLED.ordinal  -> { appInfo: Package -> !appInfo.isDisabled }
+        EnabledFilter.DISABLED.ordinal -> Package::isDisabled
+        else                           -> { _: Package -> true }
     }
     val latestPredicate = when (specialFilter.latestFilter) {
-        LATEST_FILTER_OLD -> { appInfo: Package ->
+        LatestFilter.OLD.ordinal -> { appInfo: Package ->
             when {
                 appInfo.hasBackups -> {
                     val lastBackup = appInfo.latestBackup?.backupDate
@@ -187,7 +196,7 @@ private fun List<Package>.applySpecialFilter(
             }
         }
 
-        LATEST_FILTER_NEW -> { appInfo: Package ->
+        LatestFilter.NEW.ordinal -> { appInfo: Package ->
             when {
                 appInfo.hasBackups -> {
                     val lastBackup = appInfo.latestBackup?.backupDate
@@ -199,7 +208,7 @@ private fun List<Package>.applySpecialFilter(
             }
         }
 
-        else              -> { _: Package -> true }
+        else                     -> { _: Package -> true }
     }
     predicate = { pkg: Package ->
         installedPredicate(pkg) and
@@ -214,69 +223,92 @@ private fun List<Package>.applySpecialFilter(
 private fun List<Package>.applySort(sort: Int, sortAsc: Boolean): List<Package> =
     if (!sortAsc) {
         when (sort) {
-            MAIN_SORT_PACKAGENAME -> sortedWith(
+            Sort.PACKAGENAME.ordinal
+                 -> sortedWith(
                 compareBy(Collator.getInstance().reversed()) { it.packageName.lowercase() }
             )
 
-            MAIN_SORT_APPSIZE     -> sortedByDescending { it.appBytes }
-            MAIN_SORT_DATASIZE    -> sortedByDescending { it.dataBytes }
-            MAIN_SORT_APPDATASIZE -> sortedByDescending { it.appBytes + it.dataBytes }
-            MAIN_SORT_BACKUPSIZE  -> sortedByDescending { it.backupBytes }
-            MAIN_SORT_BACKUPDATE  -> sortedWith(compareBy<Package> { it.latestBackup?.backupDate }.thenBy { it.packageLabel })
-            else                  -> sortedWith(
+            Sort.APP_SIZE.ordinal
+                 -> sortedByDescending { it.appBytes }
+
+            Sort.DATA_SIZE.ordinal
+                 -> sortedByDescending { it.dataBytes }
+
+            Sort.APPDATA_SIZE.ordinal
+                 -> sortedByDescending { it.appBytes + it.dataBytes }
+
+            Sort.BACKUP_SIZE.ordinal
+                 -> sortedByDescending { it.backupBytes }
+
+            Sort.BACKUP_DATE.ordinal
+                 -> sortedWith(compareBy<Package> { it.latestBackup?.backupDate }.thenBy { it.packageLabel })
+
+            else -> sortedWith(
                 compareBy(Collator.getInstance().reversed()) { it.packageLabel.lowercase() }
             )
         }
     } else {
         when (sort) {
-            MAIN_SORT_PACKAGENAME -> sortedWith(
-                compareBy(Collator.getInstance()) { it.packageName.lowercase() }
-            )
+            Sort.PACKAGENAME.ordinal
+                 -> sortedWith(compareBy(Collator.getInstance()) { it.packageName.lowercase() })
 
-            MAIN_SORT_APPSIZE     -> sortedBy { it.appBytes }
-            MAIN_SORT_DATASIZE    -> sortedBy { it.dataBytes }
-            MAIN_SORT_APPDATASIZE -> sortedBy { it.appBytes + it.dataBytes }
-            MAIN_SORT_BACKUPSIZE  -> sortedBy { it.backupBytes }
-            MAIN_SORT_BACKUPDATE  -> sortedWith(compareByDescending<Package> { it.latestBackup?.backupDate }.thenBy { it.packageLabel })
-            else                  -> sortedWith(
+            Sort.APP_SIZE.ordinal
+                 -> sortedBy { it.appBytes }
+
+            Sort.DATA_SIZE.ordinal
+                 -> sortedBy { it.dataBytes }
+
+            Sort.APPDATA_SIZE.ordinal
+                 -> sortedBy { it.appBytes + it.dataBytes }
+
+            Sort.BACKUP_SIZE.ordinal
+                 -> sortedBy { it.backupBytes }
+
+            Sort.BACKUP_DATE.ordinal
+                 -> sortedWith(compareByDescending<Package> { it.latestBackup?.backupDate }.thenBy { it.packageLabel })
+
+            else -> sortedWith(
                 compareBy(Collator.getInstance()) { it.packageLabel.lowercase() }
             )
         }
     }
 
-fun filterToString(context: Context, filter: Int): String {
-    val activeFilters = possibleMainFilters.filter { it and filter == it }
-    //TODO this looks wrong to me ??? what about system+special etc.?
-    //  it probably needs to be like activeFilters.map { User/System/Special }.joinToString("+")
-    return when {
-        activeFilters.size == 2                     -> context.getString(R.string.radio_all)
-        activeFilters.contains(MAIN_FILTER_USER)    -> context.getString(R.string.radio_user)
-        activeFilters.contains(MAIN_FILTER_SPECIAL) -> context.getString(R.string.radio_special)
-        else                                        -> context.getString(R.string.radio_system)
+fun filterToString(context: Context, filter: Int): String = possibleMainFilters
+    .filter { it and filter == it }
+    .let { activeFilters ->
+        if (activeFilters.containsAll(possibleMainFilters)) context.getString(R.string.radio_all)
+        else activeFilters.joinToString(", ") {
+            context.getString(
+                when (it) {
+                    MAIN_FILTER_USER    -> R.string.radio_user
+                    MAIN_FILTER_SPECIAL -> R.string.radio_special
+                    else                -> R.string.radio_system // MAIN_FILTER_SYSTEM
+                }
+            )
+        }
     }
-}
 
 fun specialFilterToString(context: Context, specialFilter: SpecialFilter) = listOfNotNull(
     when (specialFilter.launchableFilter) {
-        LAUNCHABLE_FILTER_LAUNCHABLE -> context.getString(R.string.radio_launchable)
-        LAUNCHABLE_FILTER_NOT        -> context.getString(R.string.radio_notlaunchable)
-        else                         -> null
+        LaunchableFilter.LAUNCHABLE.ordinal -> context.getString(R.string.radio_launchable)
+        LaunchableFilter.NOT.ordinal        -> context.getString(R.string.radio_notlaunchable)
+        else                                -> null
     },
     when (specialFilter.enabledFilter) {
-        ENABLED_FILTER_ENABLED  -> context.getString(R.string.show_enabled_apps)
-        ENABLED_FILTER_DISABLED -> context.getString(R.string.showDisabled)
-        else                    -> null
+        EnabledFilter.ENABLED.ordinal  -> context.getString(R.string.show_enabled_apps)
+        EnabledFilter.DISABLED.ordinal -> context.getString(R.string.showDisabled)
+        else                           -> null
     },
     when (specialFilter.latestFilter) {
-        LATEST_FILTER_NEW -> context.getString(R.string.show_new_backups)
-        LATEST_FILTER_OLD -> context.getString(R.string.showOldBackups)
-        else              -> null
+        LatestFilter.NEW.ordinal -> context.getString(R.string.show_new_backups)
+        LatestFilter.OLD.ordinal -> context.getString(R.string.showOldBackups)
+        else                     -> null
     },
     when (specialFilter.updatedFilter) {
-        UPDATED_FILTER_UPDATED -> context.getString(R.string.show_updated_apps)
-        UPDATED_FILTER_NEW     -> context.getString(R.string.show_new_apps)
-        UPDATED_FILTER_NOT     -> context.getString(R.string.show_old_apps)
-        else                   -> null
+        UpdatedFilter.UPDATED.ordinal -> context.getString(R.string.show_updated_apps)
+        UpdatedFilter.NEW.ordinal     -> context.getString(R.string.show_new_apps)
+        UpdatedFilter.NOT.ordinal     -> context.getString(R.string.show_old_apps)
+        else                          -> null
     },
 ).joinToString(", ")
 

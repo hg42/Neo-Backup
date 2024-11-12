@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CircleWavyWarning

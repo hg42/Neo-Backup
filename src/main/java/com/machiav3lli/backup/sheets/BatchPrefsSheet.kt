@@ -25,7 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
-import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.entity.Pref
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 

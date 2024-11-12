@@ -32,7 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.ui.compose.blockBorder
+import com.machiav3lli.backup.ui.compose.blockBorderBottom
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.item.TopBar
@@ -40,11 +40,12 @@ import com.machiav3lli.backup.ui.compose.recycler.ExportedScheduleRecycler
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.viewmodels.ExportsViewModel
+import com.machiav3lli.backup.viewmodels.ExportsVM
+import org.koin.androidx.compose.koinViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun SchedulesExportsPage(viewModel: ExportsViewModel) {
+fun SchedulesExportsPage(viewModel: ExportsVM = koinViewModel()) {
 
     FullScreenBackground {
         Scaffold(
@@ -70,7 +71,7 @@ fun SchedulesExportsPage(viewModel: ExportsViewModel) {
 }
 
 @Composable
-fun SchedulesExports(viewModel: ExportsViewModel, modifier: Modifier = Modifier) {
+fun SchedulesExports(viewModel: ExportsVM, modifier: Modifier = Modifier) {
 
     val exports by viewModel.exportsList.collectAsState()
 
@@ -82,7 +83,7 @@ fun SchedulesExports(viewModel: ExportsViewModel, modifier: Modifier = Modifier)
 
         ExportedScheduleRecycler(
             modifier = modifier
-                .blockBorder()
+                .blockBorderBottom()
                 .fillMaxSize(),
             productsList = exports,
             onImport = { viewModel.importSchedule(it) },

@@ -24,8 +24,8 @@ import android.content.pm.PackageManager
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.pref_autoLogUnInstallBroadcast
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.preferences.pref_autoLogUnInstallBroadcast
 import com.machiav3lli.backup.preferences.supportLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -45,7 +45,7 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
                 when (intent.action.orEmpty()) {
                     Intent.ACTION_PACKAGE_ADDED,
                     Intent.ACTION_PACKAGE_REPLACED,
-                    -> {
+                        -> {
                         context.packageManager.getPackageInfo(
                             packageName,
                             PackageManager.GET_PERMISSIONS
@@ -58,7 +58,7 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
                     }
 
                     Intent.ACTION_PACKAGE_REMOVED,
-                    -> {
+                        -> {
                         GlobalScope.launch(Dispatchers.IO) {
                             val backups = db.getBackupDao().get(packageName)
                             if (backups.isEmpty())

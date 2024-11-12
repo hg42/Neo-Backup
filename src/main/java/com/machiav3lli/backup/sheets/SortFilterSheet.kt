@@ -17,7 +17,9 @@
  */
 package com.machiav3lli.backup.sheets
 
+import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -44,20 +47,26 @@ import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.BACKUP_FILTER_DEFAULT
+import com.machiav3lli.backup.CHIP_SIZE_APP
+import com.machiav3lli.backup.CHIP_SIZE_DATA
+import com.machiav3lli.backup.EnabledFilter
+import com.machiav3lli.backup.InstalledFilter
+import com.machiav3lli.backup.LatestFilter
+import com.machiav3lli.backup.LaunchableFilter
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.SPECIAL_FILTER_ALL
-import com.machiav3lli.backup.activities.MainActivityX
+import com.machiav3lli.backup.UpdatedFilter
 import com.machiav3lli.backup.enabledFilterChipItems
+import com.machiav3lli.backup.entity.ChipItem
+import com.machiav3lli.backup.entity.InfoChipItem
+import com.machiav3lli.backup.entity.SortFilterModel
 import com.machiav3lli.backup.installedFilterChipItems
-import com.machiav3lli.backup.items.SortFilterModel
 import com.machiav3lli.backup.latestFilterChipItems
 import com.machiav3lli.backup.launchableFilterChipItems
 import com.machiav3lli.backup.mainBackupModeChipItems
 import com.machiav3lli.backup.mainFilterChipItems
 import com.machiav3lli.backup.sortChipItems
-import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowUUpLeft
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CaretDown
@@ -69,22 +78,35 @@ import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
 import com.machiav3lli.backup.ui.compose.item.ExpandableBlock
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.SwitchChip
+import com.machiav3lli.backup.ui.compose.recycler.InfoChipsBlock
 import com.machiav3lli.backup.ui.compose.recycler.MultiSelectableChipGroup
 import com.machiav3lli.backup.ui.compose.recycler.SelectableChipGroup
-import com.machiav3lli.backup.ui.item.ChipItem
+import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.updatedFilterChipItems
 import com.machiav3lli.backup.utils.applyFilter
 import com.machiav3lli.backup.utils.getStats
-import com.machiav3lli.backup.utils.sortFilterModel
 import com.machiav3lli.backup.utils.specialBackupsEnabled
+import com.machiav3lli.backup.viewmodels.MainVM
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun SortFilterSheet(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val mActivity = context as MainActivityX
+fun SortFilterSheet(
+    sourcePage: NavItem,
+    viewModel: MainVM = koinViewModel(),
+    onDismiss: () -> Unit,
+) {
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
-    val packageList by mActivity.viewModel.notBlockedList.collectAsState()
-    var model by rememberSaveable { mutableStateOf(sortFilterModel) }
+    val packageList by viewModel.notBlockedList.collectAsState()
+    var model by rememberSaveable {
+        mutableStateOf(
+            when (sourcePage) {
+                NavItem.Backup -> viewModel.backupSortFilterModel.value
+                NavItem.Restore -> viewModel.restoreSortFilterModel.value
+                else -> viewModel.homeSortFilterModel.value // NavItem.Home
+            }
+        )
+    }
+
     fun currentStats() = getStats(
         packageList.applyFilter(
             model,
@@ -96,78 +118,120 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
         topBar = {
-            ListItem(
-                colors = ListItemDefaults.colors(
-                    containerColor = Color.Transparent,
-                ),
-                headlineContent = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        DoubleVerticalText(
-                            upperText = currentStats().first.toString(),
-                            bottomText = stringResource(id = R.string.stats_apps),
-                            modifier = Modifier.weight(1f)
-                        )
-                        DoubleVerticalText(
-                            upperText = currentStats().second.toString(),
-                            bottomText = stringResource(id = R.string.stats_backups),
-                            modifier = Modifier.weight(1f)
-                        )
-                        DoubleVerticalText(
-                            upperText = currentStats().third.toString(),
-                            bottomText = stringResource(id = R.string.stats_updated),
-                            modifier = Modifier.weight(1f)
-                        )
+            Column(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+            ) {
+                ListItem(
+                    colors = ListItemDefaults.colors(
+                        containerColor = Color.Transparent,
+                    ),
+                    headlineContent = {
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val stats = currentStats()
+                                DoubleVerticalText(
+                                    upperText = stats.nApps.toString(),
+                                    bottomText = stringResource(id = R.string.stats_apps),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                DoubleVerticalText(
+                                    upperText = stats.nBackups.toString(),
+                                    bottomText = stringResource(id = R.string.stats_backups),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                DoubleVerticalText(
+                                    upperText = stats.nUpdated.toString(),
+                                    bottomText = stringResource(id = R.string.stats_updated),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val stats = currentStats()
+                                InfoChipsBlock(
+                                    list = listOf(
+                                        InfoChipItem(
+                                            flag = CHIP_SIZE_APP,
+                                            text = stringResource(id = R.string.app_size) + " " + Formatter.formatFileSize(
+                                                LocalContext.current,
+                                                stats.szApps ?: 0
+                                            ),
+                                        ),
+                                        InfoChipItem(
+                                            flag = CHIP_SIZE_DATA,
+                                            text = stringResource(id = R.string.data_size) + " " + Formatter.formatFileSize(
+                                                LocalContext.current,
+                                                stats.szData ?: 0
+                                            ),
+                                        ),
+                                    )
+                                )
+                            }
+                        }
+                    },
+                    trailingContent = {
+                        RoundButton(icon = Phosphor.CaretDown) {
+                            onDismiss()
+                        }
                     }
-                },
-                trailingContent = {
-                    RoundButton(icon = Phosphor.CaretDown) {
-                        onDismiss()
-                    }
-                }
-            )
+                )
+                HorizontalDivider(thickness = 2.dp)
+
+            }
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .navigationBarsPadding(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
             ) {
-                ElevatedActionButton(
-                    text = stringResource(id = R.string.resetFilter),
-                    icon = Phosphor.ArrowUUpLeft,
-                    modifier = Modifier.weight(1f),
-                    fullWidth = true,
-                    positive = false,
-                    onClick = {
-                        sortFilterModel = SortFilterModel()
-                        onDismiss()
-                    }
-                )
-                ElevatedActionButton(
-                    text = stringResource(id = R.string.applyFilter),
-                    icon = Phosphor.Check,
-                    modifier = Modifier.weight(1f),
-                    fullWidth = true,
-                    positive = true,
-                    onClick = {
-                        sortFilterModel = model
-                        onDismiss()
-                    }
-                )
+                HorizontalDivider(thickness = 2.dp)
+                Row(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .navigationBarsPadding(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ElevatedActionButton(
+                        text = stringResource(id = R.string.resetFilter),
+                        icon = Phosphor.ArrowUUpLeft,
+                        modifier = Modifier.weight(1f),
+                        fullWidth = true,
+                        positive = false,
+                        onClick = {
+                            viewModel.setSortFilter(SortFilterModel())
+                            onDismiss()
+                        }
+                    )
+                    ElevatedActionButton(
+                        text = stringResource(id = R.string.applyFilter),
+                        icon = Phosphor.Check,
+                        modifier = Modifier.weight(1f),
+                        fullWidth = true,
+                        positive = true,
+                        onClick = {
+                            viewModel.setSortFilter(model)
+                            onDismiss()
+                        }
+                    )
+                }
             }
         }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
-                .blockBorder()
                 .nestedScroll(nestedScrollConnection)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -226,7 +290,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
             item {
                 ExpandableBlock(
                     heading = stringResource(id = R.string.filters_installed),
-                    preExpanded = model.installedFilter != SPECIAL_FILTER_ALL,
+                    preExpanded = model.installedFilter != InstalledFilter.ALL.ordinal,
                 ) {
                     SelectableChipGroup(
                         list = installedFilterChipItems,
@@ -239,7 +303,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
             item {
                 ExpandableBlock(
                     heading = stringResource(id = R.string.filters_launchable),
-                    preExpanded = model.launchableFilter != SPECIAL_FILTER_ALL,
+                    preExpanded = model.launchableFilter != LaunchableFilter.ALL.ordinal,
                 ) {
                     SelectableChipGroup(
                         list = launchableFilterChipItems,
@@ -252,7 +316,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
             item {
                 ExpandableBlock(
                     heading = stringResource(id = R.string.filters_updated),
-                    preExpanded = model.updatedFilter != SPECIAL_FILTER_ALL,
+                    preExpanded = model.updatedFilter != UpdatedFilter.ALL.ordinal,
                 ) {
                     SelectableChipGroup(
                         list = updatedFilterChipItems,
@@ -265,7 +329,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
             item {
                 ExpandableBlock(
                     heading = stringResource(id = R.string.filters_latest),
-                    preExpanded = model.latestFilter != SPECIAL_FILTER_ALL,
+                    preExpanded = model.latestFilter != LatestFilter.ALL.ordinal,
                 ) {
                     SelectableChipGroup(
                         list = latestFilterChipItems,
@@ -278,7 +342,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
             item {
                 ExpandableBlock(
                     heading = stringResource(id = R.string.filters_enabled),
-                    preExpanded = model.enabledFilter != SPECIAL_FILTER_ALL,
+                    preExpanded = model.enabledFilter != EnabledFilter.ALL.ordinal,
                 ) {
                     SelectableChipGroup(
                         list = enabledFilterChipItems,

@@ -29,6 +29,7 @@ import android.telephony.SmsMessage
 import androidx.core.content.PermissionChecker
 import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.handler.showNotification
+import com.machiav3lli.backup.utils.SystemUtils
 
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -56,7 +57,7 @@ class SmsReceiver : BroadcastReceiver() {
     private fun putSmsToDatabase(context: Context, sms: SmsMessage) {
         val contentResolver = context.contentResolver
         val values = ContentValues()
-        val notificationId = System.currentTimeMillis()
+        val notificationId = SystemUtils.now
         val message = sms.displayMessageBody.toString()
         var sender = sms.displayOriginatingAddress ?: ""
         val threadId = Telephony.Threads.getOrCreateThreadId(context, sms.displayOriginatingAddress)

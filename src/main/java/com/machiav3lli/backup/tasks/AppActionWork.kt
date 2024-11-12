@@ -45,8 +45,8 @@ import com.machiav3lli.backup.handler.WorkHandler.Companion.getVar
 import com.machiav3lli.backup.handler.WorkHandler.Companion.setVar
 import com.machiav3lli.backup.handler.getSpecial
 import com.machiav3lli.backup.handler.showNotification
-import com.machiav3lli.backup.items.ActionResult
-import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.entity.ActionResult
+import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.preferences.pref_maxJobs
 import com.machiav3lli.backup.preferences.pref_maxRetriesPerPackage
 import com.machiav3lli.backup.preferences.pref_useExpedited
@@ -115,7 +115,7 @@ class AppActionWork(val context: Context, workerParams: WorkerParameters) :
                         }
             } catch (e: PackageManager.NameNotFoundException) {
                 if (packageLabel.isEmpty())
-                    packageLabel = packageItem?.packageLabel ?: "NOLABEL"
+                    packageLabel = packageItem?.packageLabel ?: "$packageName (no label)"
                 packageItem = Package(context, packageName)
             }
 

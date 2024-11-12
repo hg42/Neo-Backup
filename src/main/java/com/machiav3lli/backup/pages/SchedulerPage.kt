@@ -18,119 +18,140 @@
 package com.machiav3lli.backup.pages
 
 import android.annotation.SuppressLint
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import com.machiav3lli.backup.DialogMode
 import com.machiav3lli.backup.ICON_SIZE_SMALL
+import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Schedule
-import com.machiav3lli.backup.sheets.ScheduleSheet
+import com.machiav3lli.backup.dialogs.ActionsDialogUI
+import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.tasks.ScheduleWork
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.recycler.ScheduleRecycler
+import com.machiav3lli.backup.utils.getStartScheduleMessage
 import com.machiav3lli.backup.utils.specialBackupsEnabled
-import com.machiav3lli.backup.viewmodels.ScheduleViewModel
-import com.machiav3lli.backup.viewmodels.SchedulerViewModel
+import com.machiav3lli.backup.viewmodels.SchedulesVM
 import kotlinx.coroutines.launch
+import okhttp3.internal.toLongOrDefault
+import org.koin.androidx.compose.koinViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SchedulerPage(viewModel: SchedulerViewModel) {
+fun SchedulerPage(viewModel: SchedulesVM = koinViewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val schedules by viewModel.schedules.collectAsState(emptyList())
-    val scaffoldState = rememberBottomSheetScaffoldState()
-    val scheduleSheetId = remember { mutableLongStateOf(-1L) }
-    val scheduleSheetVM by remember {
-        derivedStateOf {
-            ScheduleViewModel(
-                scheduleSheetId.longValue,
-                OABX.db.getScheduleDao(),
-            )
-        }
+    val openDialog = remember { mutableStateOf(false) }
+    val dialogProps: MutableState<Pair<DialogMode, Schedule>> = remember {
+        mutableStateOf(Pair(DialogMode.NONE, Schedule()))
     }
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 0.dp,
-        sheetDragHandle = null,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        sheetContent = {
+    val schedules by viewModel.schedules.collectAsState(emptyList())
+    val paneNavigator = rememberListDetailPaneScaffoldNavigator<Any>()
+    val scheduleSheetId = remember { mutableLongStateOf(-1L) }
 
-            BackHandler {
-                scope.launch {
-                    scaffoldState.bottomSheetState.hide()
-                }
-            }
-
-            ScheduleSheet(
-                viewModel = scheduleSheetVM,
-                scheduleId = scheduleSheetId.longValue,
-                onDismiss = {
-                    scope.launch {
-                        scaffoldState.bottomSheetState.partialExpand()
-                        scheduleSheetId.longValue = -1L
-                    }
-                }
-            )
-        }
-    ) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            floatingActionButton = {
-                ExtendedFloatingActionButton(
-                    text = { Text(stringResource(id = R.string.sched_add)) },
-                    icon = {
-                        Icon(
-                            modifier = Modifier.size(ICON_SIZE_SMALL),
-                            imageVector = Phosphor.CalendarPlus,
-                            contentDescription = stringResource(id = R.string.sched_add)
-                        )
-                    },
-                    onClick = { viewModel.addSchedule(specialBackupsEnabled) }
-                )
-            }
-        ) {
-            ScheduleRecycler(
-                modifier = Modifier.fillMaxSize(),
-                productsList = schedules,
-                onClick = { item ->
-                    scope.launch {
-                        scheduleSheetId.longValue = item.id
-                        scaffoldState.bottomSheetState.expand()
-                    }
-                },
-                onCheckChanged = { item: Schedule, b: Boolean ->
-                    viewModel.updateSchedule(
-                        item.copy(enabled = b),
-                        true,
+    NavigableListDetailPaneScaffold(
+        navigator = paneNavigator,
+        listPane = {
+            Scaffold(
+                containerColor = Color.Transparent,
+                floatingActionButton = {
+                    ExtendedFloatingActionButton(
+                        text = { Text(stringResource(id = R.string.sched_add)) },
+                        icon = {
+                            Icon(
+                                modifier = Modifier.size(ICON_SIZE_SMALL),
+                                imageVector = Phosphor.CalendarPlus,
+                                contentDescription = stringResource(id = R.string.sched_add)
+                            )
+                        },
+                        onClick = { viewModel.addSchedule(specialBackupsEnabled) }
                     )
                 }
-            )
+            ) { _ ->
+                ScheduleRecycler(
+                    modifier = Modifier.fillMaxSize(),
+                    productsList = schedules,
+                    onClick = { item ->
+                        scope.launch {
+                            paneNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item.id)
+                        }
+                    },
+                    onRun = { item ->
+                        dialogProps.value = Pair(DialogMode.SCHEDULE_RUN, item)
+                        openDialog.value = true
+                    },
+                    onCheckChanged = { item: Schedule, b: Boolean ->
+                        viewModel.updateSchedule(
+                            item.copy(enabled = b),
+                            true,
+                        )
+                    }
+                )
+            }
+        },
+        detailPane = {
+            scheduleSheetId.value = paneNavigator.currentDestination
+                ?.takeIf { it.pane == this.role }?.content
+                .toString().toLongOrDefault(-1L)
+
+            scheduleSheetId.longValue.takeIf { it != -1L }?.let { id ->
+                AnimatedPane {
+                    SchedulePage(
+                        scheduleId = id,
+                        onDismiss = {
+                            scope.launch {
+                                paneNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    )
+
+    if (openDialog.value) BaseDialog(onDismiss = { openDialog.value = false }) {
+        dialogProps.value.let { (dialogMode, schedule) ->
+            when (dialogMode) {
+                DialogMode.SCHEDULE_RUN
+                    -> ActionsDialogUI(
+                    titleText = "${schedule.name}: ${stringResource(R.string.sched_activateButton)}?",
+                    messageText = context.getStartScheduleMessage(schedule),
+                    onDismiss = { openDialog.value = false },
+                    primaryText = stringResource(R.string.dialogOK),
+                    primaryAction = {
+                        if (schedule.mode != MODE_UNSET)
+                            ScheduleWork.schedule(OABX.context, schedule, true)
+                    },
+                )
+
+                else -> {}
+            }
         }
     }
 }

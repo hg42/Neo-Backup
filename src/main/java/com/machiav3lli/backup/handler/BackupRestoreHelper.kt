@@ -19,7 +19,6 @@ package com.machiav3lli.backup.handler
 
 import android.content.Context
 import android.content.pm.PackageManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.MODE_DATA
 import com.machiav3lli.backup.actions.BackupAppAction
@@ -28,11 +27,11 @@ import com.machiav3lli.backup.actions.RestoreAppAction
 import com.machiav3lli.backup.actions.RestoreSpecialAction
 import com.machiav3lli.backup.actions.RestoreSystemAppAction
 import com.machiav3lli.backup.dbs.entity.Backup
+import com.machiav3lli.backup.entity.ActionResult
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.RootFile
+import com.machiav3lli.backup.entity.StorageFile.Companion.invalidateCache
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.items.ActionResult
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.RootFile
-import com.machiav3lli.backup.items.StorageFile.Companion.invalidateCache
 import com.machiav3lli.backup.preferences.pref_numBackupRevisions
 import com.machiav3lli.backup.preferences.pref_paranoidHousekeeping
 import com.machiav3lli.backup.tasks.AppActionWork
@@ -67,7 +66,8 @@ object BackupRestoreHelper {
                 }
                 BackupSpecialAction(context, work, shell)
             }
-            else -> {
+
+            else                  -> {
                 BackupAppAction(context, work, shell)
             }
         }
@@ -93,8 +93,8 @@ object BackupRestoreHelper {
     ): ActionResult {
         val action: RestoreAppAction = when {
             appInfo.isSpecial -> RestoreSpecialAction(context, work, shellHandler)
-            appInfo.isSystem -> RestoreSystemAppAction(context, work, shellHandler)
-            else -> RestoreAppAction(context, work, shellHandler)
+            appInfo.isSystem  -> RestoreSystemAppAction(context, work, shellHandler)
+            else              -> RestoreAppAction(context, work, shellHandler)
         }
         val result = action.run(appInfo, backup, mode)
         Timber.i("<${appInfo.packageName}> Restore succeeded: ${result.succeeded}")
@@ -103,20 +103,29 @@ object BackupRestoreHelper {
 
     @Throws(IOException::class)
     fun copySelfApk(context: Context, shell: ShellHandler): Boolean {
-        val filename = BuildConfig.APPLICATION_ID + '-' + SystemUtils.versionName + ".apk"
+        val filename = SystemUtils.packageName + '-' + SystemUtils.versionName + ".apk"
         try {
             val backupRoot = context.getBackupRoot()
             val apkFile = backupRoot.findFile(filename)
             apkFile?.delete()
             try {
-                val myInfo = context.packageManager.getPackageInfo(BuildConfig.APPLICATION_ID, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
+                val apkDir = (
+                        context.packageManager.getPackageInfo(
+                            SystemUtils.packageName,
+                            0
+                        ).applicationInfo
+                            ?: context.applicationInfo).sourceDir
                 val fileInfos =
-                    shell.suGetDetailedDirectoryContents(myInfo.applicationInfo.sourceDir, false)
-                if (fileInfos.size != 1) {
+                    shell.suGetDetailedDirectoryContents(apkDir, false)
+                if (apkDir == null || fileInfos.size != 1) {
                     throw FileNotFoundException("Could not find Neo Backup's own apk file")
                 }
                 //TODO wech suCopyFileToDocument(fileInfos[0], backupRoot)
-                copyRootFileToDocument(fileInfos[0].absolutePath, backupRoot, RootFile(fileInfos[0].absolutePath).name)
+                copyRootFileToDocument(
+                    fileInfos[0].absolutePath,
+                    backupRoot,
+                    RootFile(fileInfos[0].absolutePath).name
+                )
                 // Invalidating cache, otherwise the next call will fail
                 // Can cost a lot time, but this function won't be run that often
                 invalidateCache() //TODO hg42 how to filter only the apk? or eliminate the need to invalidate

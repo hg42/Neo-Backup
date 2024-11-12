@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Schedule
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TrashSimple

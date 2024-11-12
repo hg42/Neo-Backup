@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import com.machiav3lli.backup.ui.item.Link
+import com.machiav3lli.backup.entity.Link
 
 @Composable
 fun LinkItem(item: Link, onClick: (String) -> Unit) {

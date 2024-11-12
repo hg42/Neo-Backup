@@ -12,8 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,8 +56,7 @@ import com.machiav3lli.backup.preferences.pref_fullScreenBackground
 import com.machiav3lli.backup.preferences.pref_versionOpacity
 import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.RefreshButton
-import com.machiav3lli.backup.ui.compose.item.SelectionChip
-import com.machiav3lli.backup.ui.item.ChipItem
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.applicationIssuer
 import com.machiav3lli.backup.utils.SystemUtils.versionName
 import kotlinx.coroutines.Dispatchers
@@ -161,77 +158,6 @@ fun <T> HorizontalItemList(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun SelectableChipGroup(
-    //TODO hg42 move to item/Components.kt ?
-    modifier: Modifier = Modifier,
-    list: List<ChipItem>,
-    selectedFlag: Int,
-    onClick: (Int) -> Unit,
-) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        list.forEach { item ->
-            SelectionChip(
-                item = item,
-                isSelected = item.flag == selectedFlag,
-            ) {
-                onClick(item.flag)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun MultiSelectableChipGroup(
-    //TODO hg42 move to item/Components.kt ?
-    modifier: Modifier = Modifier,
-    list: List<ChipItem>,
-    selectedFlags: Int,
-    onClick: (Int, Int) -> Unit,
-) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        list.forEach { item ->
-            SelectionChip(
-                item = item,
-                isSelected = item.flag and selectedFlags != 0,
-            ) {
-                onClick(selectedFlags xor item.flag, item.flag)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun MultiSelectableChipGroup(
-    modifier: Modifier = Modifier,
-    list: Set<String>,
-    selected: Set<String>,
-    onClick: (Set<String>) -> Unit,
-) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        list.forEach { item ->
-            SelectionChip(
-                label = item,
-                isSelected = item in selected,
-            ) {
-                onClick(if (item in selected) selected - item else selected + item)
-            }
-        }
-    }
-}
-
 fun Modifier.angledGradientBackground(colors: List<Color>, degrees: Float, factor: Float = 1f) =
     this.then(
         drawBehind {
@@ -322,7 +248,7 @@ fun BusyBackgroundAnimated(
                 .fillMaxSize()
         ) {
             fun currentAngle(): Float =
-                System.currentTimeMillis() % turnTime * 360f / turnTime
+                SystemUtils.msSinceBoot % turnTime * 360f / turnTime
             //var angle by rememberSaveable { mutableStateOf(70f) }
             //var angle by rememberSaveable { mutableFloatStateOf(calcAngle()) }
             var angle by rememberSaveable { mutableStateOf(currentAngle()) }

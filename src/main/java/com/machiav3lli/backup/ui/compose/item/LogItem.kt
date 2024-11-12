@@ -19,7 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.items.Log
+import com.machiav3lli.backup.entity.Log
 import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShareNetwork

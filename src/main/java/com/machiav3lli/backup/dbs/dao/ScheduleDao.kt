@@ -46,12 +46,22 @@ interface ScheduleDao : BaseDao<Schedule> {
     fun getCustomListFlow(id: Long): Flow<Set<String>> =
         _getCustomListFlow(id).mapLatest { Converters().toStringSet(it) }
 
+    @Query("SELECT customList FROM schedule WHERE id = :id")
+    fun _getCustomList(id: Long): String?
+
+    fun getCustomList(id: Long): Set<String> = Converters().toStringSet(_getCustomList(id))
+
     @Query("SELECT blockList FROM schedule WHERE id = :id")
     fun _getBlockListFlow(id: Long): Flow<String?>
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getBlockListFlow(id: Long): Flow<Set<String>> =
         _getBlockListFlow(id).mapLatest { Converters().toStringSet(it) }
+
+    @Query("SELECT blockList FROM schedule WHERE id = :id")
+    fun _getBlockList(id: Long): String?
+
+    fun getBlockList(id: Long): Set<String> = Converters().toStringSet(_getBlockList(id))
 
     @Query("SELECT * FROM schedule ORDER BY id ASC")
     fun getAll(): List<Schedule>

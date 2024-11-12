@@ -18,18 +18,18 @@
 package com.machiav3lli.backup.handler
 
 import android.content.Context
-import com.machiav3lli.backup.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.LOGS_FOLDER_NAME
 import com.machiav3lli.backup.LOG_INSTANCE
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.items.Log
-import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.pref_autoLogExceptions
-import com.machiav3lli.backup.pref_maxLogCount
+import com.machiav3lli.backup.entity.Log
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.preferences.onErrorInfo
+import com.machiav3lli.backup.preferences.pref_autoLogExceptions
+import com.machiav3lli.backup.preferences.pref_maxLogCount
 import com.machiav3lli.backup.preferences.textLog
+import com.machiav3lli.backup.utils.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
@@ -263,7 +263,7 @@ class LogsHandler {
             }
         }
 
-        fun <T> catchExceptions(todo: () -> T): T? {
+        fun <T> runOrLog(todo: () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
@@ -272,12 +272,62 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> catchExceptions(todo: suspend () -> T): T? {
+        fun <T> runOrLog(default: T, todo: () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                unexpectedException(e)
+                default
+            }
+        }
+
+        suspend fun <T> runsOrLog(todo: suspend () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
                 unexpectedException(e)
                 null
+            }
+        }
+
+        suspend fun <T> runsOrLog(default: T, todo: suspend () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                unexpectedException(e)
+                default
+            }
+        }
+
+        fun <T> runOr(todo: () -> T): T? {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                null
+            }
+        }
+
+        fun <T> runOr(default: T, todo: () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                default
+            }
+        }
+
+        suspend fun <T> runsOr(todo: suspend () -> T): T? {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                null
+            }
+        }
+
+        suspend fun <T> runsOr(default: T, todo: suspend () -> T): T {
+            return try {
+                todo()
+            } catch (e: Throwable) {
+                default
             }
         }
     }

@@ -20,11 +20,9 @@ package com.machiav3lli.backup.activities
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.PowerManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Box
@@ -37,6 +35,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.navigation.NavHostController
@@ -58,6 +57,7 @@ import com.machiav3lli.backup.dialogs.DialogKey
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
+import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
@@ -69,12 +69,13 @@ import com.machiav3lli.backup.preferences.pref_appTheme
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.ui.compose.ObservedEffect
 import com.machiav3lli.backup.ui.compose.item.DevTools
+import com.machiav3lli.backup.ui.compose.item.devToolsSearch
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.ui.navigation.clearBackStack
 import com.machiav3lli.backup.ui.navigation.safeNavigate
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
@@ -84,20 +85,22 @@ import com.machiav3lli.backup.utils.isBiometricLockEnabled
 import com.machiav3lli.backup.utils.isDarkTheme
 import com.machiav3lli.backup.utils.isDeviceLockEnabled
 import com.machiav3lli.backup.utils.isEncryptionEnabled
-import com.machiav3lli.backup.utils.isLikeRoot
-import com.machiav3lli.backup.viewmodels.BatchViewModel
-import com.machiav3lli.backup.viewmodels.ExportsViewModel
-import com.machiav3lli.backup.viewmodels.LogViewModel
-import com.machiav3lli.backup.viewmodels.MainViewModel
-import com.machiav3lli.backup.viewmodels.SchedulerViewModel
+import com.machiav3lli.backup.viewmodels.AppVM
+import com.machiav3lli.backup.viewmodels.BackupBatchVM
+import com.machiav3lli.backup.viewmodels.ExportsVM
+import com.machiav3lli.backup.viewmodels.LogsVM
+import com.machiav3lli.backup.viewmodels.MainVM
+import com.machiav3lli.backup.viewmodels.RestoreBatchVM
+import com.machiav3lli.backup.viewmodels.ScheduleVM
+import com.machiav3lli.backup.viewmodels.SchedulesVM
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
 import timber.log.Timber
-
 
 @Composable
 fun Rescue() {
@@ -111,29 +114,11 @@ class MainActivityX : BaseActivity() {
 
     private val mScope: CoroutineScope = MainScope()
     lateinit var navController: NavHostController
-    private lateinit var powerManager: PowerManager
 
     private lateinit var openDialog: MutableState<Boolean>
     private lateinit var dialogKey: MutableState<DialogKey?>
 
-    val viewModel by viewModels<MainViewModel> {
-        MainViewModel.Factory(OABX.db, application)
-    }
-    val backupViewModel: BatchViewModel by viewModels {
-        BatchViewModel.Factory(application)
-    }
-    val restoreViewModel: BatchViewModel by viewModels {
-        BatchViewModel.Factory(application)
-    }
-    val schedulerViewModel: SchedulerViewModel by viewModels {
-        SchedulerViewModel.Factory(OABX.db.getScheduleDao(), application)
-    }
-    val exportsViewModel: ExportsViewModel by viewModels {
-        ExportsViewModel.Factory(OABX.db.getScheduleDao(), application)
-    }
-    val logsViewModel: LogViewModel by viewModels {
-        LogViewModel.Factory(application)
-    }
+    val viewModel: MainVM by viewModel()
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -205,7 +190,7 @@ class MainActivityX : BaseActivity() {
         if (doIntent(intent, "beforeContent"))
             return
 
-        if (!isLikeRoot()) {
+        if (!ShellHandler.checkRootEquivalent()) {
             setContent {
                 AppTheme {
                     RootMissing(this)
@@ -213,8 +198,6 @@ class MainActivityX : BaseActivity() {
             }
             return
         }
-
-        powerManager = this.getSystemService(POWER_SERVICE) as PowerManager
 
         setContent {
 
@@ -252,6 +235,9 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
                             }
+
+                            devToolsSearch.value = TextFieldValue("")   //TODO hg42 hide implementation details
+
                             runOnUiThread { showEncryptionDialog() }
                         }
                     }
@@ -270,25 +256,26 @@ class MainActivityX : BaseActivity() {
                             navController = navController,
                         )
 
-                        if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
-                            GlobalBlockListDialogUI(
-                                currentBlocklist = viewModel.getBlocklist().toSet(),
-                                openDialogCustom = openBlocklist,
-                            ) { newSet ->
-                                viewModel.setBlocklist(newSet)
+                        if (openBlocklist.value)
+                            BaseDialog(onDismiss = { openBlocklist.value = false }) {
+                                GlobalBlockListDialogUI(
+                                    currentBlocklist = viewModel.getBlocklist().toSet(),
+                                    openDialogCustom = openBlocklist,
+                                ) { newSet ->
+                                    viewModel.setBlocklist(newSet)
+                                }
                             }
-                        }
                     }
                 }
 
                 if (openDialog.value) {
-                    BaseDialog(openDialogCustom = openDialog) {
+                    BaseDialog(onDismiss = { openDialog.value = false }) {
                         when (dialogKey.value) {
                             is DialogKey.Encryption -> {
                                 ActionsDialogUI(
                                     titleText = stringResource(id = R.string.enable_encryption_title),
                                     messageText = stringResource(id = R.string.enable_encryption_message),
-                                    openDialogCustom = openDialog,
+                                    onDismiss = { openDialog.value = false },
                                     primaryText = stringResource(id = R.string.dialog_approve),
                                     primaryAction = {
                                         openDialog.value = false
@@ -302,7 +289,7 @@ class MainActivityX : BaseActivity() {
                                 ActionsDialogUI(
                                     titleText = stringResource(id = R.string.errorDialogTitle),
                                     messageText = message,
-                                    openDialogCustom = openDialog,
+                                    onDismiss = { openDialog.value = false },
                                     primaryText = stringResource(id = R.string.dialogSave),
                                     primaryAction = { LogsHandler.logErrors(message) },
                                     secondaryText = stringResource(id = R.string.dialogOK)
@@ -313,14 +300,6 @@ class MainActivityX : BaseActivity() {
                         }
                     }
                 }
-            }
-
-            LaunchedEffect(true) {
-                withTimeoutOrNull(5000) {
-                    while (navController.graph.nodes.size() < 2)
-                        delay(100)
-                }
-                doIntent(intent, "afterContent")
             }
         }
     }
@@ -351,10 +330,13 @@ class MainActivityX : BaseActivity() {
 
             "beforeContent"             -> {
                 when (command) {
-                    null                         -> {}
+                    null                         -> {
+                        return false
+                    }
 
                     "android.intent.action.MAIN" -> {
-                        if (data == null) return false
+                        if (data == null)
+                            return false
                         when (data.toString()) {
                             RESCUE_NAV -> {
                                 setContent {
@@ -365,15 +347,21 @@ class MainActivityX : BaseActivity() {
                         }
                     }
 
-                    else                         -> {}
+                    else                         -> {
+                        return false
+                    }
                 }
             }
 
             "afterContent", "newIntent" -> {
                 when (command) {
-                    null                         -> {}
+                    null                         -> {
+                        return false
+                    }
+
                     "android.intent.action.MAIN" -> {
-                        if (data == null) return false
+                        if (data == null)
+                            return false
                         moveTo(data.toString())
                     }
 
@@ -403,7 +391,7 @@ class MainActivityX : BaseActivity() {
     }
 
     fun refreshPackagesAndBackups() {
-        CoroutineScope(Dispatchers.IO).launch {
+        MainScope().launch(Dispatchers.IO) {
             invalidateBackupLocation()
         }
     }
@@ -451,7 +439,7 @@ class MainActivityX : BaseActivity() {
         selectedPackageNames: List<String?>,
         selectedModes: List<Int>,
     ) {
-        val now = System.currentTimeMillis()
+        val now = SystemUtils.now
         val notificationId = now.toInt()
         val batchType = getString(if (backupBoolean) R.string.backup else R.string.restore)
         val batchName = WorkHandler.getBatchName(batchType, now)
@@ -522,7 +510,7 @@ class MainActivityX : BaseActivity() {
         selectedApk: Map<String, Int>,
         selectedData: Map<String, Int>,
     ) {
-        val now = System.currentTimeMillis()
+        val now = SystemUtils.now
         val notificationId = now.toInt()
         val batchType = getString(R.string.restore)
         val batchName = WorkHandler.getBatchName(batchType, now)
@@ -603,7 +591,7 @@ class MainActivityX : BaseActivity() {
         when {
             !persist_beenWelcomed.value
                  -> if (!navController.currentDestination?.route?.equals(NavItem.Welcome.destination)!!) {
-                navController.clearBackStack()
+                navController.clearBackStack<NavItem.Welcome>()
                 navController.safeNavigate(NavItem.Welcome.destination)
             }
 
@@ -665,4 +653,15 @@ class MainActivityX : BaseActivity() {
                 }
             })
     }
+}
+
+val viewModelsModule = module {
+    viewModel { MainVM(get(), get(), get()) }
+    viewModel { BackupBatchVM() }
+    viewModel { RestoreBatchVM() }
+    viewModel { SchedulesVM(get(), get()) }
+    viewModel { ScheduleVM(get()) }
+    viewModel { AppVM(get()) }
+    viewModel { ExportsVM(get(), get()) }
+    viewModel { LogsVM() }
 }

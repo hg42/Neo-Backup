@@ -21,7 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.entity.Package
 
 @Composable
 fun UpdatedPackageItem(

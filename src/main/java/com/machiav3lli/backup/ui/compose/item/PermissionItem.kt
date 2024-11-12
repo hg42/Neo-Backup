@@ -20,15 +20,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
-import com.machiav3lli.backup.ui.item.Permission
+import com.machiav3lli.backup.entity.Permission
 
 @Composable
 fun PermissionItem(
     item: Permission,
+    modifier: Modifier,
     onClick: () -> Unit = {},
 ) {
     ListItem(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .clickable(onClick = onClick),

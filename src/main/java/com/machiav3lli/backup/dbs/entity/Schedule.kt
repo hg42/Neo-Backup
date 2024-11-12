@@ -22,16 +22,20 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.RenameColumn
 import androidx.room.migration.AutoMigrationSpec
-import com.machiav3lli.backup.INSTALLED_FILTER_INSTALLED
+import com.machiav3lli.backup.EnabledFilter
+import com.machiav3lli.backup.InstalledFilter
+import com.machiav3lli.backup.LatestFilter
+import com.machiav3lli.backup.LaunchableFilter
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT_WITHOUT_SPECIAL
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.SPECIAL_FILTER_ALL
+import com.machiav3lli.backup.UpdatedFilter
+import com.machiav3lli.backup.entity.SpecialFilter
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.WorkHandler
-import com.machiav3lli.backup.items.SpecialFilter
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
 import kotlinx.serialization.Serializable
 import java.io.FileNotFoundException
@@ -47,20 +51,20 @@ data class Schedule(
     val timeHour: Int = 12,
     val timeMinute: Int = 0,
     val interval: Int = 1,
-    val timePlaced: Long = System.currentTimeMillis(),
+    val timePlaced: Long = SystemUtils.now,
 
     val filter: Int = MAIN_FILTER_DEFAULT,
     val mode: Int = MODE_APK,
     @ColumnInfo(defaultValue = "0")
-    val launchableFilter: Int = SPECIAL_FILTER_ALL,
+    val launchableFilter: Int = LaunchableFilter.ALL.ordinal,
     @ColumnInfo(defaultValue = "0")
-    val updatedFilter: Int = SPECIAL_FILTER_ALL,
+    val updatedFilter: Int = UpdatedFilter.ALL.ordinal,
     @ColumnInfo(defaultValue = "0")
-    val latestFilter: Int = SPECIAL_FILTER_ALL,
+    val latestFilter: Int = LatestFilter.ALL.ordinal,
     @ColumnInfo(defaultValue = "0")
-    val enabledFilter: Int = SPECIAL_FILTER_ALL,
+    val enabledFilter: Int = EnabledFilter.ALL.ordinal,
 
-    val timeToRun: Long = 0,        //TODO should this be in hashCode and equals ???
+    @Deprecated("to be removed.") val timeToRun: Long = 0,
 
     val customList: Set<String> = setOf(),
 
@@ -136,7 +140,7 @@ data class Schedule(
 
     val specialFilter: SpecialFilter
         get() = SpecialFilter(
-            INSTALLED_FILTER_INSTALLED,
+            InstalledFilter.INSTALLED.ordinal,
             launchableFilter,
             updatedFilter,
             latestFilter,
@@ -155,7 +159,7 @@ data class Schedule(
                     val item = fromSerialized(inputStream.reader().readText())
                     schedule = item.copy(
                         enabled = false,
-                        timePlaced = System.currentTimeMillis(),
+                        timePlaced = SystemUtils.now,
                         timeToRun = 0,
                     )
                 }
@@ -193,7 +197,7 @@ data class Schedule(
                 .copy(
                     id = schedule.id,
                     enabled = false,
-                    timePlaced = System.currentTimeMillis(),
+                    timePlaced = SystemUtils.now,
                     timeToRun = 0,
                 )
             return this

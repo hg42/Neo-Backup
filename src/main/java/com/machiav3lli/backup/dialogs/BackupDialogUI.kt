@@ -30,8 +30,8 @@ import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.AppInfo
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.possibleSchedModes
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.batchModesSequence
 import com.machiav3lli.backup.utils.backupModeIfActive
 
 @Composable
@@ -43,7 +43,7 @@ fun BackupDialogUI(
     val context = LocalContext.current
 
     val modePairs = mutableMapOf<Int, String>()
-    val possibleModes = possibleSchedModes.toMutableList()
+    val possibleModes = batchModesSequence.toMutableList()
 
     val selectedMode = mutableSetOf<Int>()
 

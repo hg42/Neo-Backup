@@ -22,19 +22,16 @@ import android.content.Intent
 import android.provider.DocumentsContract
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.dbs.entity.PackageInfo
-import com.machiav3lli.backup.ui.item.ChipItem
-import com.machiav3lli.backup.ui.item.Legend
-import com.machiav3lli.backup.ui.item.Link
-import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.machiav3lli.backup.entity.ChipItem
+import com.machiav3lli.backup.entity.Legend
+import com.machiav3lli.backup.entity.Link
 
 const val PREFS_SHARED_PRIVATE = "com.machiav3lli.backup"
 
 const val ADMIN_PREFIX = "!-"
 
 val COMPRESSION_TYPES = mapOf(
-    "gz"  to "Gzip Compression",    // TODO translation?
+    "gz" to "Gzip Compression",    // TODO translation?
     "zst" to "Zstd Compression",    // TODO translation?
     "no" to "No Compression"      // TODO translation?
 )
@@ -57,41 +54,7 @@ const val PREFS_BACKUP_FILE = "${ADMIN_PREFIX}app.preferences"
 const val PROP_NAME = "properties"
 const val LOG_INSTANCE = "%s.log.txt"
 
-const val ISO_LIKE_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
-const val ISO_LIKE_DATE_TIME_MIN_PATTERN = "yyyy-MM-dd HH:mm"
-const val ISO_LIKE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd HH:mm:ss:SSS"
-const val FILE_DATE_TIME_MS_PATTERN = "yyyy-MM-dd-HH-mm-ss-SSS"
-const val FILE_DATE_TIME_PATTERN = "yyyy-MM-dd-HH-mm-ss"
-const val DATE_TIME_AS_VERSION_CODE_PATTERN = "yyMMddHH"
-
-val ISO_DATE_TIME_FORMAT
-    get() = SimpleDateFormat(
-        ISO_LIKE_DATE_TIME_PATTERN,
-        Locale.getDefault()
-    )
-
-val ISO_DATE_TIME_FORMAT_MIN
-    get() = SimpleDateFormat(
-        ISO_LIKE_DATE_TIME_MIN_PATTERN,
-        Locale.getDefault()
-    )
-
-val ISO_DATE_TIME_FORMAT_MS
-    get() = SimpleDateFormat(
-        ISO_LIKE_DATE_TIME_MS_PATTERN,
-        Locale.getDefault()
-    )
-
-// must be ISO time format for sane sorting yyyy, MM, dd, ...
-// and only allowed file name characters (on all systems, Windows has the smallest set)
-// not used any more, because we don't create old format
-// and detection handles millisec as optional
-//val BACKUP_DATE_TIME_FORMATTER_OLD = DateTimeFormatter.ofPattern(FILE_DATE_TIME_PATTERN)
-
-// use millisec, because computers (and users) can be faster than a sec
-val BACKUP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(FILE_DATE_TIME_MS_PATTERN)
-val BACKUP_DATE_TIME_SHOW_FORMATTER = DateTimeFormatter.ofPattern(ISO_LIKE_DATE_TIME_PATTERN)
-val DATE_TIME_AS_VERSION_CODE_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_AS_VERSION_CODE_PATTERN)
+enum class MenuAction { PUT, GET, DEL }
 
 // optional millisec to include old format
 const val BACKUP_INSTANCE_REGEX_PATTERN = """\d\d\d\d-\d\d-\d\d-\d\d-\d\d-\d\d(-\d\d\d)?-user_\d+"""
@@ -123,16 +86,45 @@ const val PACKAGES_LIST_GLOBAL_ID = -1L
 
 const val ACTION_CANCEL = "cancel"
 const val ACTION_SCHEDULE = "schedule"
+const val ACTION_CANCEL_SCHEDULE = "cancel_schedule"
 const val ACTION_RESCHEDULE = "reschedule"
 const val ACTION_CRASH = "crash"
 
-const val NAV_MAIN = 0
-const val NAV_PREFS = 1
+enum class DialogMode {
+    NONE,
+    BACKUP,
+    RESTORE,
+    DELETE,
+    DELETE_ALL,
+    CLEAN_CACHE,
+    FORCE_KILL,
+    ENABLE_DISABLE,
+    UNINSTALL,
+    ADD_TAG,
+    NOTE,
+    ENFORCE_LIMIT,
+    NOTE_BACKUP,
+    BLOCKLIST,
+    CUSTOMLIST,
+    TIME_PICKER,
+    INTERVAL_SETTER,
+    SCHEDULE_NAME,
+    SCHEDULE_RUN,
+    NO_SAF,
+    PERMISSION_USAGE_STATS,
+    PERMISSION_SMS_MMS,
+    PERMISSION_CALL_LOGS,
+    PERMISSION_CONTACTS,
+    PERMISSION_BATTERY_OPTIMIZATION,
+    TOOL_DELETE_BACKUP_UNINSTALLED,
+    TOOL_SAVE_APPS_LIST,
+}
 
 const val PREFS_LANGUAGES_SYSTEM = "system"
 const val EXTRA_PACKAGE_NAME = "packageName"
 const val EXTRA_BACKUP_BOOLEAN = "backupBoolean"
 const val EXTRA_SCHEDULE_ID = "scheduleId"
+const val EXTRA_NAME = "name"
 const val EXTRA_STATS = "stats"
 
 const val THEME_LIGHT = 0
@@ -197,17 +189,38 @@ const val ALT_MODE_DATA = 2
 const val ALT_MODE_BOTH = 3
 
 const val MODE_UNSET = 0b0000000
-const val MODE_NONE = 0b0100000
+
 const val MODE_APK = 0b0010000
 const val MODE_DATA = 0b0001000
 const val MODE_DATA_DE = 0b0000100
 const val MODE_DATA_EXT = 0b0000010
 const val MODE_DATA_OBB = 0b0000001
 const val MODE_DATA_MEDIA = 0b1000000
-const val BACKUP_FILTER_DEFAULT = 0b1111111
-val possibleSchedModes =
+
+const val MODE_NONE = 0b0100000     //TODO name? it's not a mode! BACKUP_FILTER_NONE?
+
+val batchModes =
+    mapOf(
+        MODE_APK to "apk",
+        MODE_DATA to "data",
+        MODE_DATA_DE to "device-protected",
+        MODE_DATA_EXT to "external",
+        MODE_DATA_OBB to "obb",
+        MODE_DATA_MEDIA to "media"
+    )
+val batchOperations = mapOf(
+    MODE_APK to "a",
+    MODE_DATA to "=d",
+    MODE_DATA_DE to "==p",
+    MODE_DATA_EXT to "===x",
+    MODE_DATA_OBB to "====o",
+    MODE_DATA_MEDIA to "=====m",
+)
+val batchModesSequence =
     listOf(MODE_APK, MODE_DATA, MODE_DATA_DE, MODE_DATA_EXT, MODE_DATA_OBB, MODE_DATA_MEDIA)
-val MODE_ALL = possibleSchedModes.reduce { a, b -> a.or(b) }
+
+val MODE_ALL = batchModesSequence.reduce { a, b -> a.or(b) }
+val BACKUP_FILTER_DEFAULT = MODE_ALL or MODE_NONE
 
 val scheduleBackupModeChipItems = listOf(
     ChipItem.Apk,
@@ -221,13 +234,7 @@ val scheduleBackupModeChipItems = listOf(
 val mainBackupModeChipItems: List<ChipItem> =
     listOf(ChipItem.None).plus(scheduleBackupModeChipItems)
 
-const val MAIN_SORT_LABEL = 0
-const val MAIN_SORT_PACKAGENAME = 1
-const val MAIN_SORT_APPSIZE = 2
-const val MAIN_SORT_DATASIZE = 3
-const val MAIN_SORT_APPDATASIZE = 4
-const val MAIN_SORT_BACKUPSIZE = 5
-const val MAIN_SORT_BACKUPDATE = 6
+enum class Sort { LABEL, PACKAGENAME, APP_SIZE, DATA_SIZE, APPDATA_SIZE, BACKUP_SIZE, BACKUP_DATE }
 
 val sortChipItems = listOf(
     ChipItem.Label,
@@ -249,10 +256,7 @@ val possibleMainFilters = listOf(MAIN_FILTER_SYSTEM, MAIN_FILTER_USER, MAIN_FILT
 
 val mainFilterChipItems = listOf(ChipItem.System, ChipItem.User, ChipItem.Special)
 
-const val SPECIAL_FILTER_ALL = 0
-
-const val LAUNCHABLE_FILTER_LAUNCHABLE = 1
-const val LAUNCHABLE_FILTER_NOT = 2
+enum class LaunchableFilter { ALL, LAUNCHABLE, NOT }
 
 val launchableFilterChipItems = listOf(
     ChipItem.All,
@@ -260,8 +264,7 @@ val launchableFilterChipItems = listOf(
     ChipItem.NotLaunchable,
 )
 
-const val INSTALLED_FILTER_INSTALLED = 1
-const val INSTALLED_FILTER_NOT = 2
+enum class InstalledFilter { ALL, INSTALLED, NOT }
 
 val installedFilterChipItems = listOf(
     ChipItem.All,
@@ -269,9 +272,7 @@ val installedFilterChipItems = listOf(
     ChipItem.NotInstalled,
 )
 
-const val UPDATED_FILTER_UPDATED = 1
-const val UPDATED_FILTER_NEW = 2
-const val UPDATED_FILTER_NOT = 3
+enum class UpdatedFilter { ALL, UPDATED, NEW, NOT }
 
 val updatedFilterChipItems = listOf(
     ChipItem.All,
@@ -280,8 +281,7 @@ val updatedFilterChipItems = listOf(
     ChipItem.OldApps,
 )
 
-const val LATEST_FILTER_OLD = 1
-const val LATEST_FILTER_NEW = 2
+enum class LatestFilter { ALL, OLD, NEW }
 
 val latestFilterChipItems = listOf(
     ChipItem.All,
@@ -289,8 +289,7 @@ val latestFilterChipItems = listOf(
     ChipItem.NewBackups,
 )
 
-const val ENABLED_FILTER_ENABLED = 1
-const val ENABLED_FILTER_DISABLED = 2
+enum class EnabledFilter { ALL, ENABLED, DISABLED }
 
 val enabledFilterChipItems = listOf(
     ChipItem.All,

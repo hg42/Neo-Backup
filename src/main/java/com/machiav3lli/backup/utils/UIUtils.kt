@@ -27,19 +27,6 @@ import android.net.Uri
 import android.os.LocaleList
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.DynamicColors
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
@@ -52,9 +39,9 @@ import com.machiav3lli.backup.THEME_DYNAMIC_DARK
 import com.machiav3lli.backup.THEME_DYNAMIC_LIGHT
 import com.machiav3lli.backup.THEME_LIGHT
 import com.machiav3lli.backup.THEME_SYSTEM_BLACK
+import com.machiav3lli.backup.entity.ActionResult
 import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.items.ActionResult
-import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.ui.compose.theme.ApricotOrange
 import com.machiav3lli.backup.ui.compose.theme.ArcticCyan
 import com.machiav3lli.backup.ui.compose.theme.AzureBlue
@@ -73,7 +60,6 @@ import com.machiav3lli.backup.ui.compose.theme.Slate
 import com.machiav3lli.backup.ui.compose.theme.ThunderYellow
 import com.machiav3lli.backup.ui.compose.theme.TigerAmber
 import com.machiav3lli.backup.ui.compose.theme.Turquoise
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -171,24 +157,6 @@ fun Activity.showActionResult(result: ActionResult, saveMethod: DialogInterface.
         }
     }
 
-fun Activity.showFatalUiWarning(message: String) = showWarning(
-    getString(R.string.app_name),
-    message
-) { _: DialogInterface?, _: Int -> finishAffinity() }
-
-fun Activity.showWarning(
-    title: String,
-    message: String,
-    callback: DialogInterface.OnClickListener?,
-) = runOnUiThread {
-    AlertDialog.Builder(this)
-        .setTitle(title)
-        .setMessage(message)
-        .setNeutralButton(R.string.dialogOK, callback)
-        .setCancelable(false)
-        .show()
-}
-
 fun getThemeStyleX(theme: Int) = when (theme) {
     THEME_LIGHT,
     THEME_DYNAMIC_LIGHT,
@@ -278,7 +246,7 @@ val secondaryColor
 fun Context.restartApp(data: String? = null) {
     Timber.w(
         "restarting application${
-            data?.let { " at $data" } ?: { "" } 
+            data?.let { " at $data" } ?: { "" }
         }"
     )
     val context = this.applicationContext
@@ -324,69 +292,5 @@ fun Context.recreateActivities() {
                     it.recreate()
                 }
             }
-    }
-}
-
-fun <T> LazyListScope.gridItems(
-    items: List<T>,
-    columns: Int,
-    modifier: Modifier = Modifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    itemContent: @Composable BoxScope.(T) -> Unit,
-) {
-    val itemsCount = items.count()
-    val rows = when {
-        itemsCount >= 1 -> 1 + (itemsCount - 1) / columns
-        else            -> 0
-    }
-    items(rows, key = { it.hashCode() }) { rowIndex ->
-        Row(
-            horizontalArrangement = horizontalArrangement,
-            modifier = modifier
-        ) {
-            (0 until columns).forEach { columnIndex ->
-                val itemIndex = columns * rowIndex + columnIndex
-                if (itemIndex < itemsCount) {
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        propagateMinConstraints = true
-                    ) {
-                        itemContent(items[itemIndex])
-                    }
-                } else {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-fun Color.brighter(rate: Float): Color {
-    val hslVal = FloatArray(3)
-    ColorUtils.colorToHSL(this.toArgb(), hslVal)
-    hslVal[2] += rate * (1 - hslVal[2])
-    hslVal[2] = hslVal[2].coerceIn(0f..1f)
-    return Color(ColorUtils.HSLToColor(hslVal))
-}
-
-fun Color.darker(rate: Float): Color {
-    val hslVal = FloatArray(3)
-    ColorUtils.colorToHSL(this.toArgb(), hslVal)
-    hslVal[2] -= rate * hslVal[2]
-    hslVal[2] = hslVal[2].coerceIn(0f..1f)
-    return Color(ColorUtils.HSLToColor(hslVal))
-}
-
-// TODO make easy callable from different contexts
-fun SnackbarHostState.show(
-    coroutineScope: CoroutineScope,
-    message: String,
-    actionText: String? = null,
-    onAction: () -> Unit = {},
-) {
-    coroutineScope.launch {
-        showSnackbar(message = message, actionLabel = actionText, withDismissAction = true).apply {
-            if (this == SnackbarResult.ActionPerformed) onAction()
-        }
     }
 }

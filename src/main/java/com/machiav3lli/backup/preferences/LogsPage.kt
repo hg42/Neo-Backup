@@ -27,18 +27,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import com.machiav3lli.backup.items.Log
-import com.machiav3lli.backup.ui.compose.blockBorder
+import com.machiav3lli.backup.entity.Log
+import com.machiav3lli.backup.ui.compose.blockBorderBottom
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.compose.recycler.LogRecycler
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.viewmodels.LogViewModel
+import com.machiav3lli.backup.viewmodels.LogsVM
+import org.koin.androidx.compose.koinViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun LogsPage(viewModel: LogViewModel) {
+fun LogsPage(viewModel: LogsVM = koinViewModel()) {
 
     FullScreenBackground {
         Scaffold(
@@ -54,7 +55,7 @@ fun LogsPage(viewModel: LogViewModel) {
 }
 
 @Composable
-fun Logs(viewModel: LogViewModel, modifier: Modifier) {
+fun Logs(viewModel: LogsVM = koinViewModel(), modifier: Modifier = Modifier) {
 
     val logs = remember(viewModel) { viewModel.logsList }
 
@@ -65,7 +66,7 @@ fun Logs(viewModel: LogViewModel, modifier: Modifier) {
     InnerBackground(modifier = modifier.fillMaxSize()) {
         LogRecycler(
             modifier = Modifier
-                .blockBorder()
+                .blockBorderBottom()
                 .fillMaxSize(),
             productsList = logs.sortedByDescending(Log::logDate),
             onShare = { viewModel.shareLog(it, pref_shareAsFile.value) },

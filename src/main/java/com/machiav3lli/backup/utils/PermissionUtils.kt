@@ -5,7 +5,6 @@ import android.app.Activity
 import android.app.AppOpsManager
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -15,29 +14,17 @@ import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.machiav3lli.backup.BACKUP_DIRECTORY_INTENT
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.R
-import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.preferences.persist_ignoreBatteryOptimization
+import org.koin.java.KoinJavaComponent.get
 
 // Getters
 
-fun Activity.isLikeRoot(showDialogOnError: Boolean = false): Boolean {
-    val isRooted = ShellHandler.checkRootEquivalent()
-    if (!isRooted) {
-        if (showDialogOnError)
-            showFatalUiWarning(getString(R.string.noSu))
-        return false
-    }
-    return true
-}
-
 val Context.allPermissionsGranted: Boolean
     get() {
-        val powerManager = getSystemService(AppCompatActivity.POWER_SERVICE) as PowerManager
+        val powerManager: PowerManager = get(PowerManager::class.java)
         return hasStoragePermissions &&
                 isStorageDirSetAndOk &&
                 checkSMSMMSPermission &&
@@ -65,9 +52,7 @@ val Context.isStorageDirSetAndOk: Boolean
             if (storageDirPath.isEmpty()) {
                 return false
             }
-            //val storageDir = StorageFile.fromUri(this, Uri.parse(storageDirPath))
-            //storageDir.exists()
-            getBackupRoot().exists()  //TODO kind of similar, but throws an exception "root not accessible" in some cases
+            backupFolderExists()
         } catch (e: Throwable) {
             false
         }
@@ -75,12 +60,9 @@ val Context.isStorageDirSetAndOk: Boolean
 
 val Context.checkSMSMMSPermission: Boolean
     get() {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-            return true
-        }
-        if (!specialBackupsEnabled) {
-            return true
-        }
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
+            || !specialBackupsEnabled
+        ) return true
         val appOps = (getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager)
         val mode = when {
             OABX.minSDK(Build.VERSION_CODES.Q) ->
@@ -112,12 +94,9 @@ val Context.checkSMSMMSPermission: Boolean
 
 val Context.checkCallLogsPermission: Boolean
     get() {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-            return true
-        }
-        if (!specialBackupsEnabled) {
-            return true
-        }
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
+            || !specialBackupsEnabled
+        ) return true
         val appOps = (getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager)
         val mode = when {
             OABX.minSDK(Build.VERSION_CODES.Q) ->
@@ -143,12 +122,9 @@ val Context.checkCallLogsPermission: Boolean
 
 val Context.checkContactsPermission: Boolean
     get() {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-            return true
-        }
-        if (!specialBackupsEnabled) {
-            return true
-        }
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
+            || !specialBackupsEnabled
+        ) return true
         val appOps = (getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager)
         val mode = when {
             OABX.minSDK(Build.VERSION_CODES.Q) ->
@@ -209,17 +185,15 @@ fun Context.checkBatteryOptimization(powerManager: PowerManager)
 
 // Actions
 
-fun Activity.requireStorageLocation(activityResultLauncher: ActivityResultLauncher<Intent>) {
+fun requireStorageLocation(
+    activityResultLauncher: ActivityResultLauncher<Intent>,
+    failCallback: () -> Unit,
+) {
     val intent = BACKUP_DIRECTORY_INTENT
     try {
         activityResultLauncher.launch(intent)
     } catch (e: ActivityNotFoundException) {
-        showWarning(
-            getString(R.string.no_file_manager_title),
-            getString(R.string.no_file_manager_message)
-        ) { _: DialogInterface?, _: Int ->
-            finishAffinity()
-        }
+        failCallback()
     }
 }
 

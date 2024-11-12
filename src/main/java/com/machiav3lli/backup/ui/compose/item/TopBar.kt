@@ -1,5 +1,9 @@
 package com.machiav3lli.backup.ui.compose.item
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -8,11 +12,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
@@ -23,11 +28,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,21 +54,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.preferences.pref_showInfoLogBar
+import com.machiav3lli.backup.ui.compose.blockBorderTop
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.ifThenElse
 import com.machiav3lli.backup.ui.compose.vertical
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -118,6 +123,10 @@ fun TitleOrInfoLog(
     val infoLogText = OABX.getInfoLogText(n = 5, fill = "")
     val scroll = rememberScrollState(0)
     val scope = rememberCoroutineScope()
+    val rotation by animateFloatAsState(
+        targetValue = if (showInfo) -90f else 0f,
+        label = "rotation"
+    )
 
     LaunchedEffect(infoLogText) {
         tempShowInfo.value = true
@@ -128,62 +137,37 @@ fun TitleOrInfoLog(
         }
     }
 
-    Box(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .wrapContentHeight()
             .fillMaxWidth()
     ) {
-        if (showInfo) {
-            Row(
-                verticalAlignment = if (showInfo) Alignment.Bottom else Alignment.CenterVertically,
-                modifier = Modifier
-                    .wrapContentHeight()
-            ) {
-                Text(
-                    text = buildAnnotatedString {
-                        append(title)
-                    },
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Start,
-                    fontSize = 11.0.sp,
-                    fontWeight = FontWeight(800),
-                    modifier = Modifier
-                        .absolutePadding(right = 4.dp, bottom = 4.dp)
-                        .vertical()
-                        .rotate(-90f)
+        Text(
+            text = title,
+            style = if (showInfo) MaterialTheme.typography.labelMedium
+            else MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .ifThenElse(
+                    boolean = showInfo,
+                    modifier = { vertical() },
+                    elseModifier = { fillMaxWidth() }
                 )
+                .rotate(rotation)
+                .wrapContentHeight()
+        )
 
-                Text(
-                    text = infoLogText,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontSize = 9.0.sp,
-                    lineHeight = 9.0.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = MaterialTheme.shapes.extraSmall
-                        )
-                        .padding(horizontal = 4.dp)
+        if (showInfo) Text(
+            text = infoLogText,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.extraSmall
                 )
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                )
-            }
-        }
-
+                .padding(horizontal = 4.dp)
+        )
     }
 }
 
@@ -200,10 +184,16 @@ fun TopBar(
         !showDevTools.value && (OABX.showInfoLog || tempShowInfo.value) && pref_showInfoLogBar.value
 
     Box { // overlay TopBar and indicators
-
-        TopAppBar(
-            modifier = modifier.wrapContentHeight(),
-            title = {
+        ListItem(
+            modifier = modifier
+                .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+                .heightIn(min = 72.dp)
+                .blockBorderTop()
+                .fillMaxWidth(),
+            colors = ListItemDefaults.colors(
+                containerColor = Color.Transparent,
+            ),
+            headlineContent = {
                 TitleOrInfoLog(
                     title = title,
                     showInfo = showInfo,
@@ -223,18 +213,106 @@ fun TopBar(
                         )
                 )
                 if (showDevTools.value) {
-                    BaseDialog(openDialogCustom = showDevTools) {
+                    BaseDialog(onDismiss = { showDevTools.value = false }) {
                         DevTools(expanded = showDevTools)
                     }
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
+            trailingContent = {
+                Row { actions() }
+            }
+        )
+
+        // must be second item to overlay first
+        GlobalIndicators()
+
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun MainTopBar(
+    title: String,
+    expanded: MutableState<Boolean>,
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    actions: @Composable() (RowScope.() -> Unit) = {},
+) {
+    val showDevTools = remember { mutableStateOf(false) }
+    val tempShowInfo = remember { mutableStateOf(false) }
+    val showInfo =
+        !showDevTools.value && (OABX.showInfoLog || tempShowInfo.value) && pref_showInfoLogBar.value
+    val (isExpanded, onExpanded) = remember { expanded }
+    val enterPositive = expandHorizontally(expandFrom = Alignment.End)
+    val exitPositive = shrinkHorizontally(shrinkTowards = Alignment.End)
+    val enterNegative = expandHorizontally(expandFrom = Alignment.Start)
+    val exitNegative = shrinkHorizontally(shrinkTowards = Alignment.Start)
+
+    Box { // overlay TopBar and indicators
+        ListItem(
+            modifier = modifier
+                .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+                .height(72.dp)
+                .blockBorderTop()
+                .fillMaxWidth(),
+            colors = ListItemDefaults.colors(
                 containerColor = Color.Transparent,
-                titleContentColor = MaterialTheme.colorScheme.onSurface,
-                actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
             ),
-            actions = actions
+            headlineContent = {
+                AnimatedVisibility(
+                    visible = !isExpanded,
+                    enter = enterNegative,
+                    exit = exitNegative,
+                ) {
+                    TitleOrInfoLog(
+                        title = title,
+                        showInfo = showInfo,
+                        tempShowInfo = tempShowInfo,
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = {
+                                    if (pref_showInfoLogBar.value) {
+                                        OABX.showInfoLog = !OABX.showInfoLog
+                                    }
+                                    if (!OABX.showInfoLog)
+                                        tempShowInfo.value = false
+                                },
+                                onLongClick = {
+                                    showDevTools.value = true
+                                }
+                            )
+                    )
+                }
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = enterPositive,
+                    exit = exitPositive,
+                ) {
+                    ExpandedSearchView(
+                        query = query,
+                        modifier = modifier,
+                        onClose = onClose,
+                        onExpanded = onExpanded,
+                        onQueryChanged = onQueryChanged
+                    )
+                }
+                if (showDevTools.value) {
+                    BaseDialog(onDismiss = { showDevTools.value = false }) {
+                        DevTools(expanded = showDevTools)
+                    }
+                }
+            },
+            trailingContent = {
+                AnimatedVisibility(
+                    visible = !isExpanded,
+                    enter = enterPositive,
+                    exit = exitPositive,
+                ) {
+                    Row { actions() }
+                }
+            }
         )
 
         // must be second item to overlay first
@@ -297,7 +375,6 @@ fun ExpandedSearchView(
             onQueryChanged(it.text)
         },
         modifier = modifier
-            .padding(horizontal = 8.dp)
             .fillMaxWidth()
             .focusRequester(textFieldFocusRequester),
         singleLine = true,

@@ -2,7 +2,6 @@ package com.machiav3lli.backup.handler
 
 import android.content.Context
 import android.content.res.AssetManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.preferences.pref_backupCache
 import com.machiav3lli.backup.preferences.pref_backupNoBackupData
 import com.machiav3lli.backup.preferences.pref_restoreCache
@@ -14,7 +13,7 @@ import java.io.FileOutputStream
 
 class AssetHandler(context: Context) {
 
-    val VERSION_FILE = "__version__"
+    val UPDATE_ID_FILE = "__update_id__"
 
     var directory: File
         private set
@@ -27,20 +26,20 @@ class AssetHandler(context: Context) {
 
         directory = context.filesDir
         directory.mkdirs()
-        val appVersion = SystemUtils.versionName
-        val version = try {
-            File(directory, VERSION_FILE).readText()
+        val updateId = SystemUtils.updateId   //versionName
+        val lastId = try {
+            File(directory, UPDATE_ID_FILE).readText()
         } catch (e: Throwable) {
             ""
         }
-        if (version != appVersion) {
+        if (lastId != updateId) {
             try {
                 // cleans each directory and then copies the files
                 context.assets.copyRecursively("files", directory)
                 // add some generated files because the app version changed
                 updateExcludeFiles()
                 // finish transaction by writing the version file
-                File(directory, VERSION_FILE).writeText(appVersion)
+                File(directory, UPDATE_ID_FILE).writeText(updateId)
             } catch (e: Throwable) {
                 Timber.w("cannot copy asset files to ${directory}")
             }

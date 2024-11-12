@@ -54,9 +54,9 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.item.DialogNegativeButton
 import com.machiav3lli.backup.ui.compose.item.DialogPositiveButton
 import com.machiav3lli.backup.ui.compose.item.SelectableRow
-import com.machiav3lli.backup.ui.item.EnumPref
-import com.machiav3lli.backup.ui.item.ListPref
-import com.machiav3lli.backup.ui.item.StringPref
+import com.machiav3lli.backup.entity.EnumPref
+import com.machiav3lli.backup.entity.ListPref
+import com.machiav3lli.backup.entity.StringPref
 import kotlinx.coroutines.delay
 
 @Composable

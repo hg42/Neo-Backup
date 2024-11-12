@@ -105,10 +105,10 @@ abstract class ODatabase : RoomDatabase() {
 
 val databaseModule = module {
     single { ODatabase.getInstance(androidContext()) }
-    factory { get<ODatabase>().getScheduleDao() }
-    factory { get<ODatabase>().getBlocklistDao() }
-    factory { get<ODatabase>().getAppExtrasDao() }
-    factory { get<ODatabase>().getBackupDao() }
-    factory { get<ODatabase>().getAppInfoDao() }
-    factory { get<ODatabase>().getSpecialInfoDao() }
+    single { get<ODatabase>().getScheduleDao() }
+    single { get<ODatabase>().getBlocklistDao() }
+    single { get<ODatabase>().getAppExtrasDao() }
+    single { get<ODatabase>().getBackupDao() }
+    single { get<ODatabase>().getAppInfoDao() }
+    single { get<ODatabase>().getSpecialInfoDao() }
 }

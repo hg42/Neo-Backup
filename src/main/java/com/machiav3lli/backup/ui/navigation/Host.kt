@@ -70,14 +70,10 @@ fun MainNavHost(
             )
         }
         slideInComposable(NavItem.Exports.destination) {
-            OABX.main?.exportsViewModel?.let { viewModel ->
-                SchedulesExportsPage(viewModel)
-            }
+            SchedulesExportsPage()
         }
         slideInComposable(NavItem.Logs.destination) {
-            OABX.main?.logsViewModel?.let { viewModel ->
-                LogsPage(viewModel)
-            }
+            LogsPage()
         }
         slideInComposable(NavItem.Terminal.destination) {
             TerminalPage(title = stringResource(id = NavItem.Terminal.title))

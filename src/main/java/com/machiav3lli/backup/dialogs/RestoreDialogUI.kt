@@ -30,8 +30,8 @@ import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.possibleSchedModes
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.batchModesSequence
 
 @Composable
 fun RestoreDialogUI(
@@ -43,7 +43,7 @@ fun RestoreDialogUI(
     val context = LocalContext.current
 
     val modePairs = mutableMapOf<Int, String>()
-    val possibleModes = possibleSchedModes.toMutableList()
+    val possibleModes = batchModesSequence.toMutableList()
 
     if (backup.hasApk) {
         modePairs[MODE_APK] = stringResource(id = R.string.radio_apk)

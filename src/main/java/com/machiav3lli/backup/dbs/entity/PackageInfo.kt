@@ -43,19 +43,19 @@ open class PackageInfo(
 
     constructor(context: Context, pi: android.content.pm.PackageInfo) : this(
         packageName = pi.packageName,
-        packageLabel = pi.applicationInfo.loadLabel(context.packageManager).toString(),
+        packageLabel = pi.applicationInfo?.loadLabel(context.packageManager).toString(),
         versionName = pi.versionName ?: "",
         versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pi.longVersionCode.toInt()
         else pi.versionCode,
         profileId = try {
-            File(pi.applicationInfo.dataDir).parentFile?.name?.toInt() ?: -1
+            File(pi.applicationInfo?.dataDir).parentFile?.name?.toInt() ?: -1
         } catch (e: NumberFormatException) {
             -1 // Android System "App" points to /data/system
         },
-        sourceDir = pi.applicationInfo.sourceDir,
-        splitSourceDirs = pi.applicationInfo.splitSourceDirs ?: arrayOf(),
-        isSystem = pi.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM == android.content.pm.ApplicationInfo.FLAG_SYSTEM,
-        icon = pi.applicationInfo.icon
+        sourceDir = pi.applicationInfo?.sourceDir,
+        splitSourceDirs = pi.applicationInfo?.splitSourceDirs ?: arrayOf(),
+        isSystem = (pi.applicationInfo?.flags ?: 0) and android.content.pm.ApplicationInfo.FLAG_SYSTEM == android.content.pm.ApplicationInfo.FLAG_SYSTEM,
+        icon = pi.applicationInfo?.icon ?: -1
     )
 
     override fun equals(other: Any?): Boolean {

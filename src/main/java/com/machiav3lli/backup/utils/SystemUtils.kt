@@ -4,12 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.machiav3lli.backup.BuildConfig
+import android.os.SystemClock
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellCommands
-import com.machiav3lli.backup.items.RootFile
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.entity.RootFile
+import com.machiav3lli.backup.entity.StorageFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +31,6 @@ object SystemUtils {
 
     fun Context.getApplicationInfos(what: Int = 0): PackageInfo? {
         val packageManager: PackageManager = getPackageManager()
-        val packageName = BuildConfig.APPLICATION_ID
         return packageManager.getPackageInfo(packageName, what)
     }
 
@@ -65,17 +64,15 @@ object SystemUtils {
         return null
     }
 
-    @Suppress("DEPRECATION")
-    val versionCode = if (OABX.minSDK(28)) {
-        OABX.context.getApplicationInfos()?.longVersionCode
-    } else {
-        OABX.context.getApplicationInfos()?.versionCode
-    } ?: 0
-    val versionName = OABX.context.getApplicationInfos()?.versionName ?: "?"
+    val packageName get() = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
+    val versionCode get() = com.machiav3lli.backup.BuildConfig.VERSION_CODE
+    val versionName get() = com.machiav3lli.backup.BuildConfig.VERSION_NAME
+    val updateId get() = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
+    val backupVersionCode get() = com.machiav3lli.backup.BuildConfig.MAJOR * 1000 + com.machiav3lli.backup.BuildConfig.MINOR
 
-    val applicationIssuer = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
+    val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
 
-    val numCores = Runtime.getRuntime().availableProcessors()
+    val numCores get() = Runtime.getRuntime().availableProcessors()
 
     suspend fun <T> runParallel(
         items: List<T>,
@@ -237,4 +234,6 @@ object SystemUtils {
         }
     }
 
+    val msSinceBoot get() = SystemClock.elapsedRealtime()
+    val now get() = System.currentTimeMillis()
 }

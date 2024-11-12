@@ -14,7 +14,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,11 +33,11 @@ import com.machiav3lli.backup.ui.compose.item.DialogPositiveButton
 
 @Composable
 fun BaseDialog(
-    openDialogCustom: MutableState<Boolean>,
-    dialogUI: @Composable (() -> Unit),
+    onDismiss: () -> Unit,
+    dialogUI: @Composable () -> Unit,
 ) {
     Dialog(
-        onDismissRequest = { openDialogCustom.value = false },
+        onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         dialogUI()
@@ -49,10 +48,10 @@ fun BaseDialog(
 fun ActionsDialogUI(
     titleText: String,
     messageText: String,
-    openDialogCustom: MutableState<Boolean>,
+    onDismiss: () -> Unit,
     primaryText: String,
     primaryIcon: ImageVector? = null,
-    primaryAction: (() -> Unit) = {},
+    primaryAction: () -> Unit = {},
     secondaryText: String = "",
     secondaryAction: (() -> Unit)? = null,
 ) {
@@ -91,16 +90,14 @@ fun ActionsDialogUI(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
             ) {
-                ActionButton(text = stringResource(id = R.string.dialogCancel)) {
-                    openDialogCustom.value = false
-                }
+                ActionButton(text = stringResource(id = R.string.dialogCancel), onClick = onDismiss)
                 Spacer(Modifier.weight(1f))
                 if (secondaryAction != null && secondaryText.isNotEmpty()) {
                     DialogNegativeButton(
                         text = secondaryText,
                     ) {
                         secondaryAction()
-                        openDialogCustom.value = false
+                        onDismiss()
                     }
                     Spacer(Modifier.requiredWidth(8.dp))
                 }
@@ -109,11 +106,11 @@ fun ActionsDialogUI(
                     icon = primaryIcon,
                 ) {
                     primaryAction()
-                    openDialogCustom.value = false
+                    onDismiss()
                 }
                 else DialogPositiveButton(text = primaryText) {
                     primaryAction()
-                    openDialogCustom.value = false
+                    onDismiss()
                 }
             }
         }
@@ -126,8 +123,8 @@ fun BatchActionDialogUI(
     selectedPackageInfos: List<PackageInfo>,
     selectedApk: Map<String, Int>,
     selectedData: Map<String, Int>,
-    openDialogCustom: MutableState<Boolean>,
-    primaryAction: (() -> Unit) = {},
+    onDismiss: () -> Unit,
+    primaryAction: () -> Unit = {},
 ) {
     val message = StringBuilder()
     selectedPackageInfos.forEach { pi ->
@@ -152,7 +149,7 @@ fun BatchActionDialogUI(
             else R.string.restoreConfirmation
         ),
         messageText = message.toString().trim { it <= ' ' },
-        openDialogCustom = openDialogCustom,
+        onDismiss = onDismiss,
         primaryText = stringResource(
             id = if (backupBoolean) R.string.backup
             else R.string.restore

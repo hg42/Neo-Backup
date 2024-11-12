@@ -2,7 +2,7 @@ package com.machiav3lli.backup.plugins
 
 import android.annotation.SuppressLint
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
-import com.machiav3lli.backup.tracePlugin
+import com.machiav3lli.backup.preferences.tracePlugin
 import java.io.File
 
 class SpecialFilesPlugin(file: File) : TextPlugin(file) {
@@ -16,7 +16,11 @@ class SpecialFilesPlugin(file: File) : TextPlugin(file) {
         .map { replaceVars(it, userId) }
 
     init {
-        tracePlugin { (listOf("${this.javaClass.simpleName} $name <- ${file.name}") + getFiles("<userId>")).joinToString("\n  ") }
+        tracePlugin {
+            (listOf("${this.javaClass.simpleName} $name <- ${file.name}") + getFiles("<userId>")).joinToString(
+                "\n  "
+            )
+        }
     }
 
     companion object : PluginCompanion {
@@ -25,7 +29,7 @@ class SpecialFilesPlugin(file: File) : TextPlugin(file) {
         override fun register() = registerType(name(), Companion, listOf("special_files"))
         override fun create(file: File): Plugin? = SpecialFilesPlugin(file)
 
-        fun specialInfos(userId: String) : List<SpecialInfo> {
+        fun specialInfos(userId: String): List<SpecialInfo> {
 
             ensureScanned()
 
@@ -45,19 +49,19 @@ class SpecialFilesPlugin(file: File) : TextPlugin(file) {
         }
 
         @SuppressLint("SdCardPath")
-        fun replaceVars(text: String, userId: String) : String {
+        fun replaceVars(text: String, userId: String): String {
             val replacements = mapOf(
-                "userId"            to userId.toString(),
-                "miscData"          to "/data/misc",
-                "systemData"        to "/data/system",
-                "systemUserData"    to "/data/system/users/$userId",
-                "systemCeUserData"  to "/data/system_ce/$userId",
-                "vendorDeUserData"  to "/data/vendor_de/$userId",
-                "userData"          to "/data/user/$userId",
-                "userDeData"        to "/data/user_de/$userId",
-                "extUserData"       to "/storage/emulated/$userId/Android/data",
-                "extUserMedia"      to "/storage/emulated/$userId/Android/media",
-                "extUserObb"        to "/storage/emulated/$userId/Android/obb",
+                "userId" to userId.toString(),
+                "miscData" to "/data/misc",
+                "systemData" to "/data/system",
+                "systemUserData" to "/data/system/users/$userId",
+                "systemCeUserData" to "/data/system_ce/$userId",
+                "vendorDeUserData" to "/data/vendor_de/$userId",
+                "userData" to "/data/user/$userId",
+                "userDeData" to "/data/user_de/$userId",
+                "extUserData" to "/storage/emulated/$userId/Android/data",
+                "extUserMedia" to "/storage/emulated/$userId/Android/media",
+                "extUserObb" to "/storage/emulated/$userId/Android/obb",
             )
             var result = text
             replacements.forEach { replacement ->

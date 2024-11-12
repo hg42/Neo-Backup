@@ -15,7 +15,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.machiav3lli.backup.BuildConfig
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.activities.MainActivityX
@@ -24,8 +23,7 @@ import com.machiav3lli.backup.preferences.pref_fakeScheduleDups
 import com.machiav3lli.backup.preferences.pref_maxRetriesPerPackage
 import com.machiav3lli.backup.services.CommandReceiver
 import com.machiav3lli.backup.tasks.AppActionWork
-import com.machiav3lli.backup.utils.TraceUtils.traceBold
-import org.koin.dsl.module
+import com.machiav3lli.backup.utils.SystemUtils
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -91,7 +89,7 @@ class WorkHandler(appContext: Context) {
         batchesKnown.keys.toList().forEach { // copy the keys, because collection changes now
             batchesKnown[it]?.let { batch ->
                 if (batch.nFinished > 1 || batch.isCanceled) {
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.now
                     if (now - batch.startTime > longAgo) {
                         Timber.d("""%%%%% $it removing...\""")
                         batchesKnown.remove(it)
@@ -107,12 +105,6 @@ class WorkHandler(appContext: Context) {
         Thread.sleep(endDelay)
 
         Timber.d("%%%%% ALL DONE")
-
-        OABX.service?.let {
-            traceBold { """%%%%% ------------------------------------------ service stopping...\""" }
-            it.stopSelf()
-            traceBold { """%%%%% ------------------------------------------ service stopped.../""" }
-        }
 
         OABX.wakelock(false)
     }
@@ -260,20 +252,20 @@ class WorkHandler(appContext: Context) {
 
         var lockProgress = object {}
 
-        fun onProgress(handler: WorkHandler, workInfos: MutableList<WorkInfo>? = null) {
+        fun onProgress(handler: WorkHandler, workInfos: List<WorkInfo>? = null) {
             synchronized(lockProgress) {
                 onProgressNoSync(handler, workInfos)
             }
         }
 
-        fun onProgressNoSync(handler: WorkHandler, workInfos: MutableList<WorkInfo>? = null) {
+        fun onProgressNoSync(handler: WorkHandler, workInfos: List<WorkInfo>? = null) {
 
             val manager = handler.manager
             val work = workInfos
                 ?: manager.getWorkInfosByTag(AppActionWork::class.qualifiedName!!).get()
                 ?: return
 
-            val now = System.currentTimeMillis()
+            val now = SystemUtils.now
             val batchesRunning = mutableMapOf<String, WorkState>()
 
             val appContext = OABX.context
@@ -360,8 +352,8 @@ class WorkHandler(appContext: Context) {
                             workRunning++
                             packageName?.let { packagesState.put(it, operation ?: "") }
                             when (operation) {
-                                "" -> queued++
-                                else  -> {
+                                ""   -> queued++
+                                else -> {
                                     running++
                                     val shortPackageName =
                                         packageName
@@ -452,7 +444,7 @@ class WorkHandler(appContext: Context) {
                                 appContext,
                                 classAddress("NotificationHandler")
                             )
-                                .setGroup(BuildConfig.APPLICATION_ID)
+                                .setGroup(SystemUtils.packageName)
                                 .setSortKey("1-$batchName")
                                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                                 .setContentTitle(title)
@@ -556,8 +548,4 @@ class WorkHandler(appContext: Context) {
             }
         }
     }
-}
-
-val workHandlerModule = module {
-    single { WorkHandler(get()) }
 }

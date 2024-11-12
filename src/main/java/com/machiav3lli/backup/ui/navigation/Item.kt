@@ -2,7 +2,6 @@ package com.machiav3lli.backup.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isNeo
@@ -29,6 +28,9 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.SlidersHorizontal
 import com.machiav3lli.backup.ui.compose.icons.phosphor.UserGear
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Wrench
+import com.machiav3lli.backup.viewmodels.BackupBatchVM
+import com.machiav3lli.backup.viewmodels.RestoreBatchVM
+import org.koin.androidx.compose.koinViewModel
 
 sealed class NavItem(
     val title: Int,
@@ -50,10 +52,10 @@ sealed class NavItem(
         NavItem(
             R.string.home,
             when {
-                isNeo   -> Phosphor.Infinity
+                isNeo -> Phosphor.Infinity
                 isDebug -> Phosphor.Bug
-                isHg42  -> Phosphor.Detective
-                else    -> Phosphor.House
+                isHg42 -> Phosphor.Detective
+                else -> Phosphor.House
             },
             "home",
             { HomePage() }
@@ -61,23 +63,17 @@ sealed class NavItem(
 
     data object Backup :
         NavItem(R.string.backup, Phosphor.ArchiveTray, "batch_backup", {
-            OABX.main?.backupViewModel?.let {
-                BatchPage(viewModel = it, backupBoolean = true)
-            }
+            BatchPage(viewModel = koinViewModel<BackupBatchVM>(), backupBoolean = true)
         })
 
     data object Restore :
         NavItem(R.string.restore, Phosphor.ClockCounterClockwise, "batch_restore", {
-            OABX.main?.restoreViewModel?.let {
-                BatchPage(viewModel = it, backupBoolean = false)
-            }
+            BatchPage(viewModel = koinViewModel<RestoreBatchVM>(), backupBoolean = false)
         })
 
     data object Scheduler :
         NavItem(R.string.sched_title, Phosphor.CalendarX, "scheduler", {
-            OABX.main?.schedulerViewModel?.let { viewModel ->
-                SchedulerPage(viewModel)
-            }
+            SchedulerPage()
         })
 
     data object Main :
@@ -92,18 +88,18 @@ sealed class NavItem(
         })
 
     data object ServicePrefs :
-        NavItem(R.string.prefs_service_short, Phosphor.SlidersHorizontal, "prefs_service",{
+        NavItem(R.string.prefs_service_short, Phosphor.SlidersHorizontal, "prefs_service", {
             ServicePrefsPage()
         })
 
     data object AdvancedPrefs :
-        NavItem(R.string.prefs_advanced_short, Phosphor.Flask, "prefs_advanced",{
+        NavItem(R.string.prefs_advanced_short, Phosphor.Flask, "prefs_advanced", {
             AdvancedPrefsPage()
         })
 
     data object ToolsPrefs : NavItem(R.string.prefs_tools_short, Phosphor.Wrench, "prefs_tools", {
-            ToolsPrefsPage()
-        })
+        ToolsPrefsPage()
+    })
 
     data object Terminal :
         NavItem(R.string.prefs_tools_terminal, Phosphor.Bug, "prefs_tools/terminal")

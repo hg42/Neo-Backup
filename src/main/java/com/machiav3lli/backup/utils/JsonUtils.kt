@@ -30,7 +30,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @ExperimentalSerializationApi
-@Serializer(forClass = LocalDateTime::class)
 object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("LocalDateTimeSerializer", PrimitiveKind.STRING)
@@ -43,7 +42,6 @@ object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
 }
 
 @ExperimentalSerializationApi
-@Serializer(forClass = Uri::class)
 object UriSerializer : KSerializer<Uri> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("UriSerializer", PrimitiveKind.STRING)

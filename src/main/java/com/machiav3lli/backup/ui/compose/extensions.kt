@@ -2,10 +2,21 @@ package com.machiav3lli.backup.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -13,23 +24,21 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.machiav3lli.backup.preferences.pref_altBlockLayout
-import com.machiav3lli.backup.traceFlows
+import com.machiav3lli.backup.preferences.traceFlows
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -69,23 +78,43 @@ inline fun Modifier.ifThenElse(
     }
 }
 
-fun Modifier.blockBorder(style: Boolean? = null) = composed {
-    val altBlockStyle = style ?: (if(LocalInspectionMode.current) false else pref_altBlockLayout.value)
-    this
-        .clip(MaterialTheme.shapes.extraLarge)
-        .ifThenElse(altBlockStyle,
-            modifier = {
-                border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline,
-                    MaterialTheme.shapes.extraLarge,
-                )
-            },
-            elseModifier = {
-                background(MaterialTheme.colorScheme.surfaceContainer)
-            }
-        )
-}
+fun Modifier.blockBorderBottom(altStyle: Boolean = pref_altBlockLayout.value) =
+    composed {
+        this
+            .padding(2.dp)
+            .clip(BlockBottomShape)
+            .ifThenElse(altStyle,
+                modifier = {
+                    border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = BlockBottomShape,
+                    )
+                },
+                elseModifier = {
+                    background(color = MaterialTheme.colorScheme.surfaceContainerLow)
+                }
+            )
+    }
+
+fun Modifier.blockBorderTop(altStyle: Boolean = pref_altBlockLayout.value) =
+    composed {
+        this
+            .padding(2.dp)
+            .clip(BlockTopShape)
+            .ifThenElse(altStyle,
+                modifier = {
+                    border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = BlockTopShape,
+                    )
+                },
+                elseModifier = {
+                    background(color = MaterialTheme.colorScheme.surfaceContainerLow)
+                }
+            )
+    }
 
 fun Modifier.blockShadow(altStyle: Boolean = pref_altBlockLayout.value) =
     composed {
@@ -105,6 +134,22 @@ fun Modifier.blockShadow(altStyle: Boolean = pref_altBlockLayout.value) =
             )
     }
 
+val BlockTopShape
+    @Composable @ReadOnlyComposable get() = RoundedCornerShape(
+        topStart = MaterialTheme.shapes.extraLarge.topStart,
+        topEnd = MaterialTheme.shapes.extraLarge.topEnd,
+        bottomEnd = MaterialTheme.shapes.extraSmall.bottomEnd,
+        bottomStart = MaterialTheme.shapes.extraSmall.bottomStart,
+    )
+
+val BlockBottomShape
+    @Composable @ReadOnlyComposable get() = RoundedCornerShape(
+        topStart = MaterialTheme.shapes.extraSmall.topStart,
+        topEnd = MaterialTheme.shapes.extraSmall.topEnd,
+        bottomEnd = MaterialTheme.shapes.extraLarge.bottomEnd,
+        bottomStart = MaterialTheme.shapes.extraLarge.bottomStart,
+    )
+
 @Composable
 fun <T> ObservedEffect(flow: Flow<T?>, onChange: (T?) -> Unit) {
     val lcOwner = LocalLifecycleOwner.current
@@ -122,44 +167,6 @@ fun ObservedEffect(onChange: () -> Unit) {
         lcOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             onChange()
         }
-    }
-}
-
-
-class MutableComposableSharedFlow<T>(
-    var initial: T,
-    val scope: CoroutineScope,
-    val label: String = "ComposableSharedFlow",
-) {
-    var flow = MutableSharedFlow<T>()
-
-    var state = flow
-        .stateIn(
-            scope,
-            SharingStarted.Eagerly,
-            initial
-        )
-
-    var value: T
-        get() {
-            val value = state.value
-            if (value is String)
-                traceFlows { "*** $label => '$value'" }
-            else
-                traceFlows { "*** $label => $value" }
-            return value
-        }
-        set(value: T) {
-            if (value is String)
-                traceFlows { "*** $label <= '$value'" }
-            else
-                traceFlows { "*** $label <= $value" }
-            initial = value
-            scope.launch { flow.emit(value) }
-        }
-
-    init {
-        value = initial
     }
 }
 
@@ -194,9 +201,6 @@ class MutableComposableStateFlow<T>(
         value = initial
     }
 }
-
-//typealias MutableComposableFlow<T> = MutableComposableSharedFlow<T>
-typealias MutableComposableFlow<T> = MutableComposableStateFlow<T>
 
 
 @Composable
@@ -314,7 +318,8 @@ fun BalancedWrapRow(
                     else
                         0
                 }.sum()
-                val addSpace = if (nBWraps > 0) (maxBWrapWidth - finalTotalBWrapWidth) / nBWraps else 0
+                val addSpace =
+                    if (nBWraps > 0) (maxBWrapWidth - finalTotalBWrapWidth) / nBWraps else 0
                 measurables.map { measurable ->
                     val width = (widths[measurable] ?: 0)
                     val adjustedWidth = if (isBWrap[measurable] == true)
@@ -364,12 +369,76 @@ fun BalancedWrapRow(
 }
 
 fun Color.mix(with: Color, factor: Float = 0.5f) = Color(
-    red = (red * (1f-factor) + with.red*factor).coerceIn(0f, 1f),
-    green = (green * (1f-factor) + with.green*factor).coerceIn(0f, 1f),
-    blue = (blue * (1f-factor) + with.blue*factor).coerceIn(0f, 1f),
+    red = (red * (1f - factor) + with.red * factor).coerceIn(0f, 1f),
+    green = (green * (1f - factor) + with.green * factor).coerceIn(0f, 1f),
+    blue = (blue * (1f - factor) + with.blue * factor).coerceIn(0f, 1f),
     alpha = alpha
 )
 
 @Composable
 fun Color.flatten(factor: Float = 0.5f, surface: Color = MaterialTheme.colorScheme.surface) =
     mix(surface, factor)
+
+fun Color.brighter(rate: Float): Color {
+    val hslVal = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), hslVal)
+    hslVal[2] += rate * (1 - hslVal[2])
+    hslVal[2] = hslVal[2].coerceIn(0f..1f)
+    return Color(ColorUtils.HSLToColor(hslVal))
+}
+
+fun Color.darker(rate: Float): Color {
+    val hslVal = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), hslVal)
+    hslVal[2] -= rate * hslVal[2]
+    hslVal[2] = hslVal[2].coerceIn(0f..1f)
+    return Color(ColorUtils.HSLToColor(hslVal))
+}
+
+fun <T> LazyListScope.gridItems(
+    items: List<T>,
+    columns: Int,
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    itemContent: @Composable BoxScope.(T) -> Unit,
+) {
+    val itemsCount = items.count()
+    val rows = when {
+        itemsCount >= 1 -> 1 + (itemsCount - 1) / columns
+        else            -> 0
+    }
+    items(rows, key = { it.hashCode() }) { rowIndex ->
+        Row(
+            horizontalArrangement = horizontalArrangement,
+            modifier = modifier
+        ) {
+            (0 until columns).forEach { columnIndex ->
+                val itemIndex = columns * rowIndex + columnIndex
+                if (itemIndex < itemsCount) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        propagateMinConstraints = true
+                    ) {
+                        itemContent(items[itemIndex])
+                    }
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+// TODO make easy callable from different contexts
+fun SnackbarHostState.show(
+    coroutineScope: CoroutineScope,
+    message: String,
+    actionText: String? = null,
+    onAction: () -> Unit = {},
+) {
+    coroutineScope.launch {
+        showSnackbar(message = message, actionLabel = actionText, withDismissAction = true).apply {
+            if (this == SnackbarResult.ActionPerformed) onAction()
+        }
+    }
+}

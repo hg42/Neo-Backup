@@ -34,7 +34,7 @@ import com.machiav3lli.backup.preferences.baseInfo
 import com.machiav3lli.backup.preferences.pref_libsuTimeout
 import com.machiav3lli.backup.preferences.pref_libsuUseRootShell
 import com.machiav3lli.backup.preferences.pref_suCommand
-import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
 import com.topjohnwu.superuser.Shell

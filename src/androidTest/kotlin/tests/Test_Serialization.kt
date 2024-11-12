@@ -2,10 +2,10 @@ package tests.tests
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.ui.item.Pref.Companion.escape
-import com.machiav3lli.backup.ui.item.Pref.Companion.fromSimpleFormat
-import com.machiav3lli.backup.ui.item.Pref.Companion.toSimpleFormat
-import com.machiav3lli.backup.ui.item.Pref.Companion.unescape
+import com.machiav3lli.backup.entity.Pref.Companion.escape
+import com.machiav3lli.backup.entity.Pref.Companion.fromSimpleFormat
+import com.machiav3lli.backup.entity.Pref.Companion.toSimpleFormat
+import com.machiav3lli.backup.entity.Pref.Companion.unescape
 import junit.framework.TestCase.assertEquals
 import kotlinx.serialization.Serializable
 import org.jetbrains.annotations.TestOnly

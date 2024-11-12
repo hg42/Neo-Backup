@@ -22,7 +22,7 @@ import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.FileType
-import com.machiav3lli.backup.items.RootFile
+import com.machiav3lli.backup.entity.RootFile
 import com.machiav3lli.backup.preferences.pref_strictHardLinks
 import com.topjohnwu.superuser.io.SuFileOutputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry

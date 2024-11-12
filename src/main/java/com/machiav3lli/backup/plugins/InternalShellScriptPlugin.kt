@@ -1,6 +1,6 @@
 package com.machiav3lli.backup.plugins
 
-import com.machiav3lli.backup.tracePlugin
+import com.machiav3lli.backup.preferences.tracePlugin
 import java.io.File
 
 class InternalShellScriptPlugin(file: File) : TextPlugin(file) {

@@ -36,31 +36,37 @@ import androidx.lifecycle.ViewModel
 import com.charleskorn.kaml.Yaml
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
-import com.machiav3lli.backup.OABX.Companion.isDebug
-import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.activities.MainActivityX
+import com.machiav3lli.backup.activities.viewModelsModule
 import com.machiav3lli.backup.dbs.ODatabase
 import com.machiav3lli.backup.dbs.databaseModule
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.AssetHandler
+import com.machiav3lli.backup.handler.ExportsHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
-import com.machiav3lli.backup.handler.workHandlerModule
 import com.machiav3lli.backup.plugins.Plugin
+import com.machiav3lli.backup.preferences.NeoPrefs.Companion.prefsModule
 import com.machiav3lli.backup.preferences.pref_busyHitTime
 import com.machiav3lli.backup.preferences.pref_cancelOnStart
+import com.machiav3lli.backup.preferences.pref_catchUncaughtException
+import com.machiav3lli.backup.preferences.pref_logToSystemLogcat
+import com.machiav3lli.backup.preferences.pref_maxLogLines
 import com.machiav3lli.backup.preferences.pref_prettyJson
+import com.machiav3lli.backup.preferences.pref_uncaughtExceptionsJumpToPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlProperties
 import com.machiav3lli.backup.preferences.pref_useYamlSchedules
+import com.machiav3lli.backup.preferences.traceBusy
+import com.machiav3lli.backup.preferences.traceDebug
+import com.machiav3lli.backup.preferences.traceSection
+import com.machiav3lli.backup.preferences.traceSerialize
 import com.machiav3lli.backup.services.PackageUnInstalledReceiver
-import com.machiav3lli.backup.services.ScheduleService
-import com.machiav3lli.backup.ui.item.BooleanPref
-import com.machiav3lli.backup.ui.item.IntPref
-import com.machiav3lli.backup.utils.TraceUtils
+import com.machiav3lli.backup.utils.ISO_DATE_TIME_FORMAT_MS
+import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
@@ -69,6 +75,8 @@ import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -83,185 +91,16 @@ import kotlinx.serialization.modules.SerializersModule
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
+import org.koin.androix.startup.KoinStartup.onKoinStartup
+import org.koin.dsl.module
+import org.koin.java.KoinJavaComponent.get
 import timber.log.Timber
-import java.lang.Integer.max
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.exitProcess
 
-
-//---------------------------------------- developer settings - logging
-
-val pref_maxLogLines = IntPref(
-    key = "dev-log.maxLogLines",
-    summary = "maximum lines for internal logging",
-    entries = ((10..90 step 10) +
-            (100..450 step 50) +
-            (500..1500 step 500) +
-            (2000..5000 step 1000) +
-            (5000..20000 step 5000)
-            ).toList(),
-    defaultValue = 2000
-)
-
-val pref_maxLogCount = IntPref(
-    key = "dev-log.maxLogCount",
-    summary = "maximum count of log files (= entries on log page)",
-    entries = ((1..9 step 1) + (10..100 step 10)).toList(),
-    defaultValue = 20
-)
-
-val pref_catchUncaughtException = BooleanPref(
-    key = "dev-log.catchUncaughtException",
-    summaryId = R.string.prefs_catchuncaughtexception_summary,
-    defaultValue = false
-)
-
-val pref_uncaughtExceptionsJumpToPreferences = BooleanPref(
-    key = "dev-log.uncaughtExceptionsJumpToPreferences",
-    summary = "in case of unexpected crashes jump to preferences (prevent loops if a preference causes this, and allows to change it, back button leaves the app)",
-    defaultValue = false,
-    enableIf = { pref_catchUncaughtException.value }
-)
-
-val pref_logToSystemLogcat = BooleanPref(
-    key = "dev-log.logToSystemLogcat",
-    summary = "log to Android logcat, otherwise only internal (internal doesn't help if the app is restarted or if you are catching logs externally, e.g. via Scoop)",
-    defaultValue = true
-)
-
-val pref_autoLogExceptions = BooleanPref(
-    key = "dev-log.autoLogExceptions",
-    summary = "create a log for each unexpected exception (may disturb the timing of other operations, meant to detect catched but not expected exceptions, developers are probably intersted in these)",
-    defaultValue = false
-)
-
-val pref_autoLogSuspicious = BooleanPref(
-    key = "dev-log.autoLogSuspicious",
-    summary = "create a log for some suspicious but partly expected situations, e.g. detection of duplicate schedules (don't use it regularly)",
-    defaultValue = false
-)
-
-val pref_autoLogAfterSchedule = BooleanPref(
-    key = "dev-log.autoLogAfterSchedule",
-    summary = "create a log after each schedule execution",
-    defaultValue = false
-)
-
-val pref_autoLogUnInstallBroadcast = BooleanPref(
-    key = "dev-log.autoLogUnInstallBroadcast",
-    summary = "create a log when a package is installed or uninstalled",
-    defaultValue = false
-)
-
-//---------------------------------------- developer settings - tracing
-
-val pref_trace = BooleanPref(
-    key = "dev-trace.trace",
-    summary = "global switch for all traceXXX options",
-    defaultValue = isDebug || isHg42
-)
-
-val traceSection = TraceUtils.TracePrefBold(
-    name = "Section",
-    summary = "trace important sections (backup, schedule, etc.)",
-    default = true
-)
-
-val tracePlugin = TraceUtils.TracePref(
-    name = "Plugin",
-    summary = "trace plugins",
-    default = true
-)
-
-val traceSchedule = TraceUtils.TracePrefBold(
-    name = "Schedule",
-    summary = "trace schedules",
-    default = true
-)
-
-val tracePrefs = TraceUtils.TracePref(
-    name = "Prefs",
-    summary = "trace preferences",
-    default = true
-)
-
-val traceFlows = TraceUtils.TracePrefBold(
-    name = "Flows",
-    summary = "trace Kotlin Flows (reactive data streams)",
-    default = true
-)
-
-val traceBusy = TraceUtils.TracePrefBold(
-    name = "Busy",
-    default = true,
-    summary = "trace beginBusy/endBusy (busy indicator)"
-)
-
-val traceTiming = TraceUtils.TracePrefBold(
-    name = "Timing",
-    default = true,
-    summary = "show code segment timers"
-)
-
-val traceContextMenu = TraceUtils.TracePref(
-    name = "ContextMenu",
-    summary = "trace context menu actions and events",
-    default = true
-)
-
-val traceCompose = TraceUtils.TracePref(
-    name = "Compose",
-    summary = "trace recomposition of UI elements",
-    default = true
-)
-
-val traceDebug = TraceUtils.TracePref(
-    name = "Debug",
-    summary = "trace for debugging purposes (for devs)",
-    default = false
-)
-
-val traceWIP = TraceUtils.TracePrefExtreme(
-    name = "WIP",
-    summary = "trace for debugging purposes (for devs)",
-    default = false
-)
-
-val traceAccess = TraceUtils.TracePref(
-    name = "Access",
-    summary = "trace access",
-    default = false
-)
-
-val traceBackups = TraceUtils.TracePref(
-    name = "Backups",
-    summary = "trace backups",
-    default = true
-)
-
-val traceBackupsScan = TraceUtils.TracePref(
-    name = "BackupsScan",
-    summary = "trace scanning of backup directory for properties files (for scanning with package name)",
-    default = false
-)
-
-val traceBackupsScanAll = TraceUtils.TracePref(
-    name = "BackupsScanAll",
-    summary = "trace scanning of backup directory for properties files (for complete scan)",
-    default = false
-)
-
-val traceSerialize = TraceUtils.TracePref(
-    name = "Serialize",
-    summary = "trace json/yaml/... conversions",
-    default = false
-)
-
 val RESCUE_NAV get() = "rescue"
-
 
 class OABX : Application() {
 
@@ -269,6 +108,20 @@ class OABX : Application() {
     val db: ODatabase by inject()
 
     // TODO Add BroadcastReceiver for (UN)INSTALL_PACKAGE intents
+
+    init {
+        onKoinStartup {
+            // TODO to be replaced in koin 4.0.1
+            androidLogger()
+            androidContext(this@OABX)
+            modules(
+                handlersModule,
+                databaseModule,
+                prefsModule,
+                viewModelsModule,
+            )
+        }
+    }
 
     override fun onCreate() {
 
@@ -338,19 +191,6 @@ class OABX : Application() {
         MainScope().launch {
             addInfoLogText("--> click title to keep infobox open")
             addInfoLogText("--> long press title for dev tools")
-        }
-    }
-
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
-
-        startKoin {
-            androidLogger()
-            androidContext(this@OABX)
-            modules(
-                workHandlerModule,
-                databaseModule,
-            )
         }
     }
 
@@ -508,7 +348,7 @@ class OABX : Application() {
                             Log.WARN    -> "W"
                             else        -> "?"
                         }
-                    val now = System.currentTimeMillis()
+                    val now = SystemUtils.now
                     val date = ISO_DATE_TIME_FORMAT_MS.format(now)
                     try {
                         addLogMessage("$date $prio $tag : $message")
@@ -560,16 +400,6 @@ class OABX : Application() {
                 if (assetsRef.get() == null)
                     assetsRef = WeakReference(AssetHandler(context))
                 return assetsRef.get()!!
-            }
-
-        // service might be null
-        var serviceRef: WeakReference<ScheduleService> = WeakReference(null)
-        var service: ScheduleService?
-            get() {
-                return serviceRef.get()
-            }
-            set(service) {
-                serviceRef = WeakReference(service)
             }
 
         // activity might be null
@@ -663,10 +493,10 @@ class OABX : Application() {
             return Build.VERSION.SDK_INT >= sdk
         }
 
-        val isRelease = BuildConfig.APPLICATION_ID.endsWith(".backup")
-        val isDebug = BuildConfig.DEBUG
-        val isNeo = BuildConfig.APPLICATION_ID.contains("neo")
-        val isHg42 = BuildConfig.APPLICATION_ID.contains("hg42")
+        val isRelease get() = SystemUtils.packageName.endsWith(".backup")
+        val isDebug get() = SystemUtils.packageName.contains("debug")
+        val isNeo get() = SystemUtils.packageName.contains("neo")
+        val isHg42 get() = SystemUtils.packageName.contains("hg42")
 
         //------------------------------------------------------------------------------------------ infoText
 
@@ -714,7 +544,7 @@ class OABX : Application() {
             if (aquire) {
                 traceDebug { "%%%%% $wakeLockTag wakelock aquire (before: $wakeLockNested)" }
                 if (wakeLockNested.accumulateAndGet(+1, Int::plus) == 1) {
-                    val pm = context.getSystemService(POWER_SERVICE) as PowerManager
+                    val pm: PowerManager = get(PowerManager::class.java)
                     theWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, wakeLockTag)
                     theWakeLock?.acquire(60 * 60 * 1000L)
                     traceDebug { "%%%%% $wakeLockTag wakelock ACQUIRED" }
@@ -793,9 +623,9 @@ class OABX : Application() {
             }
         }
 
-        fun hitBusy(time: Int = 0) {
+        fun hitBusy(time: Int = pref_busyHitTime.value) {
             busyCountDownAtomic.set(
-                max(time.toInt(), pref_busyHitTime.value) / busyTick
+                time / busyTick
             )
         }
 
@@ -830,9 +660,9 @@ class OABX : Application() {
 
         private var theBackupsMap = mutableMapOf<String, List<Backup>>()
 
-        fun getBackups(): Map<String, List<Backup>> {
+        fun getBackups(): ImmutableMap<String, List<Backup>> {
             synchronized(theBackupsMap) {
-                return theBackupsMap
+                return theBackupsMap.toImmutableMap()
             }
         }
 
@@ -842,13 +672,15 @@ class OABX : Application() {
             }
         }
 
-        fun setBackups(backups: Map<String, List<Backup>>) {
-            backups.forEach {
-                putBackups(it.key, it.value)
-            }
-            // clear no more existing packages
-            (theBackupsMap.keys - backups.keys).forEach {
-                removeBackups(it)
+        fun setBackups(backupsMap: Map<String, List<Backup>>) {
+            synchronized(theBackupsMap) {
+                backupsMap.forEach { (packageName, backups) ->
+                    theBackupsMap.put(packageName, backups)
+                }
+                // clear no more existing packages
+                (theBackupsMap.keys - backupsMap.keys).forEach {
+                    theBackupsMap.remove(it)
+                }
             }
         }
 
@@ -880,14 +712,18 @@ class OABX : Application() {
         }
 
         fun emptyBackupsForMissingPackages(packageNames: List<String>) {
-            (packageNames - theBackupsMap.keys).forEach {
-                putBackups(it, emptyList())
+            synchronized(theBackupsMap) {
+                (packageNames - theBackupsMap.keys).forEach {
+                    theBackupsMap.put(it, emptyList())
+                }
             }
         }
 
         fun emptyBackupsForAllPackages(packageNames: List<String>) {
-            packageNames.forEach {
-                putBackups(it, emptyList())
+            synchronized(theBackupsMap) {
+                packageNames.forEach {
+                    theBackupsMap.put(it, emptyList())
+                }
             }
         }
 
@@ -900,4 +736,10 @@ class OABX : Application() {
             emptyBackupsForAllPackages(installedNames)
         }
     }
+}
+
+val handlersModule = module {
+    single { WorkHandler(get()) }
+    single { ExportsHandler(get()) }
+    single { get<Context>().getSystemService(Context.POWER_SERVICE) as PowerManager }
 }

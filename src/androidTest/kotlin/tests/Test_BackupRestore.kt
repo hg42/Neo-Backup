@@ -9,9 +9,9 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBox
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
-import com.machiav3lli.backup.items.RootFile
-import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.items.UndeterminedStorageFile
+import com.machiav3lli.backup.entity.RootFile
+import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.entity.UndeterminedStorageFile
 import com.machiav3lli.backup.preferences.pref_encryption
 import com.topjohnwu.superuser.ShellUtils.fastCmd
 import kotlinx.coroutines.runBlocking
