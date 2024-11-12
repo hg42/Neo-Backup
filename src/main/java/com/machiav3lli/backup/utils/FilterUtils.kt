@@ -244,17 +244,20 @@ private fun List<Package>.applySort(sort: Int, sortAsc: Boolean): List<Package> 
         }
     }
 
-fun filterToString(context: Context, filter: Int): String {
-    val activeFilters = possibleMainFilters.filter { it and filter == it }
-    //TODO this looks wrong to me ??? what about system+special etc.?
-    //  it probably needs to be like activeFilters.map { User/System/Special }.joinToString("+")
-    return when {
-        activeFilters.size == 2                     -> context.getString(R.string.radio_all)
-        activeFilters.contains(MAIN_FILTER_USER)    -> context.getString(R.string.radio_user)
-        activeFilters.contains(MAIN_FILTER_SPECIAL) -> context.getString(R.string.radio_special)
-        else                                        -> context.getString(R.string.radio_system)
+fun filterToString(context: Context, filter: Int): String = possibleMainFilters
+    .filter { it and filter == it }
+    .let { activeFilters ->
+        if (activeFilters.containsAll(possibleMainFilters)) context.getString(R.string.radio_all)
+        else activeFilters.joinToString(", ") {
+            context.getString(
+                when (it) {
+                    MAIN_FILTER_USER    -> R.string.radio_user
+                    MAIN_FILTER_SPECIAL -> R.string.radio_special
+                    else                -> R.string.radio_system // MAIN_FILTER_SYSTEM
+                }
+            )
+        }
     }
-}
 
 fun specialFilterToString(context: Context, specialFilter: SpecialFilter) = listOfNotNull(
     when (specialFilter.launchableFilter) {
