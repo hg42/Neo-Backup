@@ -299,12 +299,16 @@ open class StorageFile {
                     } else {
                         var (storage, subPath) = last.split(":", limit = 2)
                         //val user = ShellCommands.currentProfile
-                        val user = uri.authority?.split("@", limit = 2)?.first()
-                            ?: ShellCommands.currentProfile
+                        val user_provider = (uri.authority ?: "").split("@", limit = 2)
+                        val user =
+                            if (user_provider.size > 1)
+                                user_provider[0]
+                            else
+                                ShellCommands.currentProfile.toString()
                         if (storage == "primary")
                             storage = "emulated/$user"
                         file = getShadowPath(
-                            user.toString(),
+                            user,
                             storage,
                             subPath,
                             ::isWritablePath
