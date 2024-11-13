@@ -3,7 +3,6 @@ package com.machiav3lli.backup.ui.compose.item
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,14 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -126,27 +122,30 @@ fun NoteTagItem(
     onNote: ((Backup) -> Unit)? = null,
 ) {
     val note = item.note
-    // with useNoteIcon enabled, show edit icon or chip with note
-    // with useNoteIcon disabled, show filled chip "edit note" or chip with note
-    // with onNote not set, disable editing (nobody reacts on the the change)
     val fillChip = note.isEmpty() && (onNote != null)
 
     if (fillChip) {
-        FilledTonalIconButton(
-            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-            onClick = { onNote?.let { it(item) } },
-        ) {
-            Icon(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onNote?.let { it(item) } },
-                imageVector = Phosphor.NotePencil,
-                contentDescription = stringResource(id = R.string.edit_note),
-            )
-        }
+        RoundButton(
+            icon = Phosphor.NotePencil,
+            description = stringResource(id = R.string.edit_note),
+            onClick = { onNote?.let { it(item) } }
+        )
+        // why the hell? why is it more important than the other buttons?
+        //FilledTonalIconButton(
+        //    colors = IconButtonDefaults.filledTonalIconButtonColors(
+        //        containerColor = MaterialTheme.colorScheme.primary,
+        //        contentColor = MaterialTheme.colorScheme.onPrimary,
+        //    ),
+        //    onClick = { onNote?.let { it(item) } },
+        //) {
+        //    Icon(
+        //        modifier = Modifier
+        //            .size(24.dp)
+        //            .clickable { onNote?.let { it(item) } },
+        //        imageVector = Phosphor.NotePencil,
+        //        contentDescription = stringResource(id = R.string.edit_note),
+        //    )
+        //}
     } else InputChip(
         modifier = modifier
             .defaultMinSize(minWidth = 1.dp),

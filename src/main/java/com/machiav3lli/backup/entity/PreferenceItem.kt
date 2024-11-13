@@ -404,7 +404,7 @@ open class StringPref(
             openDialog.value = true
         }
         if (openDialog.value) {
-            BaseDialog(openDialogCustom = openDialog) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
                 StringPrefDialogUI(
                     pref = pref,
                     openDialogCustom = openDialog
@@ -486,7 +486,7 @@ class PasswordPref(
             openDialog.value = true
         }
         if (openDialog.value) {
-            BaseDialog(openDialogCustom = openDialog) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
                 StringPrefDialogUI(
                     pref = pref,
                     isPrivate = true,
@@ -529,7 +529,7 @@ class ListPref(
             openDialog.value = true
         }
         if (openDialog.value) {
-            BaseDialog(openDialogCustom = openDialog) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
                 ListPrefDialogUI(
                     pref = pref,
                     openDialogCustom = openDialog,
@@ -570,7 +570,7 @@ class EnumPref(
             openDialog.value = true
         }
         if (openDialog.value) {
-            BaseDialog(openDialogCustom = openDialog) {
+            BaseDialog(onDismiss = { openDialog.value = false }) {
                 EnumPrefDialogUI(
                     pref = pref as EnumPref,
                     openDialogCustom = openDialog,

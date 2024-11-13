@@ -67,7 +67,7 @@ open class TextPlugin(file: File) : Plugin(name = file.nameWithoutExtension, fil
     init {
         try {
             text = file.readText()
-            tracePlugin { "${this.javaClass.simpleName} $name loaded <- ${file.name}" }
+            //tracePlugin { "${this.javaClass.simpleName} $name loaded <- ${file.name}" }
         } catch (e: Throwable) {
             text = ""
             tracePlugin { "${this.javaClass.simpleName} $name created -> ${file.name}" }

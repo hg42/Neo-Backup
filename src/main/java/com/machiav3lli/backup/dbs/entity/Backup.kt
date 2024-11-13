@@ -27,7 +27,6 @@ import com.machiav3lli.backup.PROP_NAME
 import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
-import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.getBackupRoot
@@ -306,43 +305,28 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
             try {
 
                 val packageNameFixed = packageName ?: run {
-                    if (propertiesFile != null) {
-                        if (propertiesFile.name == BACKUP_INSTANCE_PROPERTIES_INDIR) {
-                            propertiesFile.parent?.name
-                        } else if (pref_flatStructure.value) {
-                            val baseName = propertiesFile.name?.removeSuffix(".$PROP_NAME")
-                            baseName?.let { dirName ->
-                                propertiesFile.parent?.findFile(dirName)?.name
-                            }
-                        } else {
-                            propertiesFile.parent?.name
-                        }
-                    } else {
-                        directory.name?.let { name ->
-                            if (pref_flatStructure.value) {
-                                if (regexPackageFolder.matches(name)) {
-                                    name
-                                } else {
-                                    regexPackageFolder.find(name)?.let { match ->
-                                        match.groups[0]?.value
-                                    }
-                                }
+                    listOf(directory, directory.parent)
+                        .mapNotNull { it?.name }
+                        .firstNotNullOfOrNull { name ->
+                            if (regexPackageFolder.matches(name)) {
+                                name
                             } else {
-                                directory.parent?.name
+                                regexPackageFolder.find(name)?.let { match ->
+                                    match.groups[0]?.value
+                                }
                             }
                         }
-                    }
                 } ?: ""
 
                 val backup = fromSerialized(
                     "{\n" +
                             "    \"backupVersionCode\": ${
-                                    com.machiav3lli.backup.BuildConfig.MAJOR * 1000 +
-                                            com.machiav3lli.backup.BuildConfig.MINOR
+                                com.machiav3lli.backup.BuildConfig.MAJOR * 1000 +
+                                        com.machiav3lli.backup.BuildConfig.MINOR
                             },\n" +
-                            "    \"packageName\": \"...$packageNameFixed\",\n" +
-                            "    \"packageLabel\": \"? INVALID BACKUP\",\n" +
-                            "    \"versionName\": \"${"INVALID" + if (why != null) ": $why" else ""}\",\n" +
+                            "    \"packageName\": \"${"..." + if (why != null) "$why" else ""}\",\n" +
+                            "    \"packageLabel\": \"? INVALID\",\n" +
+                            "    \"versionName\": \"$packageNameFixed\",\n" +
                             "    \"versionCode\": 0,\n" +
                             //"    \"sourceDir\": \"/data/app/~~oXzw9ZEl326kQh4Ay1vHJQ==/org.woheller69.weather-gWQaSUpYxRgFVvgMTqNb9A==/base.apk\",\n" +
                             "    \"splitSourceDirs\": [],\n" +
@@ -355,15 +339,18 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                             //"    \"iv\": [],\n" +
                             "    \"cpuArch\": \"\",\n" +
                             "    \"size\": 0\n" +
+                            "    \"note\": \"invalid\"\n" +
                             "}"
                 )
 
                 backup.file = propertiesFile
+                backup.dir = directory
 
                 return backup
 
             } catch (e: Throwable) {
-                logException(e,
+                logException(
+                    e,
                     "creating invalid backup item also failed, for directory ${
                         directory.path
                     }${
