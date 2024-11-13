@@ -43,7 +43,7 @@ fi
 
 #set -x
 
-head=$(git rev-parse HEAD)
+head="$(git rev-parse HEAD) $(git branch --show-current)"
 
 mkdir -p $basedir
 
