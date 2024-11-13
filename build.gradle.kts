@@ -142,15 +142,17 @@ val buildNumber: String by extra { minutes.toString() }
 //var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
 val buildLabel by extra {
     currentBranch
-        .replace(Regex("^feature-"), "F-")
-        .replace(Regex("^PR-"), "P-")
-        .replace(Regex("^wip$"), "W")
-        .replace(Regex("^temp$"), "T")
-        .replace(Regex("^experimental$"), "X")
+        .replace(Regex("^feature-"), "🍩")
+        .replace(Regex("^fix-"), "💊")
+        .replace(Regex("^try-"), "🚑")
+        .replace(Regex("^PR-"), "📤")
+        .replace(Regex("^wip$"), "🚧")
+        .replace(Regex("^temp$"), "🦘")
+        .replace(Regex("^experimental$"), "⚡")
 }
-val buildNumber5 = buildNumber.padStart(5, '0')
-val buildNumber4 = buildNumber5.dropLast(1)
-val buildNumber3 = buildNumber5.dropLast(2)
+val buildNumber6 = buildNumber.padStart(6, '0')
+val buildNumber4 = buildNumber6.dropLast(2)
+val buildNumber3 = buildNumber6.dropLast(3)
 val buildVersionCodeFromVersion = (
         "${
             major
@@ -166,25 +168,27 @@ val buildVersionCodeFromTime = buildTime.substring(0..8)
 val buildVersionCode by extra {
     buildVersionCodeFromTime.toInt()
 }
+val build = "$major.$minor.$revision.$buildNumber6"
 val buildVersion by extra {
-    "$major.$minor.$revision.$buildNumber5-hg42-${headHash}-${buildDay}--${buildLabel}"
+    "$build-hg42-${headHash}-${buildTime}--${buildLabel}"
 }
 
 fun buildName(variant: String) = (
-        buildVersion.replace(
+        "$build-${headHash}--${buildLabel}".replace(
             "--",
-            "--" +
+            "-" +
                     variant
-                        .replace(Regex(".*Test"), "TST")
-                        .replace("debug", "DBG")
-                        //.replace("hg42", "")
-                        .replace("release", "REL")
-                        .replace("pumpkin", "PKN")
-                        .replace("pumprel", "PRL")
+                        .replace(Regex(".*Test"), "🔎")
+                        .replace("debug", "🐞")
+                        .replace("release", "✅")
+                        .replace("neo", "♾")
+                        .replace("pumpkin", "🎃")
+                        .replace("pumprel", "🤡")
+                        .replace("hg42", "")
                         .replace(Regex("""--+"""), """-""")
                         .replace(Regex("""-+$"""), """""")
-                        .uppercase()
-                    + "--"
+                        //.uppercase()
+                    + "-"
         )
             //.replace(Regex("""-(\d{6})\d{6}-"""), """-$1-""")
             .replace("----", "--")
