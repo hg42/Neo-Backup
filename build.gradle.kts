@@ -45,7 +45,7 @@ data class InfoFromGit(
 )
 
 fun getInfoFromGit(): InfoFromGit {
-    val tagPattern = "(\\d+)\\.(\\d+)\\.(\\d+)"
+    val tagPattern = """tag: *(\d+)\.(\d+)\.(\d+)\)"""
     val tagProcess = ProcessBuilder(
         "git",
         "log",
@@ -77,7 +77,7 @@ fun getInfoFromGit(): InfoFromGit {
 
         val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
 
-        lastTag = matchResult.value
+        lastTag = "$major.$minor.$patch"
         lastTagMajor = major
         lastTagMinor = minor
         lastTagPatch = patch
