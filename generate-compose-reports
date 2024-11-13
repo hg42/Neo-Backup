@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+./gradlew :assemblePumpkin -PenableComposeCompilerReports=true --rerun-tasks
