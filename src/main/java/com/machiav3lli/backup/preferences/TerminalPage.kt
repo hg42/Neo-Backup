@@ -425,7 +425,10 @@ fun TerminalText(
 
     autoScroll = listState.isAtBottom()
 
-    val lines = text.filter { it.contains(search, ignoreCase = true) } + (1..4).map { "" }
+    val lines = if (search.length > 0)
+        text.filter { it.contains(search, ignoreCase = true) } + (1..4).map { "" }
+    else
+        text
 
     Box(
         modifier = modifier
