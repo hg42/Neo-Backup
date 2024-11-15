@@ -76,7 +76,6 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
 import com.machiav3lli.backup.utils.TraceUtils.nanoTiming
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getFormattedDate
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -232,12 +231,17 @@ fun Selections(
     selection: List<String> = emptyList(),
     onAction: (List<String>) -> Unit = {},
 ) {
-    val backupRoot = OABX.context.getBackupRoot()
-    val selectionsDir = backupRoot.findFile(SELECTIONS_FOLDER_NAME)
-        ?: backupRoot.createDirectory(SELECTIONS_FOLDER_NAME)
-    val files = selectionsDir.listFiles()
+    val backupRoot = OABX.backupRoot
+    val selectionsDir = backupRoot?.findFile(SELECTIONS_FOLDER_NAME)
+        ?: backupRoot?.createDirectory(SELECTIONS_FOLDER_NAME)
+    val files = selectionsDir?.listFiles() ?: emptyList()
 
-    if (files.isEmpty())
+    if (files == null)
+        DropdownMenuItem(
+            text = { Text("--- no selections dir ---") },
+            onClick = {}
+        )
+    else if (files.isEmpty())
         DropdownMenuItem(
             text = { Text("--- no saved selections ---") },
             onClick = {}
@@ -379,17 +383,18 @@ fun SelectionPutMenu(
 ) {
     val name = remember { mutableStateOf("") }
 
-    TextInputMenuItem(
-        text = name.value,
-        placeholder = "new selection name",
-        trailingIcon = Phosphor.ArchiveTray,
-    ) {
-        name.value = it
-        val backupRoot = OABX.context.getBackupRoot()
-        val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
-        selectionsDir.createFile(name.value)
-            .writeText(selection.joinToString("\n"))
-        onAction()
+    OABX.backupRoot?.let { backupRoot ->
+        TextInputMenuItem(
+            text = name.value,
+            placeholder = "new selection name",
+            trailingIcon = Phosphor.ArchiveTray,
+        ) {
+            name.value = it
+            val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
+            selectionsDir.createFile(name.value)
+                .writeText(selection.joinToString("\n"))
+            onAction()
+        }
     }
 
     Selections(action = "put", selection = selection) { onAction() }

@@ -47,6 +47,7 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.findBackups
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
 import com.machiav3lli.backup.preferences.pref_cancelOnStart
@@ -58,12 +59,15 @@ import com.machiav3lli.backup.services.PackageUnInstalledReceiver
 import com.machiav3lli.backup.services.ScheduleService
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
+import com.machiav3lli.backup.utils.FileUtils
+import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.methodName
+import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
@@ -449,6 +453,15 @@ class OABX : Application() {
                 }
         }
 
+        var logsDirectory: StorageFile? = null
+            get() {
+                if (field == null) {
+                    field = context.getExternalFilesDir(null)?.let { StorageFile(it).ensureDirectory("logs") }
+                        ?: context.filesDir.let { StorageFile(it).ensureDirectory("logs") }
+                }
+                return field
+            }
+
         var lastErrorPackage = ""
         var lastErrorCommands = ConcurrentLinkedQueue<String>()
         fun addErrorCommand(command: String) {
@@ -659,6 +672,27 @@ class OABX : Application() {
         val isDebug get() = SystemUtils.packageName.contains("debug")
         val isNeo get() = SystemUtils.packageName.contains("neo")
         val isHg42 get() = SystemUtils.packageName.contains("hg42")
+
+        //------------------------------------------------------------------------------------------ backupRoot
+
+        var backupRoot: StorageFile? = null
+            get() {
+                if (field == null) {
+                    val storagePath = backupDirConfigured
+                    if (storagePath.isEmpty()) {
+                        Timber.e("backup storage location not configured")
+                        throw StorageLocationNotConfiguredException()
+                    }
+                    val storageDir = StorageFile.fromUri(storagePath)
+                    if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
+                        Timber.e("backup storage location not accessible: $storagePath")
+                        throw FileUtils.BackupLocationInAccessibleException("Cannot access the root location '$storagePath'")
+                    }
+                    Timber.e("backup storage location found at ${storageDir.path}")
+                    field = storageDir
+                }
+                return field
+            }
 
         //------------------------------------------------------------------------------------------ infoText
 

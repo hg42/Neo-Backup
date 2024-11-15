@@ -27,6 +27,7 @@ import androidx.preference.PreferenceManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.backupRoot
 import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.PREFS_SHARED_PRIVATE
 import com.machiav3lli.backup.R
@@ -65,7 +66,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Locale
 
 const val READ_PERMISSION = 2
 const val WRITE_PERMISSION = 3
@@ -117,15 +118,8 @@ fun Context.isBiometricLockAvailable(): Boolean =
     BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) ==
             BiometricManager.BIOMETRIC_SUCCESS
 
-/**
- * Returns the user selected location. Go for `FileUtil.getBackupDir` to get the actual
- * backup dir's path
- *
- * @return user configured location
- * @throws StorageLocationNotConfiguredException if the value is not set
- */
+
 val backupDirConfigured: String
-    @Throws(StorageLocationNotConfiguredException::class)
     get() {
         val location = pref_pathBackupFolder.value
         if (location.isEmpty())
@@ -135,12 +129,12 @@ val backupDirConfigured: String
 
 fun backupFolderExists(uri: String? = null): Boolean {
     try {
-        if (OABX.context.getBackupRoot().exists())
-            return true
         uri?.let {
             if (StorageFile.fromUri(it).exists())
                 return true
         }
+        if (backupRoot?.exists() ?: false)
+            return true
     } catch (e: Throwable) {
         logException(e)
         return false

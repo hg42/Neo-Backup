@@ -559,7 +559,7 @@ fun TerminalText(
                 }
             )
             SmallButton(icon = Phosphor.ShareNetwork) {
-                SystemUtils.share(lines.joinToString("\n"))
+                textLogShare(lines)
             }
             SmallButton(icon = if (wrap) Phosphor.ArrowUDownLeft else Phosphor.Equals) {
                 wrap = !wrap

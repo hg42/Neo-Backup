@@ -62,7 +62,6 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import kotlinx.coroutines.Dispatchers
@@ -126,7 +125,7 @@ val scanPool = when (1) {
 suspend fun scanBackups(
     directory: StorageFile,
     packageName: String = "",
-    backupRoot: StorageFile = OABX.context.getBackupRoot(),
+    backupRoot: StorageFile,
     level: Int = 0,
     forceTrace: Boolean = false,
     damagedOp: String? = null,
@@ -536,7 +535,7 @@ fun Context.findBackups(
 
         invalidateBackupCacheForPackage(packageName)
 
-        val backupRoot = getBackupRoot()
+        val backupRoot = OABX.backupRoot
 
         val count = AtomicInteger(0)
 
@@ -545,34 +544,37 @@ fun Context.findBackups(
                 runBlocking {
 
                     //------------------------------------------------------------------------------ scan
-                    scanBackups(
-                        backupRoot,
-                        packageName,
-                        damagedOp = damagedOp,
-                        forceTrace = forceTrace,
-                        onValidBackup = { props ->
-                            count.getAndIncrement()
-                            Backup.createFrom(props)
-                                ?.let { backup ->
-                                    //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
-                                    synchronized(backupsMap) {
-                                        backupsMap.getOrPut(backup.packageName) { mutableListOf() }
-                                            .add(backup)
+                    backupRoot?.let {
+                        scanBackups(
+                            directory = it,
+                            packageName = packageName,
+                            backupRoot = it,
+                            damagedOp = damagedOp,
+                            forceTrace = forceTrace,
+                            onValidBackup = { props ->
+                                count.getAndIncrement()
+                                Backup.createFrom(props)
+                                    ?.let { backup ->
+                                        //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
+                                        synchronized(backupsMap) {
+                                            backupsMap.getOrPut(backup.packageName) { mutableListOf() }
+                                                .add(backup)
+                                        }
                                     }
-                                }
-                        },
-                        onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
-                            count.getAndIncrement()
-                            Backup.createInvalidFrom(dir, props, packageName, why)
-                                ?.let { backup ->
-                                    //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
-                                    synchronized(backupsMap) {
-                                        backupsMap.getOrPut(backup.packageName) { mutableListOf() }
-                                            .add(backup)
+                            },
+                            onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
+                                count.getAndIncrement()
+                                Backup.createInvalidFrom(dir, props, packageName, why)
+                                    ?.let { backup ->
+                                        //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
+                                        synchronized(backupsMap) {
+                                            backupsMap.getOrPut(backup.packageName) { mutableListOf() }
+                                                .add(backup)
+                                        }
                                     }
-                                }
-                        }
-                    )
+                            }
+                        )
+                    }
                 }
             }
         }

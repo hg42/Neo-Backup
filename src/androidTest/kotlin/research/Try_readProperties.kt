@@ -74,8 +74,8 @@ class Try_readProperties {
     fun test_scanPropertiesSAF() {
         val backups = mutableMapOf<String, MutableList<Backup>>()
         val time = measureTimeMillis {
-            val backupRoot = OABX.context.getBackupRoot()
-            backupRoot.listFiles().forEach { packageDir ->
+            val backupRoot = OABX.backupRoot
+            backupRoot?.listFiles()?.forEach { packageDir ->
                 val packageName = packageDir.name
                 val backupList = mutableListOf<Backup>()
                 packageDir.listFiles().forEach { file ->
@@ -100,9 +100,9 @@ class Try_readProperties {
         val backups = mutableMapOf<String, MutableList<Backup>>()
         val backupList = mutableListOf<Backup>()
         val time = measureTimeMillis {
-            val backupRoot = OABX.context.getBackupRoot()
+            val backupRoot = OABX.backupRoot
             val treeUri = DocumentsContract
-                .buildDocumentUriUsingTree(backupRoot.uri, DocumentsContract.getTreeDocumentId(backupRoot.uri))
+                .buildDocumentUriUsingTree(backupRoot!!.uri, DocumentsContract.getTreeDocumentId(backupRoot.uri))
 
             val authority = treeUri.authority
                             //"com.machiav3lli.backup.provider"

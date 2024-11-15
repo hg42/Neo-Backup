@@ -117,8 +117,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 }
             }
 
-            val appBackupRoot: StorageFile = try {
-                app.getAppBackupRoot(create = true)!!
+            val appBackupBaseDir: StorageFile = try {
+                app.getAppBackupBaseDir(create = true)!!
             } catch (e: BackupLocationInAccessibleException) {
                 // Usually, this should never happen, but just in case...
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
@@ -130,7 +130,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }
             val backupBuilder = try {
-                BackupBuilder(app.packageInfo, appBackupRoot)
+                BackupBuilder(app.packageInfo, appBackupBaseDir)
             } catch (e: Throwable) {
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }

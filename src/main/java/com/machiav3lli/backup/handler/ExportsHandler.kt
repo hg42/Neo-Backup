@@ -30,24 +30,24 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.StorageFile.Companion.invalidateCache
 import com.machiav3lli.backup.utils.SystemUtils
-import com.machiav3lli.backup.utils.getBackupRoot
 import timber.log.Timber
 import java.io.BufferedOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
 class ExportsHandler(var context: Context) {
-    private var exportsDirectory: StorageFile?
+    private var exportsDirectory: StorageFile? = null
 
     init {
-        val backupRoot = context.getBackupRoot()
-        exportsDirectory = backupRoot.ensureDirectory(EXPORTS_FOLDER_NAME)
-        backupRoot.findFile(EXPORTS_FOLDER_NAME_ALT)?.let { oldFolder ->
-            oldFolder.listFiles().forEach {
-                exportsDirectory?.createFile(it.name!!)
-                    ?.writeText(it.readText())
+        OABX.backupRoot?.let { backupRoot ->
+            exportsDirectory = backupRoot.ensureDirectory(EXPORTS_FOLDER_NAME)
+            backupRoot.findFile(EXPORTS_FOLDER_NAME_ALT)?.let { oldFolder ->
+                oldFolder.listFiles().forEach {
+                    exportsDirectory?.createFile(it.name!!)
+                        ?.writeText(it.readText())
+                }
+                oldFolder.deleteRecursive()
             }
-            oldFolder.deleteRecursive()
         }
     }
 
