@@ -226,7 +226,7 @@ android {
         }
     }
 
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
@@ -289,6 +289,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("hg42test")
         }
         create("pumpkin") {
             applicationIdSuffix = ".hg42"
