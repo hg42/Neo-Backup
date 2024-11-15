@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.MODE_DATA
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.actions.BackupAppAction
 import com.machiav3lli.backup.actions.BackupSpecialAction
 import com.machiav3lli.backup.actions.RestoreAppAction
@@ -40,7 +41,6 @@ import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
 import com.machiav3lli.backup.utils.copyRootFileToDocument
-import com.machiav3lli.backup.utils.getBackupRoot
 import timber.log.Timber
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -105,7 +105,7 @@ object BackupRestoreHelper {
     fun copySelfApk(context: Context, shell: ShellHandler): Boolean {
         val filename = SystemUtils.packageName + '-' + SystemUtils.versionName + ".apk"
         try {
-            val backupRoot = context.getBackupRoot()
+            val backupRoot = OABX.backupRoot ?: return false
             val apkFile = backupRoot.findFile(filename)
             apkFile?.delete()
             try {

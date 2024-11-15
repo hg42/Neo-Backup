@@ -18,8 +18,8 @@
 package com.machiav3lli.backup.utils
 
 import android.content.Context
-import android.net.Uri
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.backupRoot
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.entity.Package
@@ -62,36 +62,13 @@ object FileUtils {
     }
 
     //TODO hg42 move the following to somewhere else, maybe a class that handles (multiple) BackupLocations
-
-    private var backupLocation: Uri? = null
-
-    /**
-     * Returns the backup directory URI. Users have to select it themselves to avoid SAF headache.
-     *
-     * @return URI to OABX storage directory
-     */
-    @Throws(
-        StorageLocationNotConfiguredException::class,
-        BackupLocationInAccessibleException::class
-    )
-    fun getBackupDirUri(context: Context): Uri {
-        if (backupLocation == null) {
-            val storagePath = backupDirConfigured
-            if (storagePath.isEmpty()) {
-                throw StorageLocationNotConfiguredException()
-            }
-            val storageDir = StorageFile.fromUri(storagePath)
-            if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
-                throw BackupLocationInAccessibleException("Cannot access the root location '$storagePath'")
-            }
-            backupLocation = storageDir.uri
-        }
-        return backupLocation as Uri
-    }
-
+    //TODO hg42 this may work (after invalidateBackups or on startup)
+    //TODO hg42 but should probably check an empty backups map instead or additionally?
+    //TODO hg42 the name does not reflect all cases
     fun ensureBackups(): Map<String, List<Backup>> {
-        if (backupLocation == null) {
-            OABX.context.findBackups()
+        runCatching {
+            if (backupRoot == null)
+                OABX.context.findBackups()
         }
         return OABX.getBackups()
     }
@@ -103,7 +80,7 @@ object FileUtils {
     fun invalidateBackupLocation() {
         Package.invalidateBackupCacheForPackage()
         SpecialInfo.clearCache()
-        backupLocation = null // after clearing caches, because they probably need the location
+        backupRoot = null // after clearing caches, because they probably need the location
         try {
             // updateAppTables does ensureBackups, but make intention clear here
             OABX.context.findBackups()

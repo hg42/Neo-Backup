@@ -29,7 +29,6 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.SystemUtils
-import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.FileNotFoundException
@@ -252,7 +251,7 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
         get() {
             val pkg = "📦" // "📁"
             return (dir?.path
-                ?.replace(OABX.context.getBackupRoot().path ?: "", "")
+                ?.replace(OABX.backupRoot?.path ?: "", "")
                 ?.replace(packageName, pkg)
                 ?.replace(Regex("""($pkg@)?$BACKUP_INSTANCE_REGEX_PATTERN"""), "")
                 ?.replace(Regex("""[-:\s]+"""), "-")

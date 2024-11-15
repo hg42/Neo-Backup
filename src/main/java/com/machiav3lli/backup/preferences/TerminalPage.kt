@@ -75,6 +75,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.entity.Log
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.share
@@ -90,8 +92,6 @@ import com.machiav3lli.backup.handler.ShellHandler.FileInfo.Companion.utilBoxInf
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.maxThreads
 import com.machiav3lli.backup.handler.usedThreadsByName
-import com.machiav3lli.backup.entity.Log
-import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.ui.compose.blockBorderBottom
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowDown
@@ -559,7 +559,7 @@ fun TerminalText(
                 }
             )
             SmallButton(icon = Phosphor.ShareNetwork) {
-                SystemUtils.share(lines.joinToString("\n"))
+                textLogShare(lines)
             }
             SmallButton(icon = if (wrap) Phosphor.ArrowUDownLeft else Phosphor.Equals) {
                 wrap = !wrap

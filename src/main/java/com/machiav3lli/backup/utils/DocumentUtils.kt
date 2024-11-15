@@ -1,15 +1,11 @@
 package com.machiav3lli.backup.utils
 
 import android.content.Context
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeInCollectErr
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeOutCollectErr
-import com.machiav3lli.backup.entity.StorageFile
-import com.machiav3lli.backup.utils.FileUtils.getBackupDirUri
 import java.io.IOException
-
-fun Context.getBackupRoot(): StorageFile =
-    StorageFile.fromUri(getBackupDirUri(this))
 
 //TODO wech
 //fun suRecursiveCopyFilesToDocument(

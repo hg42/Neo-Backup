@@ -49,7 +49,6 @@ import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.applyFilter
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.viewmodels.MainVM
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -358,17 +357,18 @@ fun Context.writeAppsListFile(appsList: List<String>, filteredBoolean: Boolean) 
     val date = LocalDateTime.now()
     val filesText = appsList.joinToString("\n")
     val fileName = "${BACKUP_DATE_TIME_FORMATTER.format(date)}.appslist"
-    val listFile = getBackupRoot().createFile(fileName)
-    BufferedOutputStream(listFile.outputStream())
-        .use { it.write(filesText.toByteArray(StandardCharsets.UTF_8)) }
-    showNotification(
-        this, MainActivityX::class.java, SystemUtils.now.toInt(),
-        getString(
-            if (filteredBoolean) R.string.write_apps_list_filtered
-            else R.string.write_apps_list_all
-        ), null, false
-    )
-    Timber.i("Wrote apps\' list file at $date")
+    OABX.backupRoot?.createFile(fileName)?.let { listFile ->
+        BufferedOutputStream(listFile.outputStream())
+            .use { it.write(filesText.toByteArray(StandardCharsets.UTF_8)) }
+        showNotification(
+            this, MainActivityX::class.java, SystemUtils.now.toInt(),
+            getString(
+                if (filteredBoolean) R.string.write_apps_list_filtered
+                else R.string.write_apps_list_all
+            ), null, false
+        )
+        Timber.i("Wrote apps\' list file at $date")
+    }
 }
 
 

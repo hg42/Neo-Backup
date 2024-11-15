@@ -1,6 +1,5 @@
 package com.machiav3lli.backup.ui.compose.item
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -41,7 +40,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -80,7 +78,6 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
 import com.machiav3lli.backup.utils.TraceUtils.nanoTiming
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getFormattedDate
 import com.machiav3lli.backup.viewmodels.MainVM
 import kotlinx.coroutines.MainScope
@@ -238,14 +235,20 @@ fun Selections(
     selection: Set<String> = emptySet(),
     onAction: (Set<String>) -> Unit = {},
 ) {
-    val backupRoot = koinInject<Context>().getBackupRoot()
+    val backupRoot = OABX.backupRoot
+    //val backupRoot = koinInject<Context>().getBackupRoot()
     val scope = rememberCoroutineScope()
     val viewModel = koinInject<MainVM>()
-    val selectionsDir = backupRoot.findFile(SELECTIONS_FOLDER_NAME)
-        ?: backupRoot.createDirectory(SELECTIONS_FOLDER_NAME)
-    val files = selectionsDir.listFiles()
+    val selectionsDir = backupRoot?.findFile(SELECTIONS_FOLDER_NAME)
+        ?: backupRoot?.createDirectory(SELECTIONS_FOLDER_NAME)
+    val files = selectionsDir?.listFiles()
 
-    if (files.isEmpty())
+    if (files == null)
+        DropdownMenuItem(
+            text = { Text("--- no selections dir ---") },
+            onClick = {}
+        )
+    else if (files.isEmpty())
         DropdownMenuItem(
             text = { Text("--- no saved selections ---") },
             onClick = {}
@@ -392,19 +395,19 @@ fun SelectionPutMenu(
     onAction: () -> Unit = {},
 ) {
     val name = remember { mutableStateOf("") }
-    val context = LocalContext.current
 
-    TextInputMenuItem(
-        text = name.value,
-        placeholder = "new selection name",
-        trailingIcon = Phosphor.ArchiveTray,
-    ) {
-        name.value = it
-        val backupRoot = context.getBackupRoot()
-        val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
-        selectionsDir.createFile(name.value)
-            .writeText(selection.joinToString("\n"))
-        onAction()
+    OABX.backupRoot?.let { backupRoot ->
+        TextInputMenuItem(
+            text = name.value,
+            placeholder = "new selection name",
+            trailingIcon = Phosphor.ArchiveTray,
+        ) {
+            name.value = it
+            val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
+            selectionsDir.createFile(name.value)
+                .writeText(selection.joinToString("\n"))
+            onAction()
+        }
     }
 
     Selections(action = MenuAction.PUT, selection = selection) { onAction() }
