@@ -274,7 +274,7 @@ suspend fun scanBackups(
 
     suspend fun handleDirectory(
         file: StorageFile,
-        collector: FlowCollector<StorageFile>? = null
+        collector: FlowCollector<StorageFile>? = null,
     ): Boolean {
 
         hitBusy()
@@ -673,8 +673,8 @@ fun Context.getPackageInfoList(filter: Int): List<PackageInfo> =
     packageManager.getInstalledPackageInfosWithPermissions()
         .filter { packageInfo: PackageInfo ->
             val isSystem =
-                (packageInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM ==
-                        ApplicationInfo.FLAG_SYSTEM
+                (packageInfo.applicationInfo?.flags ?: 0) and
+                        ApplicationInfo.FLAG_SYSTEM == ApplicationInfo.FLAG_SYSTEM
             val isIgnored = packageInfo.packageName.matches(ignoredPackages)
             if (isIgnored)
                 Timber.i("ignored package: ${packageInfo.packageName}")
@@ -934,8 +934,9 @@ fun Context.getSpecial(packageName: String) =
 
 val PackageInfo.grantedPermissions: List<String>
     get() = requestedPermissions?.filterIndexed { index, perm ->
-        (requestedPermissionsFlags?.getOrNull(index)
-            ?: 0) and PackageInfo.REQUESTED_PERMISSION_GRANTED ==
-                PackageInfo.REQUESTED_PERMISSION_GRANTED &&
+        (((requestedPermissionsFlags?.getOrNull(index)
+            ?: 0) and PackageInfo.REQUESTED_PERMISSION_GRANTED)
+                == PackageInfo.REQUESTED_PERMISSION_GRANTED)
+                &&
                 perm !in IGNORED_PERMISSIONS
     }.orEmpty()
