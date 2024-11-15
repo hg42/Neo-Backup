@@ -125,12 +125,12 @@ val backupDirConfigured: String
 
 fun backupFolderExists(uri: String? = null): Boolean {
     try {
+        if (backupRoot?.exists() ?: false)
+            return true
         uri?.let {
             if (StorageFile.fromUri(it).exists())
                 return true
         }
-        if (backupRoot?.exists() ?: false)
-            return true
     } catch (e: Throwable) {
         logException(e)
         return false
