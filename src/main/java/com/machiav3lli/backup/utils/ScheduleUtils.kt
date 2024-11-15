@@ -22,6 +22,7 @@ import android.icu.util.Calendar
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Schedule
+import com.machiav3lli.backup.dbs.repository.ScheduleRepository
 import com.machiav3lli.backup.preferences.pref_fakeScheduleMin
 import com.machiav3lli.backup.preferences.traceSchedule
 import com.machiav3lli.backup.tasks.ScheduleWork
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.stateIn
+import org.koin.java.KoinJavaComponent.get
 import timber.log.Timber
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
@@ -140,8 +142,8 @@ fun timeLeft(
 // TODO clean up fully
 fun scheduleNext(context: Context, scheduleId: Long, rescheduleBoolean: Boolean) {
     if (scheduleId >= 0) {
-        val scheduleDao = OABX.db.getScheduleDao()
-        var schedule = scheduleDao.getSchedule(scheduleId)
+        val scheduleRepo = get<ScheduleRepository>(ScheduleRepository::class.java)
+        var schedule = scheduleRepo.getSchedule(scheduleId)
 
         if (schedule?.enabled == true) {
             val now = SystemUtils.now
@@ -149,7 +151,7 @@ fun scheduleNext(context: Context, scheduleId: Long, rescheduleBoolean: Boolean)
             if (rescheduleBoolean) {
                 schedule = schedule.copy(timePlaced = now)
                 traceSchedule { "[${schedule?.id}] re-scheduling $schedule" }
-                scheduleDao.update(schedule)
+                scheduleRepo.update(schedule)
             }
             ScheduleWork.schedule(context, schedule)
         }

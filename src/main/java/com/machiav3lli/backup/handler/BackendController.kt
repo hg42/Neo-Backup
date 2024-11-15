@@ -43,12 +43,13 @@ import com.machiav3lli.backup.actions.BaseAppAction.Companion.ignoredPackages
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
-import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
-import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
+import com.machiav3lli.backup.dbs.repository.PackageRepository
 import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.entity.Package.Companion.invalidateBackupCacheForPackage
 import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
 import com.machiav3lli.backup.preferences.pref_earlyEmptyBackups
 import com.machiav3lli.backup.preferences.pref_lookForEmptyBackups
@@ -62,7 +63,6 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +71,7 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.koin.java.KoinJavaComponent.get
 import timber.log.Timber
 import java.io.IOException
 import java.util.*
@@ -126,7 +127,7 @@ val scanPool = when (1) {
 suspend fun scanBackups(
     directory: StorageFile,
     packageName: String = "",
-    backupRoot: StorageFile = OABX.context.getBackupRoot(),
+    backupRoot: StorageFile,
     level: Int = 0,
     forceTrace: Boolean = false,
     damagedOp: String? = null,
@@ -271,9 +272,9 @@ suspend fun scanBackups(
         }
     }
 
-   suspend fun handleDirectory(
-       file: StorageFile,
-       collector: FlowCollector<StorageFile>? = null
+    suspend fun handleDirectory(
+        file: StorageFile,
+        collector: FlowCollector<StorageFile>? = null,
     ): Boolean {
 
         hitBusy()
@@ -330,7 +331,14 @@ suspend fun scanBackups(
             !name.contains(regexSpecialFile)
         ) {
             val props = file
-            traceBackupsScanPackage { traceLine(">", level, props, "++++++++++++++++++++ props ok") }
+            traceBackupsScanPackage {
+                traceLine(
+                    ">",
+                    level,
+                    props,
+                    "++++++++++++++++++++ props ok"
+                )
+            }
 
             handleProps(props, path, name, onValidBackup)
 
@@ -350,7 +358,14 @@ suspend fun scanBackups(
                         dir.findFile(BACKUP_INSTANCE_PROPERTIES_INDIR)  // indir props
                             ?.let { props ->
 
-                                traceBackupsScanPackage { traceLine(">", level, props, "++++++++++++++++++++ props indir ok") }
+                                traceBackupsScanPackage {
+                                    traceLine(
+                                        ">",
+                                        level,
+                                        props,
+                                        "++++++++++++++++++++ props indir ok"
+                                    )
+                                }
 
                                 handleProps(props, props.path, props.name, onValidBackup) {
                                     runCatching {
@@ -408,7 +423,14 @@ suspend fun scanBackups(
             name.contains(regexBackupInstance)                      // or backup instance
         ) {
             if (forceTrace)
-                traceBackupsScanPackage { traceLine("B", level, file, "++++++++++++++++++++ backup") }
+                traceBackupsScanPackage {
+                    traceLine(
+                        "B",
+                        level,
+                        file,
+                        "++++++++++++++++++++ backup"
+                    )
+                }
 
             if (path.contains(packageName)) {                           // package matches, empty matches all
 
@@ -421,14 +443,28 @@ suspend fun scanBackups(
                     if (file.isPropertyFile &&
                         !name.contains(regexSpecialFile)                        // non-instance props (wtf is that? probably a saved file)
                     ) {
-                        traceBackupsScanPackage { traceLine(">", level, file, "++++++++++++++++++++ non-instance props ok (a renamed backup?)") }
+                        traceBackupsScanPackage {
+                            traceLine(
+                                ">",
+                                level,
+                                file,
+                                "++++++++++++++++++++ non-instance props ok (a renamed backup?)"
+                            )
+                        }
 
                         handleProps(file, path, name, onValidBackup)
 
                     } else {
                         if (file.isDirectory) {                                 // non-instance-directory
                             val dir = file
-                            traceBackupsScanPackage { traceLine("/", level, file, "++++++++++++++++++++ //////////////////// dir ok") }
+                            traceBackupsScanPackage {
+                                traceLine(
+                                    "/",
+                                    level,
+                                    file,
+                                    "++++++++++++++++++++ //////////////////// dir ok"
+                                )
+                            }
 
                             if (handleDirectory(dir).not()) {
                                 // renameDamagedToERROR(dir, "empty-folder")
@@ -448,7 +484,14 @@ suspend fun scanBackups(
             ) {
                 val dir = file
                 if (forceTrace)
-                    traceBackupsScanPackage { traceLine("F", level, file, "/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\ folder ok") }
+                    traceBackupsScanPackage {
+                        traceLine(
+                            "F",
+                            level,
+                            file,
+                            "/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\ folder ok"
+                        )
+                    }
 
                 if (handleDirectory(dir).not()) {
                     // renameDamagedToERROR(dir, "empty-folder")
@@ -536,7 +579,7 @@ fun Context.findBackups(
 
         invalidateBackupCacheForPackage(packageName)
 
-        val backupRoot = getBackupRoot()
+        val backupRoot = OABX.backupRoot
 
         val count = AtomicInteger(0)
 
@@ -545,34 +588,37 @@ fun Context.findBackups(
                 runBlocking {
 
                     //------------------------------------------------------------------------------ scan
-                    scanBackups(
-                        backupRoot,
-                        packageName,
-                        damagedOp = damagedOp,
-                        forceTrace = forceTrace,
-                        onValidBackup = { props ->
-                            count.getAndIncrement()
-                            Backup.createFrom(props)
-                                ?.let { backup ->
-                                    //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
-                                    synchronized(backupsMap) {
-                                        backupsMap.getOrPut(backup.packageName) { mutableListOf() }
-                                            .add(backup)
+                    backupRoot?.let {
+                        scanBackups(
+                            directory = it,
+                            packageName = packageName,
+                            backupRoot = it,
+                            damagedOp = damagedOp,
+                            forceTrace = forceTrace,
+                            onValidBackup = { props ->
+                                count.getAndIncrement()
+                                Backup.createFrom(props)
+                                    ?.let { backup ->
+                                        //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
+                                        synchronized(backupsMap) {
+                                            backupsMap.getOrPut(backup.packageName) { mutableListOf() }
+                                                .add(backup)
+                                        }
                                     }
-                                }
-                        },
-                        onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
-                            count.getAndIncrement()
-                            Backup.createInvalidFrom(dir, props, packageName, why)
-                                ?.let { backup ->
-                                    //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
-                                    synchronized(backupsMap) {
-                                        backupsMap.getOrPut(backup.packageName) { mutableListOf() }
-                                            .add(backup)
+                            },
+                            onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
+                                count.getAndIncrement()
+                                Backup.createInvalidFrom(dir, props, packageName, why)
+                                    ?.let { backup ->
+                                        //traceDebug { "put ${backup.packageName}/${backup.backupDate}" }
+                                        synchronized(backupsMap) {
+                                            backupsMap.getOrPut(backup.packageName) { mutableListOf() }
+                                                .add(backup)
+                                        }
                                     }
-                                }
-                        }
-                    )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -627,7 +673,8 @@ fun Context.getPackageInfoList(filter: Int): List<PackageInfo> =
     packageManager.getInstalledPackageInfosWithPermissions()
         .filter { packageInfo: PackageInfo ->
             val isSystem =
-                (packageInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM == ApplicationInfo.FLAG_SYSTEM
+                (packageInfo.applicationInfo?.flags ?: 0) and
+                        ApplicationInfo.FLAG_SYSTEM == ApplicationInfo.FLAG_SYSTEM
             val isIgnored = packageInfo.packageName.matches(ignoredPackages)
             if (isIgnored)
                 Timber.i("ignored package: ${packageInfo.packageName}")
@@ -839,8 +886,11 @@ fun Context.updateAppTables() {
         try {
             beginNanoTimer("dbUpdate")
 
-            OABX.db.getBackupDao().updateList(*backups.toTypedArray())
-            OABX.db.getAppInfoDao().updateList(*appInfoList.toTypedArray())
+            get<PackageRepository>(PackageRepository::class.java)
+                .apply {
+                    replaceBackups(*backups.toTypedArray())
+                    replaceAppInfos(*appInfoList.toTypedArray())
+                }
         } catch (e: Throwable) {
             logException(e, backTrace = true)
         } finally {
@@ -884,6 +934,9 @@ fun Context.getSpecial(packageName: String) =
 
 val PackageInfo.grantedPermissions: List<String>
     get() = requestedPermissions?.filterIndexed { index, perm ->
-        (requestedPermissionsFlags?.getOrNull(index) ?: 0) and PackageInfo.REQUESTED_PERMISSION_GRANTED == PackageInfo.REQUESTED_PERMISSION_GRANTED &&
+        (((requestedPermissionsFlags?.getOrNull(index)
+            ?: 0) and PackageInfo.REQUESTED_PERMISSION_GRANTED)
+                == PackageInfo.REQUESTED_PERMISSION_GRANTED)
+                &&
                 perm !in IGNORED_PERMISSIONS
     }.orEmpty()

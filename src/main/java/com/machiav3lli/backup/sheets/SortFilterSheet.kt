@@ -54,7 +54,6 @@ import com.machiav3lli.backup.InstalledFilter
 import com.machiav3lli.backup.LatestFilter
 import com.machiav3lli.backup.LaunchableFilter
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.UpdatedFilter
 import com.machiav3lli.backup.enabledFilterChipItems
@@ -95,22 +94,23 @@ fun SortFilterSheet(
     viewModel: MainVM = koinViewModel(),
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
     val packageList by viewModel.notBlockedList.collectAsState()
     var model by rememberSaveable {
         mutableStateOf(
             when (sourcePage) {
-                NavItem.Backup -> viewModel.backupSortFilterModel.value
-                NavItem.Restore -> viewModel.restoreSortFilterModel.value
-                else -> viewModel.homeSortFilterModel.value // NavItem.Home
-            }
+                NavItem.Backup -> viewModel.backupState
+                NavItem.Restore -> viewModel.restoreState
+                else -> viewModel.homeState // NavItem.Home
+            }.value.sortFilter
         )
     }
 
     fun currentStats() = getStats(
         packageList.applyFilter(
             model,
-            OABX.context,
+            context,
         )
     )  //TODO hg42 use central function for all the filtering
 
@@ -210,7 +210,7 @@ fun SortFilterSheet(
                         fullWidth = true,
                         positive = false,
                         onClick = {
-                            viewModel.setSortFilter(SortFilterModel())
+                            viewModel.setSortFilter(SortFilterModel(), sourcePage)
                             onDismiss()
                         }
                     )
@@ -221,7 +221,7 @@ fun SortFilterSheet(
                         fullWidth = true,
                         positive = true,
                         onClick = {
-                            viewModel.setSortFilter(model)
+                            viewModel.setSortFilter(model, sourcePage)
                             onDismiss()
                         }
                     )

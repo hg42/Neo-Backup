@@ -97,7 +97,7 @@ fun filterPackages(
 
 //---------------------------------------- filters for activity
 
-fun List<Package>.applySearchAndFilter(
+fun Collection<Package>.applySearchAndFilter(
     context: Context,
     query: String,
     extras: Map<String, AppExtras>,
@@ -118,7 +118,7 @@ fun List<Package>.applySearchAndFilter(
         .applyFilter(filter, context)
 }
 
-fun List<Package>.applyFilter(filter: SortFilterModel, context: Context): List<Package> {
+fun Collection<Package>.applyFilter(filter: SortFilterModel, context: Context): List<Package> {
     val predicate: (Package) -> Boolean = {
         (if (filter.mainFilter and MAIN_FILTER_SYSTEM == MAIN_FILTER_SYSTEM) it.isSystem && !it.isSpecial else false)
                 || (if (filter.mainFilter and MAIN_FILTER_USER == MAIN_FILTER_USER) !it.isSystem else false)
@@ -130,7 +130,7 @@ fun List<Package>.applyFilter(filter: SortFilterModel, context: Context): List<P
         .applySort(filter.sort, filter.sortAsc)
 }
 
-private fun List<Package>.applyBackupFilter(backupFilter: Int): List<Package> {
+private fun Collection<Package>.applyBackupFilter(backupFilter: Int): List<Package> {
     val predicate: (Package) -> Boolean = {
         (if (backupFilter and MODE_NONE == MODE_NONE) !it.hasBackups or !(it.hasApk or it.hasData)
         else false)

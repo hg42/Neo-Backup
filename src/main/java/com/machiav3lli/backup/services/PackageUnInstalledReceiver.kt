@@ -21,23 +21,25 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.AppInfo
-import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.dbs.repository.PackageRepository
 import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.preferences.pref_autoLogUnInstallBroadcast
 import com.machiav3lli.backup.preferences.supportLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 // TODO make main way of refresh & handle new installed and backup list
-class PackageUnInstalledReceiver : BroadcastReceiver() {
+class PackageUnInstalledReceiver : BroadcastReceiver(), KoinComponent {
+    private val packageRepository: PackageRepository by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         try {
-            val db = OABX.db
             val packageName =
                 intent.data?.let { if (it.scheme == "package") it.schemeSpecificPart else null }
             if (packageName != null) {
@@ -52,7 +54,7 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
                         )?.let { packageInfo ->
                             val appInfo = AppInfo(context, packageInfo)
                             GlobalScope.launch(Dispatchers.IO) {
-                                db.getAppInfoDao().replaceInsert(appInfo)
+                                packageRepository.upsertAppInfo(appInfo)
                             }
                         }
                     }
@@ -60,12 +62,12 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
                     Intent.ACTION_PACKAGE_REMOVED,
                         -> {
                         GlobalScope.launch(Dispatchers.IO) {
-                            val backups = db.getBackupDao().get(packageName)
+                            val backups = packageRepository.getBackups(packageName)
                             if (backups.isEmpty())
-                                db.getAppInfoDao().deleteAllOf(packageName)
+                                packageRepository.deleteAppInfoOf(packageName)
                             else {
                                 val appInfo = backups.maxBy { it.backupDate }.toAppInfo()
-                                db.getAppInfoDao().replaceInsert(appInfo)
+                                packageRepository.upsertAppInfo(appInfo)
                             }
                         }
                     }

@@ -4,12 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.os.SystemClock
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.entity.RootFile
 import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.ShellCommands
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -106,7 +107,14 @@ object SystemUtils {
         }
     }
 
-    fun share(text: String, subject: String? = null) {
+    fun share(text: String, subject: String? = null, asFile: Boolean = true) {
+        if (asFile) {
+            OABX.context.getExternalFilesDir(DIRECTORY_DOWNLOADS)
+                ?.resolve("NeoBackup-share.txt")    // TODO hg42 use subject.replace(illegal, "_").truncate(n)
+                ?.also { it.writeText(text) }
+                ?.let { SystemUtils.share(StorageFile(it)) }
+            return
+        }
         MainScope().launch(Dispatchers.IO) {
             try {
                 if (text.isEmpty())
@@ -130,6 +138,13 @@ object SystemUtils {
     }
 
     fun share(file: StorageFile, asFile: Boolean = true) {
+        //if (asFile && file.file == null) {
+        //    OABX.context.getExternalFilesDir(DIRECTORY_DOWNLOADS)
+        //        ?.resolve(file.name ?: "NeoBackup-share.txt")
+        //        ?.also { it.writeText(file.readText()) }
+        //        ?.let { share(StorageFile(it)) }
+        //    return
+        //}
         MainScope().launch(Dispatchers.IO) {
             try {
                 val text = if (asFile) "" else file.readText()

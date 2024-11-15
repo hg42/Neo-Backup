@@ -27,9 +27,11 @@ import com.machiav3lli.backup.OABX.Companion.beginLogSection
 import com.machiav3lli.backup.PACKAGES_LIST_GLOBAL_ID
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.activities.MainActivityX
-import com.machiav3lli.backup.dbs.ODatabase
 import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.dbs.entity.Schedule
+import com.machiav3lli.backup.dbs.repository.AppExtrasRepository
+import com.machiav3lli.backup.dbs.repository.BlocklistRepository
+import com.machiav3lli.backup.dbs.repository.ScheduleRepository
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.getInstalledPackageList
@@ -58,6 +60,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.get
 import timber.log.Timber
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -67,7 +70,9 @@ class ScheduleWork(
     private val context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params), KoinComponent {
-    val database: ODatabase by inject()
+    private val scheduleRepo: ScheduleRepository by inject()
+    private val blocklistRepo: BlocklistRepository by inject()
+    private val appExtrasRepo: AppExtrasRepository by inject()
 
     private var scheduleId = inputData.getLong(EXTRA_SCHEDULE_ID, -1L)
     private val notificationId = SystemUtils.now.toInt()
@@ -142,9 +147,7 @@ class ScheduleWork(
 
     private suspend fun processSchedule(name: String, now: Long): Boolean =
         coroutineScope {
-            val scheduleDao = database.getScheduleDao()
-
-            val schedule = scheduleDao.getSchedule(scheduleId)
+            val schedule = scheduleRepo.getSchedule(scheduleId)
 
             val selectedItems = schedule?.let { getFilteredPackages(it) } ?: emptyList()
 
@@ -235,14 +238,11 @@ class ScheduleWork(
             try {
                 FileUtils.ensureBackups()
 
-                val blacklistDao = database.getBlocklistDao()
-                val extrasDao = database.getAppExtrasDao()
-
                 val customBlocklist = schedule.blockList
-                val globalBlocklist = blacklistDao.getBlocklistedPackages(PACKAGES_LIST_GLOBAL_ID)
+                val globalBlocklist = blocklistRepo.getBlocklistedPackages(PACKAGES_LIST_GLOBAL_ID)
                 val blockList = globalBlocklist.plus(customBlocklist)
-                val extrasMap = extrasDao.getAll().associateBy(AppExtras::packageName)
-                val allTags = extrasDao.getAll().flatMap { it.customTags }.distinct()
+                val extrasMap = appExtrasRepo.getAll().associateBy(AppExtras::packageName)
+                val allTags = appExtrasRepo.getAll().flatMap { it.customTags }.distinct()
                 val tagsList = schedule.tagsList.filter { it in allTags }
 
                 val unfilteredPackages = context.getInstalledPackageList()
@@ -420,8 +420,8 @@ class ScheduleWork(
 
         fun scheduleAll(context: Context) {
             Thread {
-                val scheduleDao = OABX.db.getScheduleDao()
-                scheduleDao.getAll().forEach { schedule ->
+                val scheduleRepo = get<ScheduleRepository>(ScheduleRepository::class.java)
+                scheduleRepo.getAll().forEach { schedule ->
                     val scheduleAlreadyRuns = runningSchedules[schedule.id] == true
                     when {
                         scheduleAlreadyRuns -> {

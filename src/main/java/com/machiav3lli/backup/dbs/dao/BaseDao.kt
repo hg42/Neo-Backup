@@ -22,15 +22,16 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Update
+import androidx.room.Upsert
 
 interface BaseDao<T> {
     @Insert
     @Throws(SQLException::class)
     fun insert(vararg product: T)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     @Throws(SQLException::class)
-    fun replaceInsert(vararg product: T)
+    fun upsert(vararg product: T)
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
     fun update(vararg obj: T): Int

@@ -244,7 +244,7 @@ fun AppPage(
                             onDismiss()
                         }
                     }
-                    AnimatedVisibility(visible = snackbarVisible) {
+                    AnimatedVisibility(visible = snackbarVisible) { // TODO move to MainPage
                         Text(
                             text = snackbarText,
                             color = MaterialTheme.colorScheme.primary,
@@ -256,11 +256,10 @@ fun AppPage(
                     InfoChipsBlock(list = pkg.infoChips())
                     if (snackbarVisible)
                         LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(5.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             trackColor = MaterialTheme.colorScheme.surface,
                             color = MaterialTheme.colorScheme.primary,
+                            gapSize = 2.dp,
                         )
                     HorizontalDivider(
                         thickness = 2.dp,

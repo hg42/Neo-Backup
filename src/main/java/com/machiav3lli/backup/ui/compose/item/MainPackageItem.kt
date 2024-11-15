@@ -30,8 +30,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +57,7 @@ import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.SELECTIONS_FOLDER_NAME
 import com.machiav3lli.backup.batchModes
+import com.machiav3lli.backup.dbs.repository.ScheduleRepository
 import com.machiav3lli.backup.entity.IntPref
 import com.machiav3lli.backup.entity.Package
 import com.machiav3lli.backup.handler.BackupRestoreHelper
@@ -77,13 +78,14 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
 import com.machiav3lli.backup.utils.TraceUtils.nanoTiming
-import com.machiav3lli.backup.utils.getBackupRoot
 import com.machiav3lli.backup.utils.getFormattedDate
+import com.machiav3lli.backup.viewmodels.MainVM
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import org.koin.compose.koinInject
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -230,15 +232,23 @@ fun TextInputMenuItem(
 @Composable
 fun Selections(
     action: MenuAction,
-    selection: List<String> = emptyList(),
-    onAction: (List<String>) -> Unit = {},
+    selection: Set<String> = emptySet(),
+    onAction: (Set<String>) -> Unit = {},
 ) {
-    val backupRoot = OABX.context.getBackupRoot()
-    val selectionsDir = backupRoot.findFile(SELECTIONS_FOLDER_NAME)
-        ?: backupRoot.createDirectory(SELECTIONS_FOLDER_NAME)
-    val files = selectionsDir.listFiles()
+    val backupRoot = OABX.backupRoot
+    //val backupRoot = koinInject<Context>().getBackupRoot()
+    val scope = rememberCoroutineScope()
+    val viewModel = koinInject<MainVM>()
+    val selectionsDir = backupRoot?.findFile(SELECTIONS_FOLDER_NAME)
+        ?: backupRoot?.createDirectory(SELECTIONS_FOLDER_NAME)
+    val files = selectionsDir?.listFiles()
 
-    if (files.isEmpty())
+    if (files == null)
+        DropdownMenuItem(
+            text = { Text("--- no selections dir ---") },
+            onClick = {}
+        )
+    else if (files.isEmpty())
         DropdownMenuItem(
             text = { Text("--- no saved selections ---") },
             onClick = {}
@@ -255,7 +265,7 @@ fun Selections(
                     onClick = {
                         when (action) {
                             MenuAction.GET -> {
-                                val newSelection = file.readText().lines()
+                                val newSelection = file.readText().lines().toSet()
                                 onAction(newSelection)
                             }
 
@@ -276,8 +286,8 @@ fun Selections(
     }
 
     if (action != MenuAction.DEL) {
-        val scheduleDao = OABX.db.getScheduleDao()
-        val schedules = OABX.main?.viewModel?.schedules?.value ?: emptyList()
+        val scheduleRepo: ScheduleRepository = koinInject()
+        val schedules = scheduleRepo.getAll()
         if (schedules.isEmpty())
             DropdownMenuItem(
                 text = { Text("--- no schedules ---") },
@@ -295,17 +305,18 @@ fun Selections(
                         onClick = {
                             when (action) {
                                 MenuAction.GET -> {
-                                    val newSelection = schedule.customList.toList()
+                                    val newSelection = schedule.customList
                                     onAction(newSelection)
                                 }
 
                                 MenuAction.PUT -> {
-                                    Thread {
-                                        scheduleDao.update(
+                                    scope.launch {
+                                        scheduleRepo.update(
                                             schedule.copy(customList = selection.toSet())
                                         )
-                                    }.start()
-                                    onAction(selection)
+                                    }.invokeOnCompletion {
+                                        onAction(selection)
+                                    }
                                 }
 
                                 else           -> {}
@@ -325,17 +336,18 @@ fun Selections(
                         onClick = {
                             when (action) {
                                 MenuAction.GET -> {
-                                    val newSelection = schedule.blockList.toList()
+                                    val newSelection = schedule.blockList
                                     onAction(newSelection)
                                 }
 
                                 MenuAction.PUT -> {
-                                    Thread {
-                                        scheduleDao.update(
+                                    scope.launch {
+                                        scheduleRepo.update(
                                             schedule.copy(blockList = selection.toSet())
                                         )
-                                    }.start()
-                                    onAction(selection)
+                                    }.invokeOnCompletion {
+                                        onAction(selection)
+                                    }
                                 }
 
                                 else           -> {}
@@ -354,14 +366,12 @@ fun Selections(
             onClick = {
                 when (action) {
                     MenuAction.GET -> {
-                        val newSelection =
-                            OABX.main?.viewModel?.getBlocklist()
-                                ?: emptyList()
+                        val newSelection = viewModel.homeState.value.blocklist
                         onAction(newSelection)
                     }
 
                     MenuAction.PUT -> {
-                        OABX.main?.viewModel?.setBlocklist(selection.toSet())
+                        viewModel.updateBlocklist(selection.toSet())
                         onAction(selection)
                     }
 
@@ -374,29 +384,30 @@ fun Selections(
 
 @Composable
 fun SelectionGetMenu(
-    onAction: (List<String>) -> Unit = {},
+    onAction: (Set<String>) -> Unit = {},
 ) {
     Selections(action = MenuAction.GET, onAction = onAction)
 }
 
 @Composable
 fun SelectionPutMenu(
-    selection: List<String>,
+    selection: Set<String>,
     onAction: () -> Unit = {},
 ) {
     val name = remember { mutableStateOf("") }
 
-    TextInputMenuItem(
-        text = name.value,
-        placeholder = "new selection name",
-        trailingIcon = Phosphor.ArchiveTray,
-    ) {
-        name.value = it
-        val backupRoot = OABX.context.getBackupRoot()
-        val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
-        selectionsDir.createFile(name.value)
-            .writeText(selection.joinToString("\n"))
-        onAction()
+    OABX.backupRoot?.let { backupRoot ->
+        TextInputMenuItem(
+            text = name.value,
+            placeholder = "new selection name",
+            trailingIcon = Phosphor.ArchiveTray,
+        ) {
+            name.value = it
+            val selectionsDir = backupRoot.ensureDirectory(SELECTIONS_FOLDER_NAME)
+            selectionsDir.createFile(name.value)
+                .writeText(selection.joinToString("\n"))
+            onAction()
+        }
     }
 
     Selections(action = MenuAction.PUT, selection = selection) { onAction() }
@@ -470,32 +481,44 @@ fun launchPackagesAction(
 suspend fun forEachPackage(
     packages: List<Package>,
     action: String,
-    selection: SnapshotStateMap<String, Boolean>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit,
     select: Boolean? = true,
     parallel: Boolean = true,
     todo: (p: Package) -> Unit = {},
 ) {
     if (parallel) {
         runParallel(packages, scope = menuScope, pool = menuPool) {
-            if (select == true) selection[it.packageName] = false
+            if (select == true && selection.contains(it.packageName))
+                toggleSelection(it.packageName)
             traceContextMenu { "$action ${it.packageName}" }
             todo(it)
-            select?.let { selected -> selection[it.packageName] = selected }
+            select?.let { selected ->
+                if (selected != selection.contains(it.packageName))
+                    toggleSelection(it.packageName)
+            }
         }
     } else {
         packages.forEach {
-            if (select == true) selection[it.packageName] = false
+            if (select == true && selection.contains(it.packageName))
+                toggleSelection(it.packageName)
             traceContextMenu { "$action ${it.packageName}" }
             todo(it)
             yield()
-            select?.let { selected -> selection[it.packageName] = selected }
+            select?.let { selected ->
+                if (selected != selection.contains(it.packageName))
+                    toggleSelection(it.packageName)
+            }
         }
     }
 }
 
 fun launchEachPackage(
+    // TODO revamp
     packages: List<Package>,
     action: String,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit,
     select: Boolean? = true,
     parallel: Boolean = true,
     todo: (p: Package) -> Unit = {},
@@ -504,8 +527,8 @@ fun launchEachPackage(
         forEachPackage(
             packages = packages,
             action = action,
-            selection = OABX.main?.viewModel?.selection
-                ?: throw Exception("cannot access selection"),
+            selection = selection,
+            toggleSelection = toggleSelection,
             select = select,
             parallel = parallel,
             todo = todo
@@ -531,8 +554,12 @@ fun launchRestore(packages: List<Package>, mode: Int) {
     )
 }
 
-fun launchEnable(packages: List<Package>) {
-    launchEachPackage(packages, "enable", parallel = false) {
+fun launchEnable(
+    packages: List<Package>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit
+) {
+    launchEachPackage(packages, "enable", selection, toggleSelection, parallel = false) {
         val users = listOf(currentProfile.toString())
         //runAsRoot("pm enable ${it.packageName}")
         ShellCommands.enableDisable(users, it.packageName, true)
@@ -540,8 +567,12 @@ fun launchEnable(packages: List<Package>) {
     }
 }
 
-fun launchDisable(packages: List<Package>) {
-    launchEachPackage(packages, "disable", parallel = false) {
+fun launchDisable(
+    packages: List<Package>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit
+) {
+    launchEachPackage(packages, "disable", selection, toggleSelection, parallel = false) {
         val users = listOf(currentProfile.toString())
         //runAsRoot("pm disable ${it.packageName}")
         ShellCommands.enableDisable(users, it.packageName, false)
@@ -549,8 +580,12 @@ fun launchDisable(packages: List<Package>) {
     }
 }
 
-fun launchUninstall(packages: List<Package>) {
-    launchEachPackage(packages, "uninstall", parallel = false) {
+fun launchUninstall(
+    packages: List<Package>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit
+) {
+    launchEachPackage(packages, "uninstall", selection, toggleSelection, parallel = false) {
         val users = listOf(currentProfile.toString())
         //runAsRoot("pm uninstall ${it.packageName}")
         ShellCommands.uninstall(users, it.packageName, it.apkPath, it.dataPath, it.isSystem)
@@ -558,15 +593,23 @@ fun launchUninstall(packages: List<Package>) {
     }
 }
 
-fun launchDeleteBackups(packages: List<Package>) {
-    launchEachPackage(packages.withBackups(), "delete backups") {
+fun launchDeleteBackups(
+    packages: List<Package>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit
+) {
+    launchEachPackage(packages.withBackups(), "delete backups", selection, toggleSelection) {
         it.deleteAllBackups()
         Package.invalidateCacheForPackage(it.packageName)
     }
 }
 
-fun launchLimitBackups(packages: List<Package>) {
-    launchEachPackage(packages.withBackups(), "limit backups") {
+fun launchLimitBackups(
+    packages: List<Package>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit
+) {
+    launchEachPackage(packages.withBackups(), "limit backups", selection, toggleSelection) {
         BackupRestoreHelper.housekeepingPackageBackups(it)
         Package.invalidateCacheForPackage(it.packageName)
     }
@@ -577,12 +620,13 @@ fun MainPackageContextMenu(
     expanded: MutableState<Boolean>,
     packageItem: Package?,
     productsList: List<Package>,
-    selection: SnapshotStateMap<String, Boolean>,
+    selection: Set<String>,
+    toggleSelection: (String) -> Unit,
     openSheet: (Package) -> Unit = {},
 ) {
     val visible = productsList
 
-    fun List<Package>.selected() = filter { selection[it.packageName] == true }
+    fun List<Package>.selected() = filter { selection.contains(it.packageName) }
 
     val selectedVisible by remember { mutableStateOf(visible.selected()) }   // freeze selection
 
@@ -664,7 +708,9 @@ fun MainPackageContextMenu(
             text = { Text("Select Visible") },
             onClick = {
                 expanded.value = false
-                visible.forEach { selection[it.packageName] = true }
+                (visible.map { it.packageName }.toSet() - selection).forEach {
+                    toggleSelection(it)
+                }
             }
         )
 
@@ -672,7 +718,11 @@ fun MainPackageContextMenu(
             text = { Text("Deselect Visible") },
             onClick = {
                 expanded.value = false
-                visible.forEach { selection[it.packageName] = false }
+                visible.map { it.packageName }.toSet()
+                    .intersect(selection)
+                    .forEach {
+                        toggleSelection(it)
+                    }
             }
         )
 
@@ -680,8 +730,8 @@ fun MainPackageContextMenu(
             text = { Text("Deselect Not Visible") },
             onClick = {
                 expanded.value = false
-                (selection.keys - visible.map { it.packageName }.toSet()).forEach {
-                    selection[it] = false
+                (selection - visible.map { it.packageName }.toSet()).forEach {
+                    toggleSelection(it)
                 }
             }
         )
@@ -690,7 +740,7 @@ fun MainPackageContextMenu(
             text = { Text("Deselect All") },
             onClick = {
                 expanded.value = false
-                selection.clear()   //TODO hg42 ???
+                selection.forEach(toggleSelection)
             }
         )
 
@@ -700,8 +750,8 @@ fun MainPackageContextMenu(
                 openSubMenu(subMenu) {
                     SelectionGetMenu { selectionLoaded ->
                         expanded.value = false
-                        selection.clear()
-                        selectionLoaded.forEach { selection[it] = true }
+                        selection.forEach(toggleSelection)
+                        selectionLoaded.forEach { toggleSelection(it) }
                     }
                 }
             }
@@ -712,7 +762,7 @@ fun MainPackageContextMenu(
             onClick = {
                 openSubMenu(subMenu) {
                     SelectionPutMenu(
-                        selection = selection.filter { it.value }.map { it.key }
+                        selection = selection
                     ) {
                         expanded.value = false
                         //launchSelect(selectedVisible)
@@ -733,7 +783,7 @@ fun MainPackageContextMenu(
             }
         )
 
-        if (selection.count { it.value } > 0) {
+        if (selection.isNotEmpty()) {
 
             HorizontalDivider() //------------------------------------------------------------------
 
@@ -772,7 +822,7 @@ fun MainPackageContextMenu(
                 text = { Text("Enable") },
                 onClick = {
                     expanded.value = false
-                    launchEnable(selectedVisible)
+                    launchEnable(selectedVisible, selection, toggleSelection)
                 }
             )
 
@@ -781,7 +831,7 @@ fun MainPackageContextMenu(
                 onClick = {
                     openSubMenu(subMenu) {
                         Confirmation(expanded) {
-                            launchDisable(selectedVisible)
+                            launchDisable(selectedVisible, selection, toggleSelection)
                         }
                     }
                 }
@@ -792,7 +842,7 @@ fun MainPackageContextMenu(
                 onClick = {
                     openSubMenu(subMenu) {
                         Confirmation(expanded) {
-                            launchUninstall(selectedVisible)
+                            launchUninstall(selectedVisible, selection, toggleSelection)
                         }
                     }
                 }
@@ -805,7 +855,7 @@ fun MainPackageContextMenu(
                 onClick = {
                     openSubMenu(subMenu) {
                         Confirmation(expanded) {
-                            launchDeleteBackups(selectedVisible)
+                            launchDeleteBackups(selectedVisible, selection, toggleSelection)
                         }
                     }
                 }
@@ -816,7 +866,7 @@ fun MainPackageContextMenu(
                 onClick = {
                     openSubMenu(subMenu) {
                         Confirmation(expanded) {
-                            launchLimitBackups(selectedVisible)
+                            launchLimitBackups(selectedVisible, selection, toggleSelection)
                         }
                     }
                 }

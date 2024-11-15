@@ -6,11 +6,10 @@ import android.provider.DocumentsContract
 import androidx.test.platform.app.InstrumentationRegistry
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.entity.RootFile
 import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.entity.getCursorString
-import com.machiav3lli.backup.utils.getBackupRoot
+import com.machiav3lli.backup.handler.LogsHandler
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.junit.Test
@@ -74,8 +73,8 @@ class Try_readProperties {
     fun test_scanPropertiesSAF() {
         val backups = mutableMapOf<String, MutableList<Backup>>()
         val time = measureTimeMillis {
-            val backupRoot = OABX.context.getBackupRoot()
-            backupRoot.listFiles().forEach { packageDir ->
+            val backupRoot = OABX.backupRoot
+            backupRoot?.listFiles()?.forEach { packageDir ->
                 val packageName = packageDir.name
                 val backupList = mutableListOf<Backup>()
                 packageDir.listFiles().forEach { file ->
@@ -100,9 +99,9 @@ class Try_readProperties {
         val backups = mutableMapOf<String, MutableList<Backup>>()
         val backupList = mutableListOf<Backup>()
         val time = measureTimeMillis {
-            val backupRoot = OABX.context.getBackupRoot()
+            val backupRoot = OABX.backupRoot
             val treeUri = DocumentsContract
-                .buildDocumentUriUsingTree(backupRoot.uri, DocumentsContract.getTreeDocumentId(backupRoot.uri))
+                .buildDocumentUriUsingTree(backupRoot!!.uri, DocumentsContract.getTreeDocumentId(backupRoot.uri))
 
             val authority = treeUri.authority
                             //"com.machiav3lli.backup.provider"

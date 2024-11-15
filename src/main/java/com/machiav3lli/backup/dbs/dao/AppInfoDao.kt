@@ -46,6 +46,6 @@ interface AppInfoDao : BaseDao<AppInfo> {
     @Transaction
     fun updateList(vararg appInfos: AppInfo) {
         emptyTable()
-        replaceInsert(*appInfos)
+        upsert(*appInfos)
     }
 }

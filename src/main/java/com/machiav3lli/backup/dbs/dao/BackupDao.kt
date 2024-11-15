@@ -59,6 +59,6 @@ interface BackupDao : BaseDao<Backup> {
     @Transaction
     fun updateList(vararg backups: Backup) {
         emptyTable()
-        replaceInsert(*backups)
+        upsert(*backups)
     }
 }

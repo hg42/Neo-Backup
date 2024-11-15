@@ -41,7 +41,7 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 
-class ScheduleVM(database: ODatabase) : ViewModel(), KoinComponent {
+class ScheduleVM(database: ODatabase) : ViewModel(), KoinComponent { // TODO add repos
     private val cc = Dispatchers.IO
     private val scheduleDB: ScheduleDao = database.getScheduleDao()
 

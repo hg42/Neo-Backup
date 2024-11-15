@@ -14,7 +14,12 @@ import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.Sort
 import com.machiav3lli.backup.UpdatedFilter
 import com.machiav3lli.backup.batchModesSequence
+import com.machiav3lli.backup.entity.SortFilterModel
 import com.machiav3lli.backup.possibleMainFilters
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import org.koin.core.component.KoinComponent
 import org.koin.dsl.module
 import org.koin.java.KoinJavaComponent.getKoin
@@ -207,6 +212,78 @@ class NeoPrefs private constructor(val context: Context) : KoinComponent {
         defaultValue = EnabledFilter.ALL.ordinal,
         entries = EnabledFilter.entries.map { it.ordinal },
     )
+
+    fun homeSortFilterFlow(): Flow<SortFilterModel> = combine(
+        sortHome.get(),
+        sortAscHome.get(),
+        mainFilterHome.get(),
+        backupFilterHome.get(),
+        installedFilterHome.get(),
+        launchableFilterHome.get(),
+        updatedFilterHome.get(),
+        latestFilterHome.get(),
+        enabledFilterHome.get(),
+    ) { args ->
+        SortFilterModel(
+            sort = args[0] as Int,
+            sortAsc = args[1] as Boolean,
+            mainFilter = args[2] as Int,
+            backupFilter = args[3] as Int,
+            installedFilter = args[4] as Int,
+            launchableFilter = args[5] as Int,
+            updatedFilter = args[6] as Int,
+            latestFilter = args[7] as Int,
+            enabledFilter = args[8] as Int,
+        )
+    }.flowOn(Dispatchers.IO)
+
+    fun backupSortFilterFlow(): Flow<SortFilterModel> = combine(
+        sortBackup.get(),
+        sortAscBackup.get(),
+        mainFilterBackup.get(),
+        backupFilterBackup.get(),
+        installedFilterBackup.get(),
+        launchableFilterBackup.get(),
+        updatedFilterBackup.get(),
+        latestFilterBackup.get(),
+        enabledFilterBackup.get(),
+    ) { args ->
+        SortFilterModel(
+            sort = args[0] as Int,
+            sortAsc = args[1] as Boolean,
+            mainFilter = args[2] as Int,
+            backupFilter = args[3] as Int,
+            installedFilter = args[4] as Int,
+            launchableFilter = args[5] as Int,
+            updatedFilter = args[6] as Int,
+            latestFilter = args[7] as Int,
+            enabledFilter = args[8] as Int,
+        )
+    }.flowOn(Dispatchers.IO)
+
+    fun restoreSortFilterFlow(): Flow<SortFilterModel> = combine(
+        sortRestore.get(),
+        sortAscRestore.get(),
+        mainFilterRestore.get(),
+        backupFilterRestore.get(),
+        installedFilterRestore.get(),
+        launchableFilterRestore.get(),
+        updatedFilterRestore.get(),
+        latestFilterRestore.get(),
+        enabledFilterRestore.get(),
+    ) { args ->
+        SortFilterModel(
+            sort = args[0] as Int,
+            sortAsc = args[1] as Boolean,
+            mainFilter = args[2] as Int,
+            backupFilter = args[3] as Int,
+            installedFilter = args[4] as Int,
+            launchableFilter = args[5] as Int,
+            updatedFilter = args[6] as Int,
+            latestFilter = args[7] as Int,
+            enabledFilter = args[8] as Int,
+        )
+    }.flowOn(Dispatchers.IO)
 
     companion object {
         val prefsModule = module {

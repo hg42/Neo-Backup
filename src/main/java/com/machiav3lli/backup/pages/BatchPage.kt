@@ -35,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,8 +85,8 @@ fun BatchPage(
 ) {
     val main = OABX.main!!
     val scope = rememberCoroutineScope()
-    val filteredList by if (backupBoolean) mainVM.backupFilteredList.collectAsState(emptyList())
-    else mainVM.restoreFilteredList.collectAsState(emptyList())
+    val mainState by if (backupBoolean) mainVM.backupState.collectAsState()
+    else mainVM.restoreState.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val openBatchDialog = remember { mutableStateOf(false) }
     val openBlocklist = rememberSaveable { mutableStateOf(false) }
@@ -96,7 +95,7 @@ fun BatchPage(
     val filterPredicate = { item: Package ->
         if (backupBoolean) item.isInstalled else item.hasBackups
     }
-    val workList = filteredList.filter(filterPredicate)
+    val workList = mainState.filteredPackages.filter(filterPredicate)
 
     val allApkChecked by remember(workList, viewModel.apkBackupCheckedList) {
         derivedStateOf {
@@ -111,11 +110,6 @@ fun BatchPage(
                 .filter { backupBoolean || it.latestBackup?.hasData == true }
                 .size
         }
-    }
-
-    val selection = remember { mutableStateMapOf<Package, Boolean>() }
-    filteredList.forEach {
-        selection.putIfAbsent(it, false)
     }
 
     BackHandler(scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
@@ -296,10 +290,10 @@ fun BatchPage(
 
         if (openBlocklist.value) BaseDialog(onDismiss = { openBlocklist.value = false }) {
             GlobalBlockListDialogUI(
-                currentBlocklist = mainVM.getBlocklist().toSet(),
+                currentBlocklist = mainState.blocklist,
                 openDialogCustom = openBlocklist,
             ) { newSet ->
-                mainVM.setBlocklist(newSet)
+                mainVM.updateBlocklist(newSet)
             }
         }
         if (openBatchDialog.value) BaseDialog(onDismiss = { openBatchDialog.value = false }) {
@@ -309,7 +303,7 @@ fun BatchPage(
 
             BatchActionDialogUI(
                 backupBoolean = backupBoolean,
-                selectedPackageInfos = filteredList
+                selectedPackageInfos = mainState.filteredPackages
                     .filter { it.packageName in selectedPackageNames }
                     .map(Package::packageInfo),
                 selectedApk = selectedApk,

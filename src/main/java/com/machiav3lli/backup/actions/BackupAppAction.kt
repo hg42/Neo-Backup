@@ -29,6 +29,10 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.batchModes
 import com.machiav3lli.backup.batchOperations
 import com.machiav3lli.backup.dbs.entity.Backup
+import com.machiav3lli.backup.entity.ActionResult
+import com.machiav3lli.backup.entity.Package
+import com.machiav3lli.backup.entity.RootFile
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.BackupBuilder
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
@@ -38,10 +42,6 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeOutCollectErr
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
-import com.machiav3lli.backup.entity.ActionResult
-import com.machiav3lli.backup.entity.Package
-import com.machiav3lli.backup.entity.RootFile
-import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.plugins.InternalShellScriptPlugin
 import com.machiav3lli.backup.preferences.pref_backupCache
 import com.machiav3lli.backup.preferences.pref_backupPauseApps
@@ -117,8 +117,8 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 }
             }
 
-            val appBackupRoot: StorageFile = try {
-                app.getAppBackupRoot(create = true)!!
+            val appBackupBaseDir: StorageFile = try {
+                app.getAppBackupBaseDir(create = true)!!
             } catch (e: BackupLocationInAccessibleException) {
                 // Usually, this should never happen, but just in case...
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
@@ -130,7 +130,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }
             val backupBuilder = try {
-                BackupBuilder(app.packageInfo, appBackupRoot)
+                BackupBuilder(app.packageInfo, appBackupBaseDir)
             } catch (e: Throwable) {
                 return handleException(BackupFailedException(STORAGE_LOCATION_INACCESSIBLE, e))
             }

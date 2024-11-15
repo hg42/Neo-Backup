@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-class AppVM(private val database: ODatabase) : ViewModel() {
+class AppVM(private val database: ODatabase) : ViewModel() { // TODO add repos
     private val thePackage: MutableStateFlow<Package?> = MutableStateFlow(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,7 +55,7 @@ class AppVM(private val database: ODatabase) : ViewModel() {
         AppExtras(thePackage.value?.packageName ?: "")
     )
 
-    val snackbarText = MutableComposableStateFlow(
+    val snackbarText = MutableComposableStateFlow( // TODO change to MutableStateFlow
         "",
         viewModelScope,
         "snackBarText"
@@ -176,7 +176,7 @@ class AppVM(private val database: ODatabase) : ViewModel() {
     private suspend fun replaceExtras(appExtras: AppExtras?) {
         withContext(Dispatchers.IO) {
             if (appExtras != null)
-                database.getAppExtrasDao().replaceInsert(appExtras)
+                database.getAppExtrasDao().upsert(appExtras)
             else
                 thePackage.value?.let {
                     database.getAppExtrasDao().deleteByPackageName(it.packageName)

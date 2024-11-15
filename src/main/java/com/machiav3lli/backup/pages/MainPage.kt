@@ -76,7 +76,7 @@ fun MainPage(
         OABX.main?.finishAffinity()
     }
 
-    val query by viewModel.searchQuery.collectAsState("")
+    val mainState by viewModel.homeState.collectAsState()
 
     FullScreenBackground {
         NeoNavigationSuiteScaffold(
@@ -101,7 +101,7 @@ fun MainPage(
                         MainTopBar(
                             title = stringResource(id = currentPage.title),
                             expanded = searchExpanded,
-                            query = query,
+                            query = mainState.searchQuery,
                             onQueryChanged = { newQuery ->
                                 viewModel.setSearchQuery(newQuery)
                             },
@@ -150,10 +150,10 @@ fun MainPage(
 
             if (openBlocklist.value) BaseDialog(onDismiss = { openBlocklist.value = false }) {
                 GlobalBlockListDialogUI(
-                    currentBlocklist = viewModel.getBlocklist().toSet(),
+                    currentBlocklist = mainState.blocklist,
                     openDialogCustom = openBlocklist,
                 ) { newSet ->
-                    viewModel.setBlocklist(newSet)
+                    viewModel.updateBlocklist(newSet)
                 }
             }
         }

@@ -32,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
@@ -51,6 +53,10 @@ import com.machiav3lli.backup.OABX.Companion.addInfoLogText
 import com.machiav3lli.backup.OABX.Companion.startup
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.RESCUE_NAV
+import com.machiav3lli.backup.dbs.repository.AppExtrasRepository
+import com.machiav3lli.backup.dbs.repository.BlocklistRepository
+import com.machiav3lli.backup.dbs.repository.PackageRepository
+import com.machiav3lli.backup.dbs.repository.ScheduleRepository
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.DialogKey
@@ -118,7 +124,7 @@ class MainActivityX : BaseActivity() {
     private lateinit var openDialog: MutableState<Boolean>
     private lateinit var dialogKey: MutableState<DialogKey?>
 
-    val viewModel: MainVM by viewModel()
+    val viewModel: MainVM by viewModel() // TODO remove usage in other classes
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -221,6 +227,7 @@ class MainActivityX : BaseActivity() {
                 openDialog = remember { mutableStateOf(false) }
                 dialogKey = remember { mutableStateOf(null) }
                 val openBlocklist = remember { mutableStateOf(false) }
+                val mainState by viewModel.homeState.collectAsState()
 
                 LaunchedEffect(viewModel) {
                     navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -259,10 +266,10 @@ class MainActivityX : BaseActivity() {
                         if (openBlocklist.value)
                             BaseDialog(onDismiss = { openBlocklist.value = false }) {
                                 GlobalBlockListDialogUI(
-                                    currentBlocklist = viewModel.getBlocklist().toSet(),
+                                    currentBlocklist = mainState.blocklist,
                                     openDialogCustom = openBlocklist,
                                 ) { newSet ->
-                                    viewModel.setBlocklist(newSet)
+                                    viewModel.updateBlocklist(newSet)
                                 }
                             }
                     }
@@ -656,7 +663,11 @@ class MainActivityX : BaseActivity() {
 }
 
 val viewModelsModule = module {
-    viewModel { MainVM(get(), get(), get()) }
+    single { PackageRepository(get(), get()) }
+    single { BlocklistRepository(get()) }
+    single { ScheduleRepository(get()) }
+    single { AppExtrasRepository(get()) }
+    viewModel { MainVM(get(), get(), get(), get()) }
     viewModel { BackupBatchVM() }
     viewModel { RestoreBatchVM() }
     viewModel { SchedulesVM(get(), get()) }

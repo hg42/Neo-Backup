@@ -38,7 +38,6 @@ import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
 import com.machiav3lli.backup.utils.TraceUtils
-import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -128,7 +127,7 @@ class Package {
     private fun isPlausiblePath(path: String?): Boolean {
         return !path.isNullOrEmpty() &&
                 path.contains(packageName) &&
-                path != OABX.context.getBackupRoot().path
+                path != OABX.backupRoot?.path
     }
 
     fun refreshStorageStats(context: Context): Boolean {
@@ -198,21 +197,21 @@ class Package {
         FileUtils.BackupLocationInAccessibleException::class,
         StorageLocationNotConfiguredException::class
     )
-    fun getAppBackupRoot(
+    fun getAppBackupBaseDir(
         packageName: String = this.packageName,
         create: Boolean = false,
     ): StorageFile? {
         return try {
             if (pref_flatStructure.value) {
-                OABX.context.getBackupRoot()
+                OABX.backupRoot
             } else {
                 when {
                     create -> {
-                        OABX.context.getBackupRoot().ensureDirectory(packageName)
+                        OABX.backupRoot?.ensureDirectory(packageName)
                     }
 
                     else   -> {
-                        OABX.context.getBackupRoot().findFile(packageName)
+                        OABX.backupRoot?.findFile(packageName)
                     }
                 }
             }
@@ -305,7 +304,7 @@ class Package {
     fun deleteAllBackups() {
         val backups = backupsNewestFirst.toMutableList()
         while (backups.isNotEmpty())
-            _deleteBackup(backups.removeLast())
+            _deleteBackup(backups.removeLast()) // TODO
         if (pref_paranoidBackupLists.value)
             runOrLog { refreshBackupList() }                // get real state of file system only once
     }
@@ -324,7 +323,7 @@ class Package {
                 } --> delete ${TraceUtils.formatBackups(deletableBackups)}"
             }
             while (deletableBackups.size > 0) {
-                val backup = deletableBackups.removeLast()
+                val backup = deletableBackups.removeLast() // TODO
                 backups.remove(backup)
                 _deleteBackup(backup)
             }
@@ -339,7 +338,7 @@ class Package {
             }
             while (keep < backups.size && deletableBackups.size > 0) {
 
-                val backup = deletableBackups.removeLast()
+                val backup = deletableBackups.removeLast() // TODO
                 backups.remove(backup)
                 _deleteBackup(backup)
             }

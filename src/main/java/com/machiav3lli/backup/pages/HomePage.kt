@@ -104,15 +104,13 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
     val scaffoldState = rememberBottomSheetScaffoldState()
     val paneNavigator = rememberListDetailPaneScaffoldNavigator<Any>()
 
+    val mainState by viewModel.homeState.collectAsState()
     val packagesList by viewModel.notBlockedList.collectAsState(emptyList())
-    val filteredList by viewModel.homeFilteredList.collectAsState(emptyList())
     val updatedPackages by viewModel.updatedPackages.collectAsState(emptyList())
     val updaterVisible = updatedPackages.isNotEmpty()  // recompose is already triggered above
     var updaterExpanded by remember { mutableStateOf(false) }
-    val selection = viewModel.selection
-    val nSelected = selection.filter { it.value }.keys.size
     var menuPackage by remember { mutableStateOf<Package?>(null) }
-    val menuExpanded = viewModel.menuExpanded
+    val menuExpanded = rememberSaveable { mutableStateOf(false) }
     val menuButtonAlwaysVisible = pref_menuButtonAlwaysVisible.value
 
     val openBlocklist = rememberSaveable { mutableStateOf(false) }
@@ -126,7 +124,7 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
 
     traceCompose {
         "HomePage filtered=${
-            filteredList.size
+            mainState.filteredPackages.size
         } updated=${
             updatedPackages.size
         }->${
@@ -143,9 +141,9 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
     }
 
     // prefetch icons
-    if (filteredList.size > IconCache.size) {    // includes empty cache and empty filteredList
+    if (mainState.filteredPackages.size > IconCache.size) {    // includes empty cache and empty filteredList
         //beginNanoTimer("prefetchIcons")
-        filteredList.forEach { pkg ->
+        mainState.filteredPackages.forEach { pkg ->
             cachedAsyncImagePainter(model = pkg.iconData)
         }
         //endNanoTimer("prefetchIcons")
@@ -221,7 +219,7 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
                 Scaffold(
                     containerColor = Color.Transparent,
                     floatingActionButton = {
-                        if (nSelected > 0 || updaterVisible || menuButtonAlwaysVisible) {
+                        if (mainState.selection.isNotEmpty() || updaterVisible || menuButtonAlwaysVisible) {
                             Row(
                                 modifier = Modifier.padding(start = 28.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -284,10 +282,10 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
                                     )
                                 }
                                 if (!(updaterVisible && updaterExpanded) &&
-                                    (nSelected > 0 || menuButtonAlwaysVisible)
+                                    (mainState.selection.isNotEmpty() || menuButtonAlwaysVisible)
                                 ) {
                                     ExtendedFloatingActionButton(
-                                        text = { Text(text = nSelected.toString()) },
+                                        text = { Text(text = mainState.selection.size.toString()) },
                                         icon = {
                                             Icon(
                                                 imageVector = Phosphor.List,
@@ -305,18 +303,18 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
                 ) {
                     HomePackageRecycler(
                         modifier = Modifier.fillMaxSize(),
-                        productsList = filteredList,
-                        selection = selection,
+                        productsList = mainState.filteredPackages,
+                        selection = mainState.selection,
                         onLongClick = { item ->
-                            if (selection[item.packageName] == true) {
+                            if (mainState.selection.contains(item.packageName)) {
                                 menuPackage = item
                                 menuExpanded.value = true
                             } else {
-                                selection[item.packageName] = selection[item.packageName] != true
+                                viewModel.toggleSelection(item.packageName)
                             }
                         },
                         onClick = { item ->
-                            if (filteredList.none { selection[it.packageName] == true }) {
+                            if (mainState.filteredPackages.none { mainState.selection.contains(it.packageName) }) {
                                 scope.launch {
                                     paneNavigator.navigateTo(
                                         ListDetailPaneScaffoldRole.Detail,
@@ -324,7 +322,7 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
                                     )
                                 }
                             } else {
-                                selection[item.packageName] = selection[item.packageName] != true
+                                viewModel.toggleSelection(item.packageName)
                             }
                         },
                     )
@@ -338,8 +336,9 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
                             MainPackageContextMenu(
                                 expanded = menuExpanded,
                                 packageItem = menuPackage,
-                                productsList = filteredList,
-                                selection = selection,
+                                productsList = mainState.filteredPackages,
+                                selection = mainState.selection,
+                                toggleSelection = viewModel::toggleSelection,
                                 openSheet = { item ->
                                     scope.launch {
                                         paneNavigator.navigateTo(
@@ -372,10 +371,10 @@ fun HomePage(viewModel: MainVM = koinViewModel()) {
 
     if (openBlocklist.value) BaseDialog(onDismiss = { openBlocklist.value = false }) {
         GlobalBlockListDialogUI(
-            currentBlocklist = viewModel.getBlocklist().toSet(),
+            currentBlocklist = mainState.blocklist,
             openDialogCustom = openBlocklist,
         ) { newSet ->
-            viewModel.setBlocklist(newSet)
+            viewModel.updateBlocklist(newSet)
         }
     }
     if (openBatchDialog.value) BaseDialog(onDismiss = { openBatchDialog.value = false }) {

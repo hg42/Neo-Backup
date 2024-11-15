@@ -18,13 +18,13 @@
 package com.machiav3lli.backup.handler
 
 import android.content.Context
-import com.machiav3lli.backup.LOGS_FOLDER_NAME
 import com.machiav3lli.backup.LOG_INSTANCE
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.hitBusy
+import com.machiav3lli.backup.OABX.Companion.logsDirectory
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.entity.Log
 import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.entity.StorageFile.Companion.invalidateCache
 import com.machiav3lli.backup.preferences.onErrorInfo
 import com.machiav3lli.backup.preferences.pref_autoLogExceptions
 import com.machiav3lli.backup.preferences.pref_maxLogCount
@@ -33,7 +33,6 @@ import com.machiav3lli.backup.utils.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
-import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -62,15 +61,13 @@ class LogsHandler {
         @Throws(IOException::class)
         fun writeToLogFile(logText: String): StorageFile? {
             runCatching {
-                val backupRoot = OABX.context.getBackupRoot()
-                val logsDirectory = backupRoot.ensureDirectory(LOGS_FOLDER_NAME)
                 val date = LocalDateTime.now()
                 val logItem = Log(logText, date)
                 val logFileName = String.format(
                     LOG_INSTANCE,
                     BACKUP_DATE_TIME_FORMATTER.format(date)
                 )
-                logsDirectory.createFile(logFileName).let { logFile ->
+                logsDirectory?.createFile(logFileName)?.let { logFile ->
                     BufferedOutputStream(logFile.outputStream()).use { logOut ->
                         logOut.write(
                             logItem.toSerialized().toByteArray(StandardCharsets.UTF_8)
@@ -87,9 +84,8 @@ class LogsHandler {
         @Throws(IOException::class)
         fun readLogs(): MutableList<Log> {
             val logs = mutableListOf<Log>()
-            val backupRoot = OABX.context.getBackupRoot()
-            StorageFile.invalidateCache { it.contains(LOGS_FOLDER_NAME) }
-            backupRoot.findFile(LOGS_FOLDER_NAME)?.let { logsDir ->
+            logsDirectory?.let { logsDir ->
+                invalidateCache(logsDir)
                 if (logsDir.isDirectory) {
                     logsDir.listFiles().forEach {
 
@@ -131,10 +127,8 @@ class LogsHandler {
         @Throws(IOException::class)
         fun housekeepingLogs() {
             try {
-                val backupRoot = OABX.context.getBackupRoot()
-                StorageFile.invalidateCache { it.contains(LOGS_FOLDER_NAME) }
-                //val logsDirectory = StorageFile(backupRoot, LOG_FOLDER_NAME)
-                backupRoot.findFile(LOGS_FOLDER_NAME)?.let { logsDir ->
+                logsDirectory?.let { logsDir ->
+                    invalidateCache(logsDir)
                     if (logsDir.isDirectory) {
                         // must be ISO time format with sane sorted fields yyyy-mm-dd hh:mm:ss
                         val logs = logsDir.listFiles().sortedByDescending { it.name }
@@ -161,9 +155,9 @@ class LogsHandler {
         }
 
         fun getLogFile(date: LocalDateTime): StorageFile? {
-            val backupRoot = OABX.context.getBackupRoot()
             try {
-                backupRoot.findFile(LOGS_FOLDER_NAME)?.let { logsDir ->
+                logsDirectory?.let { logsDir ->
+                    invalidateCache(logsDir)
                     val timeStr = BACKUP_DATE_TIME_FORMATTER.format(date)
                     //val logFileName = String.format(  //TODO WECH
                     //    LOG_INSTANCE,

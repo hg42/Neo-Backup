@@ -37,14 +37,12 @@ import com.machiav3lli.backup.ui.compose.item.UpdatedPackageItem
 fun HomePackageRecycler(
     modifier: Modifier = Modifier,
     productsList: List<Package>,
-    selection: SnapshotStateMap<String, Boolean>,
+    selection: Set<String>,
     onLongClick: (Package) -> Unit = {},
     onClick: (Package) -> Unit = {},
 ) {
     val imageLoader = LocalContext.current.imageLoader
-    productsList.forEach {
-        selection.putIfAbsent(it.packageName, false)
-    }
+
     InnerBackground(modifier) {
         VerticalItemList(
             list = productsList,
@@ -52,7 +50,7 @@ fun HomePackageRecycler(
         ) {
             MainPackageItem(
                 it,
-                selection[it.packageName] ?: false,
+                selection.contains(it.packageName),
                 imageLoader,
                 onLongClick,
                 onClick

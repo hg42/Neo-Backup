@@ -38,10 +38,10 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
 import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.activities.viewModelsModule
-import com.machiav3lli.backup.dbs.ODatabase
 import com.machiav3lli.backup.dbs.databaseModule
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
+import com.machiav3lli.backup.entity.StorageFile
 import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.ExportsHandler
 import com.machiav3lli.backup.handler.LogsHandler
@@ -65,12 +65,15 @@ import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.preferences.traceSection
 import com.machiav3lli.backup.preferences.traceSerialize
 import com.machiav3lli.backup.services.PackageUnInstalledReceiver
+import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.ISO_DATE_TIME_FORMAT_MS
+import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.methodName
+import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
@@ -105,7 +108,6 @@ val RESCUE_NAV get() = "rescue"
 class OABX : Application() {
 
     val work: WorkHandler by inject()
-    val db: ODatabase by inject()
 
     // TODO Add BroadcastReceiver for (UN)INSTALL_PACKAGE intents
 
@@ -304,6 +306,15 @@ class OABX : Application() {
                 }
         }
 
+        var logsDirectory: StorageFile? = null
+            get() {
+                if (field == null) {
+                    field = context.getExternalFilesDir(null)?.let { StorageFile(it).ensureDirectory("logs") }
+                        ?: context.filesDir.let { StorageFile(it).ensureDirectory("logs") }
+                }
+                return field
+            }
+
         var lastErrorPackage = ""
         var lastErrorCommands = ConcurrentLinkedQueue<String>()
         fun addErrorCommand(command: String) {
@@ -471,8 +482,6 @@ class OABX : Application() {
 
         var appsSuspendedChecked = false
 
-        val db: ODatabase get() = NB.db
-
         var shellHandler: ShellHandler? = null
             private set
 
@@ -497,6 +506,27 @@ class OABX : Application() {
         val isDebug get() = SystemUtils.packageName.contains("debug")
         val isNeo get() = SystemUtils.packageName.contains("neo")
         val isHg42 get() = SystemUtils.packageName.contains("hg42")
+
+        //------------------------------------------------------------------------------------------ backupRoot
+
+        var backupRoot: StorageFile? = null
+            get() {
+                if (field == null) {
+                    val storagePath = backupDirConfigured
+                    if (storagePath.isEmpty()) {
+                        Timber.e("backup storage location not configured")
+                        throw StorageLocationNotConfiguredException()
+                    }
+                    val storageDir = StorageFile.fromUri(storagePath)
+                    if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
+                        Timber.e("backup storage location not accessible: $storagePath")
+                        throw BackupLocationInAccessibleException("Cannot access the root location '$storagePath'")
+                    }
+                    Timber.e("backup storage location found at ${storageDir.path}")
+                    field = storageDir
+                }
+                return field
+            }
 
         //------------------------------------------------------------------------------------------ infoText
 

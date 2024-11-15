@@ -10,11 +10,14 @@ import com.machiav3lli.backup.ACTION_RESCHEDULE
 import com.machiav3lli.backup.ACTION_SCHEDULE
 import com.machiav3lli.backup.EXTRA_SCHEDULE_ID
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.dbs.ODatabase
+import com.machiav3lli.backup.dbs.repository.ScheduleRepository
 import com.machiav3lli.backup.preferences.traceSchedule
 import com.machiav3lli.backup.tasks.ScheduleWork
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.scheduleNext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
@@ -26,7 +29,7 @@ class CommandReceiver : //TODO hg42 how to maintain security?
 //TODO hg42 but it's one of the purposes to be remotely controllable from other apps like Tasker
 //TODO hg42 no big prob for now: cancel, starting or changing schedule isn't very critical
     BroadcastReceiver(), KoinComponent {
-    val database: ODatabase by inject()
+    private val scheduleRepo: ScheduleRepository by inject()
 
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent == null) return
@@ -44,12 +47,11 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                 intent.getStringExtra("name")?.let { name ->
                     OABX.addInfoLogText("$command $name")
                     Timber.d("################################################### command intent schedule -------------> name=$name")
-                    Thread {
-                        val scheduleDao = database.getScheduleDao()
-                        scheduleDao.getSchedule(name)?.let { schedule ->
+                    CoroutineScope(Dispatchers.Default).launch {
+                        scheduleRepo.getSchedule(name)?.let { schedule ->
                             ScheduleWork.schedule(context, schedule, true)
                         }
-                    }.start()
+                    }
                 }
             }
 
@@ -60,7 +62,7 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                 }
             }
 
-            ACTION_RESCHEDULE      -> {
+            ACTION_RESCHEDULE      -> { // TODO reconsider when ScheduleWork is fully implemented
                 intent.getStringExtra("name")?.let { name ->
                     val now = SystemUtils.now
                     val time = intent.getStringExtra("time")
@@ -68,19 +70,18 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                         .format(now + 120)
                     OABX.addInfoLogText("$command $name $time -> $setTime")
                     Timber.d("################################################### command intent reschedule -------------> name=$name time=$time -> $setTime")
-                    Thread {
-                        val scheduleDao = database.getScheduleDao()
-                        scheduleDao.getSchedule(name)?.let { schedule ->
+                    CoroutineScope(Dispatchers.Default).launch {
+                        scheduleRepo.getSchedule(name)?.let { schedule ->
                             val (hour, minute) = setTime.split(":").map { it.toInt() }
                             traceSchedule { "[${schedule.id}] command receiver -> re-schedule to hour=$hour minute=$minute" }
                             val newSched = schedule.copy(
                                 timeHour = hour,
                                 timeMinute = minute,
                             )
-                            scheduleDao.update(newSched)
+                            scheduleRepo.update(newSched)
                             scheduleNext(context, newSched.id, true)
                         }
-                    }.start()
+                    }
                 }
             }
 

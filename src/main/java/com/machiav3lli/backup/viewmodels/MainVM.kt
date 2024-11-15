@@ -18,26 +18,20 @@
 package com.machiav3lli.backup.viewmodels
 
 import android.app.Application
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.machiav3lli.backup.OABX.Companion.getBackups
-import com.machiav3lli.backup.PACKAGES_LIST_GLOBAL_ID
-import com.machiav3lli.backup.dbs.ODatabase
-import com.machiav3lli.backup.dbs.entity.AppExtras
-import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.dbs.entity.Blocklist
+import com.machiav3lli.backup.dbs.repository.BlocklistRepository
+import com.machiav3lli.backup.dbs.repository.PackageRepository
+import com.machiav3lli.backup.entity.MainState
 import com.machiav3lli.backup.entity.Package
-import com.machiav3lli.backup.entity.Package.Companion.invalidateCacheForPackage
 import com.machiav3lli.backup.entity.SortFilterModel
-import com.machiav3lli.backup.handler.toPackageList
 import com.machiav3lli.backup.preferences.NeoPrefs
 import com.machiav3lli.backup.preferences.pref_newAndUpdatedNotification
 import com.machiav3lli.backup.preferences.traceBackups
 import com.machiav3lli.backup.preferences.traceFlows
 import com.machiav3lli.backup.ui.compose.item.IconCache
+import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.formatSortedBackups
 import com.machiav3lli.backup.utils.TraceUtils.trace
@@ -48,6 +42,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.mapLatest
@@ -56,12 +51,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainVM(
-    private val db: ODatabase,
+    private val packageRepository: PackageRepository,
+    private val blocklistRepository: BlocklistRepository,
     private val prefs: NeoPrefs,
     private val appContext: Application,
 ) : ViewModel() {
@@ -71,138 +66,23 @@ class MainVM(
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS
 
-    // most flows are for complete states, so skipping (conflate, mapLatest) is usually allowed
-    // it's noted otherwise
-    // conflate:
-    //   takes the latest item and processes it completely, then takes the next (latest again)
-    //   if input rate is f_in and processing can run at max rate f_proc,
-    //   then with f_in > f_proc the results will only come out with about f_proc
-    // mapLatest: (use mapLatest { it } as an equivalent form similar to conflate())
-    //   kills processing the item, when a new one comes in
-    //   so, as long as items come in faster than processing time, there won't be results, in short:
-    //   if f_in > f_proc, then there is no output at all
-    //   this is much like processing on idle only
+    private val _homeState = MutableStateFlow(MainState())
+    val homeState: StateFlow<MainState> = _homeState.asStateFlow()
+    private val _backupState = MutableStateFlow(MainState())
+    val backupState: StateFlow<MainState> = _backupState.asStateFlow()
+    private val _restoreState = MutableStateFlow(MainState())
+    val restoreState: StateFlow<MainState> = _restoreState.asStateFlow()
 
-    val homeSortFilterModel: StateFlow<SortFilterModel> = combine(
-        prefs.sortHome.get(),
-        prefs.sortAscHome.get(),
-        prefs.mainFilterHome.get(),
-        prefs.backupFilterHome.get(),
-        prefs.installedFilterHome.get(),
-        prefs.launchableFilterHome.get(),
-        prefs.updatedFilterHome.get(),
-        prefs.latestFilterHome.get(),
-        prefs.enabledFilterHome.get(),
-    ) { args ->
-        SortFilterModel(
-            args[0] as Int,
-            args[1] as Boolean,
-            args[2] as Int,
-            args[3] as Int,
-            args[4] as Int,
-            args[5] as Int,
-            args[6] as Int,
-            args[7] as Int,
-            args[8] as Int,
-        )
-    }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Lazily,
-            SortFilterModel()
-        )
+    private val searchQuery = MutableStateFlow("")
 
-    val backupSortFilterModel: StateFlow<SortFilterModel> = combine(
-        prefs.sortBackup.get(),
-        prefs.sortAscBackup.get(),
-        prefs.mainFilterBackup.get(),
-        prefs.backupFilterBackup.get(),
-        prefs.installedFilterBackup.get(),
-        prefs.launchableFilterBackup.get(),
-        prefs.updatedFilterBackup.get(),
-        prefs.latestFilterBackup.get(),
-        prefs.enabledFilterBackup.get(),
-    ) { args ->
-        SortFilterModel(
-            args[0] as Int,
-            args[1] as Boolean,
-            args[2] as Int,
-            args[3] as Int,
-            args[4] as Int,
-            args[5] as Int,
-            args[6] as Int,
-            args[7] as Int,
-            args[8] as Int,
-        )
-    }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Lazily,
-            SortFilterModel()
-        )
-
-    val restoreSortFilterModel: StateFlow<SortFilterModel> = combine(
-        prefs.sortRestore.get(),
-        prefs.sortAscRestore.get(),
-        prefs.mainFilterRestore.get(),
-        prefs.backupFilterRestore.get(),
-        prefs.installedFilterRestore.get(),
-        prefs.launchableFilterRestore.get(),
-        prefs.updatedFilterRestore.get(),
-        prefs.latestFilterRestore.get(),
-        prefs.enabledFilterRestore.get(),
-    ) { args ->
-        SortFilterModel(
-            args[0] as Int,
-            args[1] as Boolean,
-            args[2] as Int,
-            args[3] as Int,
-            args[4] as Int,
-            args[5] as Int,
-            args[6] as Int,
-            args[7] as Int,
-            args[8] as Int,
-        )
-    }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Lazily,
-            SortFilterModel()
-        )
-
-    val schedules =
-        //------------------------------------------------------------------------------------------ blocklist
-        db.getScheduleDao().getAllFlow()
-            .trace { "*** schedules <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    val blocklist =
-        //------------------------------------------------------------------------------------------ blocklist
-        db.getBlocklistDao().getAllFlow()
-            .trace { "*** blocklist <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    private val backupsMapDb =
-        //------------------------------------------------------------------------------------------ backupsMap
-        db.getBackupDao().getAllFlow()
-            .mapLatest { it.groupBy(Backup::packageName) }
-            .trace { "*** backupsMapDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
-            //.trace { "*** backupsMap <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyMap()
-            )
+    private val selection = MutableStateFlow(emptySet<String>())
+    private val homeSortFilterModelFlow = prefs.homeSortFilterFlow()
+    private val backupSortFilterModelFlow = prefs.backupSortFilterFlow()
+    private val restoreSortFilterModelFlow = prefs.restoreSortFilterFlow()
 
     val backupsUpdateFlow = MutableSharedFlow<Pair<String, List<Backup>>?>()
+
+    // Used as channel to update the database
     val backupsUpdate = backupsUpdateFlow
         // don't skip anything here (no conflate or map Latest etc.)
         // we need to process each update as it's the update for a single package
@@ -218,7 +98,7 @@ class MainVM(
                         )
                     }"
                 }
-                db.getBackupDao().updateList(
+                packageRepository.updateBackups(
                     it.first,
                     it.second.sortedByDescending { it.backupDate },
                 )
@@ -230,49 +110,24 @@ class MainVM(
             null
         )
 
-    private val appExtrasMap =
-        //------------------------------------------------------------------------------------------ appExtrasMap
-        db.getAppExtrasDao().getAllFlow()
-            .mapLatest { it.associateBy(AppExtras::packageName) }
-            .trace { "*** appExtrasMap <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyMap()
-            )
-
-    val packageList =
+    val packageMap =
         //========================================================================================== packageList
-        combine(db.getAppInfoDao().getAllFlow(), backupsMapDb) { appinfos, backups ->
+        combine(
+            packageRepository.getPackagesFlow(),
+            packageRepository.getBackupsFlow()
+        ) { pkgs, backups ->
 
             traceFlows {
-                "******************** packages-db: ${appinfos.size} backups-db: ${
+                "******************** packages-db: ${pkgs.size} backups-db: ${
                     backups.map { it.value.size }.sum()
                 }"
             }
-
-            // use the current backups instead of slow and async turn around from db
-            // but keep backups in combine, because it signals changes of the backups
-            //TODO hg42 might be done differently later
-            //val appinfos = appinfos.toPackageList(appContext, emptyList(), backups)
-            val pkgs = appinfos.toPackageList(appContext, emptyList(), getBackups())
 
             IconCache.dropAllButUsed(pkgs.drop(0))
 
             traceFlows { "***** packages ->> ${pkgs.size}" }
             pkgs
         }
-            .mapLatest { it }
-            .trace { "*** packageList <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    val packageMap =
-        //------------------------------------------------------------------------------------------ packageMap
-        packageList
             .mapLatest { it.associateBy(Package::packageName) }
             .trace { "*** packageMap <<- ${it.size}" }
             .stateIn(
@@ -283,15 +138,17 @@ class MainVM(
 
     val notBlockedList =
         //========================================================================================== notBlockedList
-        combine(packageList, blocklist) { pkgs, blocked ->
+        combine(
+            packageRepository.getPackagesFlow(),
+            blocklistRepository.getBlocklistFlow()
+        ) { pkgs, block ->
 
             traceFlows {
                 "******************** blocking - list: ${pkgs.size} block: ${
-                    blocked.joinToString(",")
+                    block.joinToString(",")
                 }"
             }
 
-            val block = blocked.map { it.packageName }
             val list = pkgs.filterNot { block.contains(it.packageName) }
 
             traceFlows { "***** blocked ->> ${list.size}" }
@@ -305,81 +162,19 @@ class MainVM(
                 emptyList()
             )
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery
-
-    val homeFilteredList =
-        //========================================================================================== filteredList
-        combine(
-            notBlockedList,
-            homeSortFilterModel,
-            searchQuery,
-            appExtrasMap
-        ) { pkgs, filter, search, extras ->
-            traceFlows { "******************** filtering - list: ${pkgs.size} filter: $filter" }
-            pkgs.applySearchAndFilter(appContext, search, extras, filter)
-        }
-            // if the filter changes we can drop the older filters
-            .mapLatest { it }
-            .trace { "*** filteredList <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    val backupFilteredList =
-        //========================================================================================== filteredList
-        combine(
-            notBlockedList,
-            backupSortFilterModel,
-            searchQuery,
-            appExtrasMap
-        ) { pkgs, filter, search, extras ->
-            traceFlows { "******************** filtering - list: ${pkgs.size} filter: $filter" }
-            pkgs.applySearchAndFilter(appContext, search, extras, filter)
-        }
-            // if the filter changes we can drop the older filters
-            .mapLatest { it }
-            .trace { "*** backupFilteredList <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    val restoreFilteredList =
-        //========================================================================================== filteredList
-        combine(
-            notBlockedList,
-            restoreSortFilterModel,
-            searchQuery,
-            appExtrasMap
-        ) { pkgs, filter, search, extras ->
-            traceFlows { "******************** filtering - list: ${pkgs.size} filter: $filter" }
-            pkgs.applySearchAndFilter(appContext, search, extras, filter)
-        }
-            // if the filter changes we can drop the older filters
-            .mapLatest { it }
-            .trace { "*** filteredList <<- ${it.size}" }
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyList()
-            )
-
-    val updatedPackages =
+    val updatedPackages = // TODO move into state
         //------------------------------------------------------------------------------------------ updatedPackages
         notBlockedList
             .trace { "updatePackages? ..." }
             .mapLatest {
-                it.filter { it.isUpdated || (pref_newAndUpdatedNotification.value && it.isNew) }
-                    .toMutableList()
+                it.filter { item ->
+                    item.isUpdated || (pref_newAndUpdatedNotification.value && item.isNew)
+                }
             }
             .trace {
                 "*** updatedPackages <<- updated: (${it.size})${
-                    it.map {
-                        "${it.packageName}(${it.versionCode}!=${it.latestBackup?.versionCode ?: ""})"
+                    it.map { item ->
+                        "${item.packageName}(${item.versionCode}!=${item.latestBackup?.versionCode ?: ""})"
                     }
                 }"
             }
@@ -391,122 +186,161 @@ class MainVM(
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS end
 
-    val selection = mutableStateMapOf<String, Boolean>()
-    val menuExpanded = mutableStateOf(false)
-
-    fun setSearchQuery(value: String) {
-        viewModelScope.launch { _searchQuery.update { value } }
+    init {
+        observeData()
     }
 
-    fun setSortFilter(value: SortFilterModel) = viewModelScope.launch {
-        prefs.sortHome.value = value.sort
-        prefs.sortAscHome.value = value.sortAsc
-        prefs.mainFilterHome.value = value.mainFilter
-        prefs.backupFilterHome.value = value.backupFilter
-        prefs.installedFilterHome.value = value.installedFilter
-        prefs.launchableFilterHome.value = value.launchableFilter
-        prefs.updatedFilterHome.value = value.updatedFilter
-        prefs.latestFilterHome.value = value.latestFilter
-        prefs.enabledFilterHome.value = value.enabledFilter
+    private fun observeData() {
+        viewModelScope.launch {
+            combine(
+                packageRepository.getPackagesFlow(),
+                blocklistRepository.getBlocklistFlow(),
+                homeSortFilterModelFlow,
+                searchQuery,
+                selection
+            ) { packages, blocklist, sortFilter, search, selection ->
+                val filteredPackages = packages
+                    .filterNot { blocklist.contains(it.packageName) }
+                    .applySearchAndFilter(appContext, search, emptyMap(), sortFilter)
+
+                MainState(
+                    packages = packages,
+                    filteredPackages = filteredPackages,
+                    blocklist = blocklist,
+                    schedules = emptyList(), // Add schedule repository if needed
+                    searchQuery = search,
+                    sortFilter = sortFilter,
+                    selection = selection
+                )
+            }.collect { newState ->
+                _homeState.update { newState }
+            }
+        }
+        viewModelScope.launch {
+            combine(
+                packageRepository.getPackagesFlow(),
+                blocklistRepository.getBlocklistFlow(),
+                backupSortFilterModelFlow,
+                searchQuery,
+                selection
+            ) { packages, blocklist, sortFilter, search, selection ->
+                val filteredPackages = packages
+                    .filterNot { blocklist.contains(it.packageName) }
+                    .applySearchAndFilter(appContext, search, emptyMap(), sortFilter)
+
+                MainState(
+                    packages = packages,
+                    filteredPackages = filteredPackages,
+                    blocklist = blocklist,
+                    schedules = emptyList(), // Add schedule repository if needed
+                    searchQuery = search,
+                    sortFilter = sortFilter,
+                    selection = selection
+                )
+            }.collect { newState ->
+                _backupState.update { newState }
+            }
+        }
+        viewModelScope.launch {
+            combine(
+                packageRepository.getPackagesFlow(),
+                blocklistRepository.getBlocklistFlow(),
+                restoreSortFilterModelFlow,
+                searchQuery,
+                selection
+            ) { packages, blocklist, sortFilter, search, selection ->
+                val filteredPackages = packages
+                    .filterNot { blocklist.contains(it.packageName) }
+                    .applySearchAndFilter(appContext, search, emptyMap(), sortFilter)
+
+                MainState(
+                    packages = packages,
+                    filteredPackages = filteredPackages,
+                    blocklist = blocklist,
+                    schedules = emptyList(), // Add schedule repository if needed
+                    searchQuery = search,
+                    sortFilter = sortFilter,
+                    selection = selection
+                )
+            }.collect { newState ->
+                _restoreState.update { newState }
+            }
+        }
+    }
+
+    fun setSearchQuery(value: String) {
+        viewModelScope.launch { searchQuery.update { value } }
+    }
+
+    fun setSortFilter(value: SortFilterModel, sourcePage: NavItem) {
+        viewModelScope.launch {
+            when (sourcePage) {
+                NavItem.Backup  -> {
+                    prefs.sortBackup.value = value.sort
+                    prefs.sortAscBackup.value = value.sortAsc
+                    prefs.mainFilterBackup.value = value.mainFilter
+                    prefs.backupFilterBackup.value = value.backupFilter
+                    prefs.installedFilterBackup.value = value.installedFilter
+                    prefs.launchableFilterBackup.value = value.launchableFilter
+                    prefs.updatedFilterBackup.value = value.updatedFilter
+                    prefs.latestFilterBackup.value = value.latestFilter
+                    prefs.enabledFilterBackup.value = value.enabledFilter
+                }
+
+                NavItem.Restore -> {
+                    prefs.sortRestore.value = value.sort
+                    prefs.sortAscRestore.value = value.sortAsc
+                    prefs.mainFilterRestore.value = value.mainFilter
+                    prefs.backupFilterRestore.value = value.backupFilter
+                    prefs.installedFilterRestore.value = value.installedFilter
+                    prefs.launchableFilterRestore.value = value.launchableFilter
+                    prefs.updatedFilterRestore.value = value.updatedFilter
+                    prefs.latestFilterRestore.value = value.latestFilter
+                    prefs.enabledFilterRestore.value = value.enabledFilter
+                }
+
+                else            -> {
+                    prefs.sortHome.value = value.sort
+                    prefs.sortAscHome.value = value.sortAsc
+                    prefs.mainFilterHome.value = value.mainFilter
+                    prefs.backupFilterHome.value = value.backupFilter
+                    prefs.installedFilterHome.value = value.installedFilter
+                    prefs.launchableFilterHome.value = value.launchableFilter
+                    prefs.updatedFilterHome.value = value.updatedFilter
+                    prefs.latestFilterHome.value = value.latestFilter
+                    prefs.enabledFilterHome.value = value.enabledFilter
+                }
+            }
+        }
+    }
+
+    fun toggleSelection(packageName: String) {
+        viewModelScope.launch {
+            selection.update { current ->
+                if (current.contains(packageName)) {
+                    current - packageName
+                } else {
+                    current + packageName
+                }
+            }
+        }
     }
 
     fun updatePackage(packageName: String) {
         viewModelScope.launch {
-            packageMap.value[packageName]?.let {
-                updateDataOf(packageName)
-            }
-        }
-    }
-
-    private suspend fun updateDataOf(packageName: String) =
-        withContext(Dispatchers.IO) {
-            try {
-                invalidateCacheForPackage(packageName)
-                val appPackage = packageMap.value[packageName]
-                appPackage?.apply {
-                    val new = Package(appContext, packageName)
-                    if (!isSpecial) {
-                        new.refreshFromPackageManager(appContext)
-                        db.getAppInfoDao().update(new.packageInfo as AppInfo)
-                    }
-                    //new.refreshBackupList()     //TODO hg42 ??? who calls this? take it from backupsMap?
-                }
-            } catch (e: AssertionError) {
-                Timber.w(e.message ?: "")
-                null
-            }
-        }
-
-    fun updateExtras(appExtras: AppExtras) {
-        viewModelScope.launch {
-            updateExtrasWith(appExtras)
-        }
-    }
-
-    private suspend fun updateExtrasWith(appExtras: AppExtras) {
-        withContext(Dispatchers.IO) {
-            db.getAppExtrasDao().replaceInsert(appExtras)
-            true
-        }
-    }
-
-    fun setExtras(appExtras: Map<String, AppExtras>) {
-        viewModelScope.launch { replaceExtras(appExtras.values) }
-    }
-
-    private suspend fun replaceExtras(appExtras: Collection<AppExtras>) {
-        withContext(Dispatchers.IO) {
-            db.getAppExtrasDao().deleteAll()
-            db.getAppExtrasDao().insert(*appExtras.toTypedArray())
+            packageRepository.updatePackage(packageName)
         }
     }
 
     fun addToBlocklist(packageName: String) {
         viewModelScope.launch {
-            insertIntoBlocklistDB(packageName)
+            blocklistRepository.addToBlocklist(packageName)
         }
     }
 
-    //fun removeFromBlocklist(packageName: String) {
-    //    viewModelScope.launch {
-    //        removeFromBlocklistDB(packageName)
-    //    }
-    //}
-
-    private suspend fun insertIntoBlocklistDB(packageName: String) {
-        withContext(Dispatchers.IO) {
-            db.getBlocklistDao().insert(
-                Blocklist.Builder()
-                    .withId(0)
-                    .withBlocklistId(PACKAGES_LIST_GLOBAL_ID)
-                    .withPackageName(packageName)
-                    .build()
-            )
-        }
-    }
-
-    //private suspend fun removeFromBlocklistDB(packageName: String) {
-    //    updateBlocklist(
-    //        (blocklist.value
-    //            ?.map { it.packageName }
-    //            ?.filterNotNull()
-    //            ?.filterNot { it == packageName }
-    //            ?: listOf()
-    //        ).toSet()
-    //    )
-    //}
-
-    fun setBlocklist(newList: Set<String>) {
+    fun updateBlocklist(packages: Set<String>) {
         viewModelScope.launch {
-            insertIntoBlocklistDB(newList)
+            blocklistRepository.updateBlocklist(packages)
         }
     }
-
-    fun getBlocklist() = blocklist.value.mapNotNull { it.packageName }
-
-    private suspend fun insertIntoBlocklistDB(newList: Set<String>) =
-        withContext(Dispatchers.IO) {
-            db.getBlocklistDao().updateList(PACKAGES_LIST_GLOBAL_ID, newList)
-        }
 }
-
