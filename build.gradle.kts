@@ -15,7 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import com.android.build.api.variant.BuildConfigField
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import com.android.build.gradle.internal.core.InternalBaseVariant
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
@@ -25,21 +32,225 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+data class InfoFromGit(
+    val lastTag: String?,
+    val lastTagDateTime: LocalDateTime?,
+    val lastTagMajor: Int?,
+    val lastTagMinor: Int?,
+    val lastTagPatch: Int?,
+    val currentBranch: String,
+    val headHash: String,
+)
+
+fun getInfoFromGit(): InfoFromGit {
+    val tagPattern = """tag: *(\d+)\.(\d+)\.(\d+)\)"""
+    val tagProcess = ProcessBuilder(
+        "git",
+        "log",
+        "--tags",
+        "--simplify-by-decoration",
+        "--pretty=format:%ai %d",
+        "--date=iso"
+    )
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+
+    val tagResult = tagProcess.inputStream.bufferedReader().use { it.readText() }
+    tagProcess.waitFor(10, TimeUnit.SECONDS)
+
+    val regex = Regex(tagPattern)
+    val matchResult = regex.find(tagResult)
+
+    var lastTag: String? = null
+    var lastTagDateTime: LocalDateTime? = null
+    var lastTagMajor: Int? = null
+    var lastTagMinor: Int? = null
+    var lastTagPatch: Int? = null
+
+    if (matchResult != null) {
+        val tagLine = tagResult.lines().first { it.contains(matchResult.value) }
+        val dateTime = tagLine.split(" ")[0] + "T" + tagLine.split(" ")[1]
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
+
+        val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
+
+        lastTag = "$major.$minor.$patch"
+        lastTagMajor = major
+        lastTagMinor = minor
+        lastTagPatch = patch
+    }
+
+    // current branch
+    val branchProcess = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val currentBranch = branchProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    branchProcess.waitFor(10, TimeUnit.SECONDS)
+
+    // hash of HEAD
+    val hashProcess = ProcessBuilder("git", "rev-parse", "HEAD")
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    val headHash = hashProcess.inputStream.bufferedReader().use { it.readText().trim() }
+    hashProcess.waitFor(10, TimeUnit.SECONDS)
+
+    return InfoFromGit(
+        lastTag = lastTag,
+        lastTagDateTime = lastTagDateTime,
+        lastTagMajor = lastTagMajor,
+        lastTagMinor = lastTagMinor,
+        lastTagPatch = lastTagPatch,
+        currentBranch = currentBranch,
+        headHash = headHash.take(8)
+    )
+}
+
+val gitInfo = getInfoFromGit()
+
+val lastTag = gitInfo.lastTag
+val lastTagDateTime = gitInfo.lastTagDateTime
+val lastTagMajor = gitInfo.lastTagMajor
+val lastTagMinor = gitInfo.lastTagMinor
+val lastTagPatch = gitInfo.lastTagPatch
+val currentBranch = gitInfo.currentBranch
+val headHash = gitInfo.headHash
+
+
+// extract base version from last git tag
+val major by extra(lastTagMajor)
+val minor by extra(lastTagMinor)
+val revision by extra(lastTagPatch)
+
+val refTime = (
+        lastTagDateTime ?: LocalDateTime.parse("2020-01-01T00:00:00")
+        ); println("refTime:     $refTime")
+val startTime = LocalDateTime.now(); println("startTime:   $startTime")
+val seconds = (
+        startTime.toEpochSecond(ZoneOffset.UTC) - refTime.toEpochSecond(ZoneOffset.UTC)
+        ); println("seconds:     $seconds")
+val minutes = seconds / 60; println("minutes:     $minutes")
+val fiveminutes = seconds / 60 / 5; println("fiveminutes: $fiveminutes")
+val tenminutes = seconds / 60 / 10; println("tenminutes:  $tenminutes")
+val hours = seconds / 60 / 60; println("hours:       $hours")
+
+val buildTime by extra { startTime.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) }
+val buildDay = buildTime.substring(0..5)
+val buildNumber: String by extra { minutes.toString() }
+//var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
+val buildLabel by extra {
+    currentBranch
+        .replace(Regex("^feature-"), "🍩")
+        .replace(Regex("^fix-"), "💊")
+        .replace(Regex("^try-"), "🚑")
+        .replace(Regex("^PR-"), "📤")
+        .replace(Regex("^wip$"), "🚧")
+        .replace(Regex("^temp$"), "🦘")
+        .replace(Regex("^experimental$"), "⚡")
+}
+val buildNumber6 = buildNumber.padStart(6, '0')
+val buildNumber4 = buildNumber6.dropLast(2)
+val buildNumber3 = buildNumber6.dropLast(3)
+val buildVersionCodeFromVersion = (
+        "${
+            major
+        }${
+            minor.toString().padStart(2, '0')
+        }${
+            revision.toString().padStart(2, '0')
+        }${
+            buildNumber3
+        }"
+        )
+val buildVersionCodeFromTime = buildTime.substring(0..8)
+val buildVersionCode by extra {
+    buildVersionCodeFromTime.toInt()
+}
+val build = "$major.$minor.$revision.$buildNumber6"
+val buildVersion by extra {
+    "$build-hg42-${headHash}-${buildTime}--${buildLabel}"
+}
+
+fun buildName(variant: String) = (
+        "$build-${headHash}--${buildLabel}".replace(
+            "--",
+            "-" +
+                    variant
+                        .replace(Regex(".*Test"), "🔎")
+                        .replace("debug", "🐞")
+                        .replace("release", "✅")
+                        .replace("neo", "♾")
+                        .replace("pumpkin", "🎃")
+                        .replace("pumprel", "🤡")
+                        .replace("hg42", "")
+                        .replace(Regex("""--+"""), """-""")
+                        .replace(Regex("""-+$"""), """""")
+                        //.uppercase()
+                    + "-"
+        )
+            //.replace(Regex("""-(\d{6})\d{6}-"""), """-$1-""")
+            .replace("----", "--")
+            .replace("--", "-")
+        )
+
+println(
+    """
+version build:
+    buildVersion:       $buildVersion
+    buildVersionCode:   $buildVersionCode
+    startTime:          $startTime
+    buildTime:          $buildTime
+    basedOnTag:         $lastTag
+        time:               $lastTagDateTime
+        commit:             $headHash
+        branch:             $currentBranch
+"""
+)
+
+
+//System.exit(0)
+
+val neobackup_keystore: String by rootProject.extra
+val neobackup_keystorepass: String by rootProject.extra
+val neobackup_keypass: String by rootProject.extra
+
+val jvmVersion = JavaVersion.VERSION_17
+
 android {
     namespace = "com.machiav3lli.backup"
+
+    signingConfigs {
+        create("hg42test") {
+            storeFile = file(neobackup_keystore)
+            storePassword = neobackup_keystorepass
+            keyPassword = neobackup_keypass
+            keyAlias = "cert"
+        }
+    }
+
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8318
-        versionName = "8.3.8"
-        buildConfigField("int", "MAJOR", "8")
-        buildConfigField("int", "MINOR", "3")
 
-        testApplicationId = "$applicationId.tests"
+        versionCode = buildVersionCode
+        versionName = buildVersion
+        buildConfigField("int", "MAJOR", "$major")
+        buildConfigField("int", "MINOR", "$minor")
+
+        // Tests
+        testApplicationId = "${applicationId}.tests"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        //testInstrumentationRunner = "androidx.test.runner.AndroidJUnit5Runner"
+        //testInstrumentationRunner = "androidx.test.runner.AndroidJUnitPlatformRunner"
+        //testInstrumentationRunner = "androidx.test.ext.junit.runners.AndroidJUnit5"
+
+        // The following argument makes the Android Test Orchestrator run its
+        // "pm clear" command after each test invocation. This command ensures
+        // that the app's state is completely cleared between tests.
+        // testInstrumentationRunnerArguments.put("clearPackageData", "true")
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -50,14 +261,8 @@ android {
                 }
             }
         }
-    }
 
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "Neo_Backup_${variant.name}_${variant.versionName}.apk"
-        }
-        true
+        println("\n---------------------------------------- version $versionCode $versionName\n\n")
     }
 
     buildTypes {
@@ -67,10 +272,17 @@ android {
                 "proguard-rules.pro",
             )
             isMinifyEnabled = true
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
         named("debug") {
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = ".hg42.debug"
+            versionNameSuffix = "-debug"
             isMinifyEnabled = false
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
         create("neo") {
             applicationIdSuffix = ".neo"
@@ -79,6 +291,30 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        create("pumpkin") {
+            applicationIdSuffix = ".hg42"
+            versionNameSuffix = ""
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
+        }
+        create("pumprel") {
+            applicationIdSuffix = ".hg42.rel"
+            versionNameSuffix = "-rel"
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
+            signingConfig = signingConfigs.getByName("hg42test")
         }
     }
     buildFeatures {
@@ -116,7 +352,71 @@ android {
             )
         }
     }
+
+    fun manipulations(variant: InternalBaseVariant) {
+        (variant as? com.android.build.gradle.internal.api.BaseVariantImpl)?.let {
+            it.outputs.all {
+                (this as? BaseVariantOutputImpl)?.let {
+                    it.outputFileName = "nb-${buildName(it.name)}.apk"
+                    println("---------------------------------------- variant ${it.name.padEnd(20)} -> ${it.outputFileName}")
+                }
+            }
+            //if (it.buildType.name == "debug") {
+            //    it.generateBuildConfig.versionCode = 777777777
+            //    it.generateBuildConfig.versionName = "8.3.8.777777-hg42-DEBUG"
+            //}
+        }
+    }
+    testVariants.all {
+        manipulations(this)
+    }
+    applicationVariants.all {
+        manipulations(this)
+    }
 }
+
+androidComponents {
+    // public static final boolean DEBUG = Boolean.parseBoolean("true");
+    // public static final String APPLICATION_ID = "com.machiav3lli.backup.hg42.debug";
+    // public static final String BUILD_TYPE = "debug";
+    // public static final int VERSION_CODE = 777777777;
+    // public static final String VERSION_NAME = "8.3.8.777777-hg42-DEBUG-debug";
+    // // Field from default config.
+    // public static final String[] DETECTED_LOCALES = {"ar","bs","ca","cs","de","el","en","es","et","fa","fi","fil","fr","hi","hr","hu","in","it","ja","ko","lt","lv","ml","nb","nl","pa","pl","pt","pt-rBR","ro","ru","sr","sv","th","tr","uk","vi","zh","zh-rTW"};
+    // // Field from default config.
+    // public static final int MAJOR = 8;
+    // // Field from default config.
+    // public static final int MINOR = 3;
+    onVariants {
+        it.buildConfigFields.put(
+            "DEBUG", BuildConfigField("boolean", "Boolean.parseBoolean(\"${it.debuggable}\")", "")
+        )
+        it.buildConfigFields.put(
+            "APPLICATION_ID", BuildConfigField("String", "\"${it.applicationId.get()}\"", "")
+        )
+        it.buildConfigFields.put(
+            "BUILD_TYPE", BuildConfigField("String", "\"${it.buildType}\"", "")
+        )
+        it.buildConfigFields.put(
+            "VERSION_CODE", BuildConfigField("String", "\"$buildVersionCode\"", "")
+        )
+        it.buildConfigFields.put(
+            "VERSION_NAME", BuildConfigField("String", "\"${buildName(it.buildType!!)}\"", "")
+        )
+        it.buildConfigFields.put(
+            "MAJOR", BuildConfigField("int", "$major", "")
+        )
+        it.buildConfigFields.put(
+            "MINOR", BuildConfigField("int", "$minor", "")
+        )
+    }
+}
+
+//androidComponents {
+//    onVariants(selector().withBuildType("release")) {
+//        it.packaging.resources.excludes.add("META-INF/**")
+//    }
+//}
 
 dependencies {
     implementation(libs.kotlin.stdlib)
@@ -150,6 +450,8 @@ dependencies {
     implementation(libs.semver)
     implementation(libs.libsu.core)
     implementation(libs.libsu.io)
+    // hg42
+    //implementation("de.voize:semver4k:$vSemVer")
 
     // UI
     implementation(libs.material)
@@ -207,4 +509,80 @@ tasks.withType<Test> {
     useJUnit() // we still use junit4
     // useTestNG()
     // useJUnitPlatform()
+}
+
+
+// generators
+
+if (false) {
+    // use with sdkman: sdk install kotlin
+
+    val sourceDirs =
+        android.sourceSets.map { it.java.srcDirs.map { if (it.name == "java") it.parentFile else it } }
+            .flatten()
+    println("sourceDirs: ${sourceDirs.map { "${it.javaClass.simpleName}: ${it.absolutePath}" }}")
+
+    fun findGeneratorKtsFiles(dir: File): List<File> {
+        return dir.walkTopDown()
+            .filter { it.extension == "kts" }
+            .filter { it.name.endsWith(".generator.kts") }
+            .toList()
+    }
+
+    val generatorFiles = sourceDirs.map { findGeneratorKtsFiles(it) }.flatten()
+
+    val kotlinRunner = "kotlin"
+
+    println("kotlinRunner: $kotlinRunner")
+
+    println()
+
+    generatorFiles.forEach { generatorFile ->
+        val baseName = generatorFile.nameWithoutExtension.removeSuffix(".generator")
+
+        val defFile = File(generatorFile.parentFile, "$baseName.def")
+        val generatedKtFile = File(generatorFile.parentFile, "$baseName.kt")
+        val taskName = "generate${baseName}Kt"
+
+        println("$taskName: ${generatorFile.relativeTo(rootDir)} -> ${generatedKtFile.name}")
+
+        tasks.register(taskName, Exec::class.java) {
+            if (defFile.exists()) {
+                inputs.file(defFile)
+            }
+            outputs.file(generatedKtFile)
+
+            //commandLine("gradle", "-q", "-b", generatorFile.absolutePath)
+            //commandLine("kotlin", generatorFile.absolutePath)
+            //commandLine(
+            //    org.jetbrains.kotlin.cli.jvm.K2JVMCompiler::class.java.canonicalName,
+            //    "-script",
+            //    generatorFile.absolutePath
+            //)
+            //commandLine(kotlinCompiler, generatorFile.absolutePath)
+
+            doLast {
+                exec {
+                    executable(kotlinRunner)
+                    args(generatorFile.absolutePath)
+                }
+                println("Generated ${generatedKtFile.absolutePath}")
+            }
+        }.configure {
+            // Ensure this task runs before Kotlin compilation
+            tasks.named("compileKotlin") {
+                dependsOn(this@configure)
+            }
+        }
+    }
+
+    println()
+}
+
+// Exclude (non-gradle) kts scripts from compilation
+tasks.withType<KotlinCompile>().configureEach {
+    setSource(sources.filterNot {
+        //it.name.endsWith(".generator.kts")
+        it.extension == "kts"
+    })
 }
