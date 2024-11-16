@@ -1,5 +1,6 @@
 package com.machiav3lli.backup.ui.compose.item
 
+import android.os.Build
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -62,13 +63,12 @@ fun BackupItem_headlineContent(
             modifier = Modifier.weight(1f, false),
             text = "${item.versionName ?: ""} (${item.versionCode})",
             overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
+            maxLines = 5,
         )
         Row(
-            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.End
         ) {
-            AnimatedVisibility(visible = (item.cpuArch != android.os.Build.SUPPORTED_ABIS[0])) {
+            AnimatedVisibility(visible = (item.cpuArch != Build.SUPPORTED_ABIS[0])) {
                 Text(
                     text = " ${item.cpuArch} ",
                     color = Color.Red,
@@ -107,7 +107,10 @@ fun BackupItem_supportingContent(
                     maxLines = 1,
                 )
         }
-        Row {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.End
+        ) {
             Text(
                 text = if (item.backupVersionCode == 0)
                     "old"
@@ -172,7 +175,7 @@ fun BackupItem_supportingContent(
             NoteTagItem(
                 item = item,
                 modifier = Modifier.weight(1f, false),
-                maxLines = 1,
+                maxLines = 5,
                 onNote = null,
             )
         }
