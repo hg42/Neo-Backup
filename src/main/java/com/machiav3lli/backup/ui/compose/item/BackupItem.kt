@@ -88,11 +88,11 @@ fun BackupItem_supportingContent(
     item: Backup,
     showTag: Boolean = false,
 ) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row {
+    Column {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
             Text(
                 text = item.backupDate.format(BACKUP_DATE_TIME_SHOW_FORMATTER),
                 modifier = Modifier.align(Alignment.Top),
@@ -106,68 +106,68 @@ fun BackupItem_supportingContent(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
-        }
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text(
-                text = if (item.backupVersionCode == 0)
-                    "old"
-                else
-                    "${item.backupVersionCode / 1000}.${item.backupVersionCode % 1000}",
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-            if (item.isEncrypted) {
-                val description = "${item.cipherType}"
-                val showTooltip = remember { mutableStateOf(false) }
-                if (showTooltip.value) {
-                    Tooltip(description, showTooltip)
-                }
+            FlowRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.End
+            ) {
                 Text(
-                    text = " enc",
-                    color = Color.Red,
-                    modifier = Modifier
-                        .combinedClickable(
-                            onClick = {},
-                            onLongClick = { showTooltip.value = true }
-                        ),
+                    text = if (item.backupVersionCode == 0)
+                        "old"
+                    else
+                        "${item.backupVersionCode / 1000}.${item.backupVersionCode % 1000}",
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
-            }
-            val compressionText = if (item.isCompressed) {
-                if (item.compressionType.isNullOrEmpty())
-                    " gz"
-                else
-                    " ${item.compressionType}"
-            } else ""
-            if (compressionText.isNotEmpty()) Text(
-                text = compressionText,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-            val fileSizeText = if (item.backupVersionCode != 0)
-                Formatter.formatFileSize(LocalContext.current, item.size)
-            else ""
-            Text(
-                text = " - $fileSizeText",
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-            AnimatedVisibility(visible = (item.profileId != currentProfile)) {
-                Row {
+                if (item.isEncrypted) {
+                    val description = "${item.cipherType}"
+                    val showTooltip = remember { mutableStateOf(false) }
+                    if (showTooltip.value) {
+                        Tooltip(description, showTooltip)
+                    }
                     Text(
-                        text = " 👤",
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                    Text(
-                        text = "${item.profileId}",
+                        text = " enc",
                         color = Color.Red,
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = {},
+                                onLongClick = { showTooltip.value = true }
+                            ),
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
                     )
+                }
+                val compressionText = if (item.isCompressed) {
+                    if (item.compressionType.isNullOrEmpty())
+                        " gz"
+                    else
+                        " ${item.compressionType}"
+                } else ""
+                if (compressionText.isNotEmpty()) Text(
+                    text = compressionText,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
+                val fileSizeText = if (item.backupVersionCode != 0)
+                    Formatter.formatFileSize(LocalContext.current, item.size)
+                else ""
+                Text(
+                    text = " - $fileSizeText",
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
+                AnimatedVisibility(visible = (item.profileId != currentProfile)) {
+                    Row {
+                        Text(
+                            text = " 👤",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text(
+                            text = "${item.profileId}",
+                            color = Color.Red,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }
