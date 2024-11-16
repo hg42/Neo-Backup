@@ -6,11 +6,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.expandVertically
@@ -33,23 +28,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
@@ -61,7 +52,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -72,8 +62,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -85,8 +73,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -98,7 +84,6 @@ import coil.request.ImageRequest
 import coil.size.Size
 import com.machiav3lli.backup.ENABLED_FILTER_DISABLED
 import com.machiav3lli.backup.ICON_SIZE_LARGE
-import com.machiav3lli.backup.ICON_SIZE_MEDIUM
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.LATEST_FILTER_NEW
 import com.machiav3lli.backup.LAUNCHABLE_FILTER_NOT
@@ -111,7 +96,6 @@ import com.machiav3lli.backup.MODE_DATA_DE
 import com.machiav3lli.backup.MODE_DATA_EXT
 import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.SPECIAL_FILTER_ALL
 import com.machiav3lli.backup.UPDATED_FILTER_NEW
@@ -119,12 +103,9 @@ import com.machiav3lli.backup.UPDATED_FILTER_NOT
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.preferences.pref_busyIconScale
-import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowSquareOut
-import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Checks
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CircleWavyWarning
@@ -154,7 +135,6 @@ import com.machiav3lli.backup.ui.compose.theme.ColorSystem
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
 import com.machiav3lli.backup.ui.compose.theme.ColorUser
 import kotlinx.coroutines.delay
-import kotlin.math.max
 
 @Composable
 fun ButtonIcon(
@@ -297,131 +277,6 @@ fun placeholderIconPainter(
 )
 
 @Composable
-fun ActionButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    positive: Boolean = true,
-    iconOnSide: Boolean = false,
-    icon: ImageVector? = null,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        modifier = modifier,
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = if (positive) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.tertiary
-        ),
-        onClick = onClick
-    ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            text = text,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleSmall
-        )
-        if (icon != null) {
-            if (iconOnSide) Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                imageVector = icon,
-                contentDescription = text
-            )
-        }
-    }
-}
-
-@Composable
-fun ElevatedActionButton(
-    modifier: Modifier = Modifier,
-    text: String,
-    positive: Boolean = true,
-    icon: ImageVector? = null,
-    fullWidth: Boolean = false,
-    enabled: Boolean = true,
-    colored: Boolean = true,
-    withText: Boolean = text.isNotEmpty(),
-    onClick: () -> Unit,
-) {
-    ElevatedButton(
-        modifier = modifier,
-        colors = ButtonDefaults.elevatedButtonColors(
-            contentColor = when {
-                !colored -> MaterialTheme.colorScheme.onSurface
-                positive -> MaterialTheme.colorScheme.onPrimaryContainer
-                else     -> MaterialTheme.colorScheme.onTertiaryContainer
-            },
-            containerColor = when {
-                !colored -> MaterialTheme.colorScheme.surfaceContainer
-                positive -> MaterialTheme.colorScheme.primaryContainer
-                else     -> MaterialTheme.colorScheme.tertiaryContainer
-            }
-        ),
-        enabled = enabled,
-        onClick = onClick
-    ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text
-            )
-        }
-        if (withText)
-            Text(
-                modifier = when {
-                    fullWidth -> Modifier.weight(1f)
-                    else      -> Modifier.padding(start = 8.dp)
-                },
-                text = text,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleSmall
-            )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CardButton(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    description: String,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    val showTooltip = remember { mutableStateOf(false) }
-
-    ListItem(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = { showTooltip.value = true },
-                enabled = enabled,
-            ),
-        colors = ListItemDefaults.colors(
-            leadingIconColor = contentColor,
-            headlineColor = contentColor,
-            containerColor = containerColor,
-        ),
-        leadingContent = {
-            Icon(imageVector = icon, contentDescription = description)
-        },
-        headlineContent = {
-            Text(
-                text = description,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 2,
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            if (showTooltip.value) {
-                Tooltip(description, showTooltip)
-            }
-        }
-    )
-}
-
-@Composable
 fun Tooltip(
     text: String,
     openPopup: MutableState<Boolean>,
@@ -453,102 +308,6 @@ fun Tooltip(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun RoundButton(
-    modifier: Modifier = Modifier,
-    size: Dp = ICON_SIZE_SMALL,
-    icon: ImageVector,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    description: String = "",
-    onClick: () -> Unit,
-) {
-    IconButton(
-        modifier = modifier,
-        onClick = onClick
-    ) {
-        Icon(
-            modifier = Modifier.size(size),
-            imageVector = icon,
-            tint = tint,
-            contentDescription = description
-        )
-    }
-}
-
-@Composable
-fun RefreshButton(
-    modifier: Modifier = Modifier,
-    size: Dp = ICON_SIZE_SMALL,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    hideIfNotBusy: Boolean = false,
-    onClick: () -> Unit = {},
-) {
-    val isBusy by remember { OABX.busy }
-
-    if (hideIfNotBusy && isBusy.not())
-        return
-
-    val (angle, scale) = if (isBusy) {
-        val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransition")
-
-        // Animate from 0f to 1f
-        val animationProgress by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = pref_busyIconTurnTime.value,
-                    easing = LinearEasing
-                )
-            ), label = "animationProgress"
-        )
-        val angle = 360f * animationProgress
-        val scale = 0.01f * pref_busyIconScale.value
-        angle to scale
-    } else {
-        0f to 1f
-    }
-
-    RoundButton(
-        description = stringResource(id = R.string.refresh),
-        icon = Phosphor.ArrowsClockwise,
-        size = size,
-        tint = if (isBusy) Color.Red else tint,
-        modifier = modifier
-            .scale(scale)
-            .rotate(angle),
-        onClick = onClick
-    )
-}
-
-
-@Preview
-@Composable
-fun RefreshButtonPreview() {
-    OABX.fakeContext = LocalContext.current.applicationContext
-    
-    val level by remember { OABX.busyLevel }
-    val factor = 1.0 / max(1, level)
-
-    Column {
-        Text("factor: $factor")
-        Text("level: $level")
-        Text("time: ${(pref_busyIconTurnTime.value * factor).toInt()}")
-        Row {
-            RefreshButton()
-            ActionButton(text = "hit") {
-                OABX.hitBusy()
-            }
-            ActionButton(text = "begin") {
-                OABX.beginBusy()
-            }
-            ActionButton(text = "end") {
-                OABX.endBusy()
             }
         }
     }

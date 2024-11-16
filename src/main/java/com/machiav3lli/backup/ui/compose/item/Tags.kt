@@ -133,29 +133,13 @@ fun NoteTagItem(
             description = stringResource(id = R.string.edit_note),
             onClick = { onNote?.let { it(item) } }
         )
-        // why the hell? why is it more important than the other buttons?
-        //FilledTonalIconButton(
-        //    colors = IconButtonDefaults.filledTonalIconButtonColors(
-        //        containerColor = MaterialTheme.colorScheme.primary,
-        //        contentColor = MaterialTheme.colorScheme.onPrimary,
-        //    ),
-        //    onClick = { onNote?.let { it(item) } },
-        //) {
-        //    Icon(
-        //        modifier = Modifier
-        //            .size(24.dp)
-        //            .clickable { onNote?.let { it(item) } },
-        //        imageVector = Phosphor.NotePencil,
-        //        contentDescription = stringResource(id = R.string.edit_note),
-        //    )
-        //}
     } else InputChip(
         modifier = modifier
             .defaultMinSize(minWidth = 1.dp),
         selected = fillChip,
         colors = InputChipDefaults.inputChipColors(
-            containerColor = Color.Transparent,
-            labelColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = MaterialTheme.colorScheme.primary, //Color.Transparent,
+            labelColor = MaterialTheme.colorScheme.onPrimary, //.onSurface,
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
         ),
