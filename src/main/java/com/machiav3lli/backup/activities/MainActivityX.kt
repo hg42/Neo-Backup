@@ -138,6 +138,12 @@ class MainActivityX : BaseActivity() {
         LogViewModel.Factory(application)
     }
 
+    object LockNavigationState {
+        var intendedDestination: String? = null
+    }
+
+    private val lockNavigationState = LockNavigationState
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -443,7 +449,7 @@ class MainActivityX : BaseActivity() {
     fun moveTo(destination: String) {
         try {
             persist_beenWelcomed.value = destination != NavItem.Welcome.destination
-            navController.navigate(destination)
+            if (!isOnLockScreen()) navController.navigate(destination)
         } catch (e: IllegalArgumentException) {
             Timber.e("cannot navigate to '$destination'")
         } catch (e: Throwable) {
@@ -631,34 +637,23 @@ class MainActivityX : BaseActivity() {
 
     private fun launchMain() {
         when {
-            isBiometricLockAvailable() && isDeviceLockEnabled() -> {
+            shouldShowLock()   -> {
                 val currentDestination =
                     navController.currentDestination?.route ?: NavItem.Main.destination
-                val wasInited = !listOf(
-                    NavItem.Welcome.destination,
-                    NavItem.Permissions.destination,
-                    NavItem.Lock.destination
-                ).contains(currentDestination)
+                if (!isOnLockScreen()) lockNavigationState.intendedDestination = currentDestination
                 navController.safeNavigate(NavItem.Lock.destination)
-                launchBiometricPrompt(
-                    if (wasInited) currentDestination
-                    else NavItem.Main.destination
-                )
+                launchBiometricPrompt()
             }
 
-            listOf(
-                NavItem.Welcome.destination,
-                NavItem.Permissions.destination,
-                NavItem.Lock.destination
-            ).contains(navController.currentDestination?.route) -> {
+            isOnSystemScreen() -> {
                 navController.safeNavigate(NavItem.Main.destination)
             }
         }
     }
 
-    private fun launchBiometricPrompt(destination: String) {
+    private fun launchBiometricPrompt() {
         try {
-            val biometricPrompt = createBiometricPrompt(destination)
+            val biometricPrompt = createBiometricPrompt()
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(getString(R.string.prefs_biometriclock))
                 .setConfirmationRequired(true)
@@ -666,18 +661,36 @@ class MainActivityX : BaseActivity() {
                 .build()
             biometricPrompt.authenticate(promptInfo)
         } catch (e: Throwable) {
-            navController.safeNavigate(destination)
+            navigateToStoredDestination()
         }
     }
 
-    private fun createBiometricPrompt(destination: String): BiometricPrompt {
+    private fun createBiometricPrompt(): BiometricPrompt {
         return BiometricPrompt(this,
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    navController.safeNavigate(destination)
+                    navigateToStoredDestination()
                 }
             })
+    }
+
+    private fun shouldShowLock() = isBiometricLockAvailable() && isDeviceLockEnabled()
+
+    private fun isOnSystemScreen() = navController.currentDestination?.route in listOf(
+        NavItem.Welcome.destination,
+        NavItem.Permissions.destination,
+        NavItem.Lock.destination,
+    )
+
+    private fun isOnLockScreen() =
+        navController.currentDestination?.route == NavItem.Lock.destination
+
+    private fun navigateToStoredDestination() {
+        lockNavigationState.intendedDestination?.let { destination ->
+            navController.safeNavigate(destination)
+            lockNavigationState.intendedDestination = null
+        }
     }
 }
