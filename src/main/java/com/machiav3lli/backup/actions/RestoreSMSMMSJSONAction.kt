@@ -54,7 +54,7 @@ object RestoreSMSMMSJSONAction {
             throw RuntimeException("No permission for SMS/MMS.")
         }
         if (!isDefaultSms(context)) {
-            throw RuntimeException("OAndBackupX not default SMS/MMS app.")
+            throw RuntimeException("Neo Backup not default SMS/MMS app.")
         }
         val inputFile = context.contentResolver.openInputStream(Uri.fromFile(File(filePath)))
         inputFile?.use { inputStream ->
