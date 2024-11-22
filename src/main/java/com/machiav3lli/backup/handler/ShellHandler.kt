@@ -772,8 +772,10 @@ class ShellHandler {
 
         var isLikeRoot: Boolean? = null
             get() {
+                // invalidate cached field if suCommand changes
                 if (field == null || suCommand != checkedCommand) {
                     field = checkRootEquivalent()
+                    Timber.i("suCommand = $suCommand => ${if(field ?: false) "IS like root" else "is NOT like root"}")
                     checkedCommand = suCommand
                 }
                 return field ?: false
