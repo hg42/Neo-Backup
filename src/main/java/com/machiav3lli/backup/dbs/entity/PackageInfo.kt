@@ -39,7 +39,7 @@ open class PackageInfo(
     var icon: Int = -1,
 ) {
     open val isSpecial: Boolean
-        get() = false
+        get() = packageName.startsWith("special.")
 
     constructor(context: Context, pi: android.content.pm.PackageInfo) : this(
         packageName = pi.packageName,
