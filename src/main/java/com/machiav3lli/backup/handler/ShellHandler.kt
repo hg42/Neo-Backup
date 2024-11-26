@@ -845,7 +845,7 @@ class ShellHandler {
 
         fun validateSuCommand(command: String): Boolean {
             try {
-                Timber.i("validateSuCommand: $command")
+                Timber.i("----- validateSuCommand: $command")
                 suCommand = command
                 if (tryGainAccessCommand()) {
                     return true
@@ -861,6 +861,9 @@ class ShellHandler {
                 if (command == "") null else command,
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
+                "sh -c \"(echo 'nsenter --mount=/proc/1/ns/mnt sh'; cat) | \$(which su kp)\"",  // APatch workaround, slow
+                "sh -c \"(echo 'nsenter --mount=/proc/1/ns/mnt sh'; cat) | su\"",  // APatch workaround, slow
+                "sh -c \"(echo 'nsenter --mount=/proc/1/ns/mnt sh'; cat) | kp\"",  // APatch workaround, slow
                 "su",
                 "/system/bin/su",
                 "sh"
