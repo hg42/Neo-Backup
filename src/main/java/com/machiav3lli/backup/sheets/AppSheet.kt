@@ -175,7 +175,10 @@ fun AppSheet(
             viewModel.refreshNow.value = false
             mActivity.updatePackage(pkg.packageName)
         }
-        if (dismissNow) onDismiss()
+        if (dismissNow) {
+            viewModel.dismissNow.value = false
+            onDismiss()
+        }
 
         Scaffold(
             containerColor = Color.Transparent,
