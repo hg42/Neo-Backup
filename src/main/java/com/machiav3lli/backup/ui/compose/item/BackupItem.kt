@@ -99,9 +99,9 @@ fun BackupItem_supportingContent(item: Backup) {
                 maxLines = 2,
                 style = MaterialTheme.typography.labelMedium,
             )
-            if (item.tag.isNotEmpty())
+            if (item.directoryTag.isNotEmpty())
                 Text(
-                    text = " ${item.tag}",
+                    text = " ${item.directoryTag}",
                     modifier = Modifier.align(Alignment.Top),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 3,
