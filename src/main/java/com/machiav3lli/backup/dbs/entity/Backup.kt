@@ -24,7 +24,7 @@ import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
-import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer

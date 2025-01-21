@@ -76,14 +76,10 @@ import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.PREFS_BACKUP_FILE
-import com.machiav3lli.backup.entity.LaunchPref
-import com.machiav3lli.backup.entity.Pref
-import com.machiav3lli.backup.entity.Pref.Companion.preferencesFromSerialized
-import com.machiav3lli.backup.entity.Pref.Companion.preferencesToSerialized
-import com.machiav3lli.backup.entity.StorageFile
-import com.machiav3lli.backup.entity.UndeterminedStorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.findBackups
+import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.items.UndeterminedStorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.plugins.Plugin.Companion.displayPath
 import com.machiav3lli.backup.plugins.Plugin.Companion.fileFor
@@ -92,20 +88,19 @@ import com.machiav3lli.backup.plugins.Plugin.Companion.pluginTypes
 import com.machiav3lli.backup.plugins.Plugin.Companion.typeFor
 import com.machiav3lli.backup.plugins.SpecialFilesPlugin
 import com.machiav3lli.backup.plugins.TextPlugin
+import com.machiav3lli.backup.pref_autoLogAfterSchedule
+import com.machiav3lli.backup.pref_autoLogExceptions
+import com.machiav3lli.backup.pref_autoLogSuspicious
+import com.machiav3lli.backup.pref_catchUncaughtException
+import com.machiav3lli.backup.pref_logToSystemLogcat
+import com.machiav3lli.backup.pref_maxLogLines
+import com.machiav3lli.backup.pref_trace
 import com.machiav3lli.backup.preferences.DevPrefGroups
 import com.machiav3lli.backup.preferences.Logs
 import com.machiav3lli.backup.preferences.Terminal
 import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
-import com.machiav3lli.backup.preferences.pref_autoLogAfterSchedule
-import com.machiav3lli.backup.preferences.pref_autoLogExceptions
-import com.machiav3lli.backup.preferences.pref_autoLogSuspicious
-import com.machiav3lli.backup.preferences.pref_catchUncaughtException
-import com.machiav3lli.backup.preferences.pref_logToSystemLogcat
-import com.machiav3lli.backup.preferences.pref_maxLogLines
-import com.machiav3lli.backup.preferences.pref_trace
 import com.machiav3lli.backup.preferences.supportInfoLogShare
-import com.machiav3lli.backup.preferences.traceDebug
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.flatten
@@ -115,6 +110,10 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
+import com.machiav3lli.backup.ui.item.LaunchPref
+import com.machiav3lli.backup.ui.item.Pref
+import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesFromSerialized
+import com.machiav3lli.backup.ui.item.Pref.Companion.preferencesToSerialized
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.getBackupRoot
@@ -129,7 +128,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
-
 
 
 @Composable
@@ -382,7 +380,7 @@ fun DevInfoLogTab() {
 @Composable
 fun DevLogsTab() {
 
-    Logs()
+    Logs(viewModel = OABX.main?.logsViewModel ?: LogViewModel(OABX.NB)) // in case MainActivity is not existing yet
 }
 
 @Composable

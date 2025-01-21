@@ -54,7 +54,7 @@ fun LogsPage(viewModel: LogViewModel) {
 }
 
 @Composable
-fun Logs(viewModel: LogViewModel, modifier: Modifier) {
+fun Logs(viewModel: LogViewModel, modifier: Modifier = Modifier) {
 
     val logs = remember(viewModel) { viewModel.logsList }
 
