@@ -863,7 +863,7 @@ open class StorageFile {
             try {
                 synchronized(invalidateFilters) {
                     while (invalidateFilters.size > 0) {
-                        invalidateFilters.removeFirst().let { isInvalid ->
+                        invalidateFilters.removeFirstOrNull()?.let { isInvalid ->
                             //beginNanoTimer("checkCache")
                             synchronized(fileListCache) {
                                 fileListCache = fileListCache
@@ -960,8 +960,9 @@ class UndeterminedStorageFile(val parent: StorageFile, val subPath: String) {
         var dir: StorageFile? = parent
         val components = subPath.split('/').toMutableList()
         while (dir != null && components.size > 1) {
-            val component = components.removeFirst()
-            dir = dir.findFile(component)
+            components.removeFirstOrNull()?.let { component ->
+                dir = dir?.findFile(component)
+            }
         }
         return dir?.findFile(components.first())
     }
@@ -974,8 +975,9 @@ class UndeterminedStorageFile(val parent: StorageFile, val subPath: String) {
         var dir = parent
         val components = subPath.split('/').toMutableList()
         while (components.size > 1) {
-            val component = components.removeFirst()
-            dir = dir.createDirectory(component)
+            components.removeFirstOrNull()?.let { component ->
+                dir = dir.createDirectory(component)
+            }
         }
         return dir.createFile(components.first())
     }

@@ -304,8 +304,11 @@ class Package {
 
     fun deleteAllBackups() {
         val backups = backupsNewestFirst.toMutableList()
-        while (backups.isNotEmpty())
-            _deleteBackup(backups.removeLast())
+        while (backups.isNotEmpty()) {
+            backups.removeLastOrNull()?.let { backup ->
+                _deleteBackup(backup)
+            }
+        }
         if (pref_paranoidBackupLists.value)
             runOrLog { refreshBackupList() }                // get real state of file system only once
     }
@@ -324,9 +327,10 @@ class Package {
                 } --> delete ${TraceUtils.formatBackups(deletableBackups)}"
             }
             while (deletableBackups.size > 0) {
-                val backup = deletableBackups.removeLast()
-                backups.remove(backup)
-                _deleteBackup(backup)
+                deletableBackups.removeLastOrNull()?.let { backup ->
+                    backups.remove(backup)
+                    _deleteBackup(backup)
+                }
             }
         } else {
             val deletableBackups = backups.filterNot { it.persistent }.drop(1).toMutableList()
@@ -338,10 +342,10 @@ class Package {
                 } --> delete ${TraceUtils.formatBackups(deletableBackups)}"
             }
             while (keep < backups.size && deletableBackups.size > 0) {
-
-                val backup = deletableBackups.removeLast()
-                backups.remove(backup)
-                _deleteBackup(backup)
+                deletableBackups.removeLastOrNull()?.let { backup ->
+                    backups.remove(backup)
+                    _deleteBackup(backup)
+                }
             }
         }
         backupList = backups
