@@ -37,7 +37,7 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
-import com.machiav3lli.backup.entity.StorageFile
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
@@ -113,11 +113,7 @@ fun AdvancedPrefsPage() {
         ) {
             item {
                 PrefsGroup(prefs = prefs) { pref ->
-                    if (pref == pref_enableSpecialBackups) {        //TODO hg42 encapsulate in pref
-                        val newModel = sortFilterModel
-                        newModel.mainFilter = newModel.mainFilter and MAIN_FILTER_DEFAULT
-                        sortFilterModel = newModel
-                    }
+                    // TODO do things
                 }
             }
             item {
@@ -209,7 +205,7 @@ class SuCommandPref(
     summary: String? = null,
     UI: PrefUI? = null,
     icon: ImageVector? = null,
-    iconTint: Color? = null,
+    iconTint: ((Pref) -> Color)? = null,
     enableIf: (() -> Boolean)? = null,
     onChanged: ((Pref) -> Unit)? = null,
 ) : StringPref(
@@ -241,7 +237,17 @@ val pref_suCommand = SuCommandPref(
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
     summary = suCommand_summary,
     icon = Phosphor.Hash,
-    iconTint = Color.Gray,
+    iconTint = {
+        val pref = it as SuCommandPref
+        if (isLikeRoot == true) {
+            if (pref.value == suCommand)
+                Color.Green
+            else
+                Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
+        } else {
+            Color.Red
+        }
+    },
     defaultValue = suCommand_default,
 ) {
     val pref = it as SuCommandPref
@@ -252,14 +258,6 @@ val pref_suCommand = SuCommandPref(
             findSuCommand()
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
-    }
-    pref.iconTint = if (isLikeRoot == true) {
-        if (pref.value == suCommand)
-            Color.Green
-        else
-            Color.Green.copy(alpha = 0.5f)      //TODO hg42 because here is not @Ccomposable
-    } else {
-        Color.Red
     }
     pref.summary = suCommand_summary
     traceDebug  { "summary: ${pref.summary}" }
@@ -635,8 +633,14 @@ val pref_enableSpecialBackups = BooleanPref(
     titleId = R.string.prefs_enablespecial,
     summaryId = R.string.prefs_enablespecial_summary,
     icon = Phosphor.AsteriskSimple,
-    iconTint = ColorSpecial,
-    defaultValue = false
+    iconTint = { ColorSpecial },
+    defaultValue = false,
+    onChanged = {
+        // TODO hg42
+        //NeoPrefs.getInstance().let {
+        //    it.mainFilterHome.value = it.mainFilterHome.value and MAIN_FILTER_DEFAULT
+        //}
+    }
 )
 
 val pref_disableVerification = BooleanPref(
@@ -644,7 +648,7 @@ val pref_disableVerification = BooleanPref(
     titleId = R.string.prefs_disableverification,
     summaryId = R.string.prefs_disableverification_summary,
     icon = Phosphor.AndroidLogo,
-    iconTint = ColorUpdated,
+    iconTint = { ColorUpdated },
     defaultValue = true
 )
 
@@ -653,7 +657,7 @@ val pref_giveAllPermissions = BooleanPref(
     titleId = R.string.prefs_restoreallpermissions,
     summaryId = R.string.prefs_restoreallpermissions_summary,
     icon = Phosphor.ShieldStar,
-    iconTint = ColorDeData,
+    iconTint = { ColorDeData },
     defaultValue = false
 )
 

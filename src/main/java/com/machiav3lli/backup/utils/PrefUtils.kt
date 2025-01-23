@@ -31,6 +31,7 @@ import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.PREFS_SHARED_PRIVATE
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.items.SortFilterModel
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.persist_salt
 import com.machiav3lli.backup.preferences.persist_sortFilter
 import com.machiav3lli.backup.preferences.persist_specialFilters
@@ -167,22 +168,16 @@ fun setBackupDir(uri: Uri): String {
             if (!pref_shadowRootFile.value) // prevent recursion
                 pref_shadowRootFile.value = true
         MainScope().launch(Dispatchers.IO) {
-        invalidateBackupLocation()
-    }
+            invalidateBackupLocation()
+        }
     }
     return fullUriString
 }
 
-val Context.canReadExternalStorage: Boolean
+val Context.canAccessExternalStorage: Boolean
     get() {
         val externalStorage = FileUtils.getExternalStorageDirectory(this)
-        return externalStorage?.canRead() ?: false
-    }
-
-val Context.canWriteExternalStorage: Boolean
-    get() {
-        val externalStorage = FileUtils.getExternalStorageDirectory(this)
-        return externalStorage?.canWrite() ?: false
+        return externalStorage?.let { it.canRead() && it.canWrite() } ?: false
     }
 
 val isBackupDeviceProtectedData: Boolean
