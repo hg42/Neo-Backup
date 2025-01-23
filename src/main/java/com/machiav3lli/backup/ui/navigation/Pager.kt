@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -139,10 +138,10 @@ fun RowScope.AltNavBarItem(
                     .size(iconSize),
                 tint = iconColor,
             )
-            AnimatedVisibility(
-                visible = !selected,
-                enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            ) {
+            //AnimatedVisibility(
+            //    visible = !selected,
+            //    enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
+            //) {
                 Text(
                     text = stringResource(id = labelId),
                     style = MaterialTheme.typography.bodyMedium,
@@ -150,7 +149,7 @@ fun RowScope.AltNavBarItem(
                     overflow = TextOverflow.Ellipsis,
                     color = iconColor,
                 )
-            }
+            //}
         }
     }
 }
