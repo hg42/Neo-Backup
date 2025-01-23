@@ -445,4 +445,6 @@
     <string name="prefs_restorecache_summary">Restore files in cache directories</string>
     <string name="filters_tags">Tags</string>
     <string name="search_package">Search for the app in store</string>
+    <string name="prefs_altbackupdate">Show ISO date format in backups</string>
+    <string name="prefs_altbackupdate_summary">Use the ISO date format in backup items instead of the locale one.</string>
 </resources>

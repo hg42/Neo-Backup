@@ -30,6 +30,7 @@ import com.machiav3lli.backup.secondaryColorItems
 import com.machiav3lli.backup.themeItems
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsOutLineVertical
+import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarX
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CircleWavyWarning
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Clock
 import com.machiav3lli.backup.ui.compose.icons.phosphor.EyedropperSample
@@ -280,6 +281,14 @@ val pref_altNavBarItem = BooleanPref(
     titleId = R.string.prefs_altnavbaritem,
     summaryId = R.string.prefs_altnavbaritem_summary,
     icon = Phosphor.TagSimple,
+    defaultValue = false
+)
+
+val pref_altBackupDate = BooleanPref(
+    key = "user.altBackupDate",
+    titleId = R.string.prefs_altbackupdate,
+    summaryId = R.string.prefs_altbackupdate_summary,
+    icon = Phosphor.CalendarX,
     defaultValue = false
 )
 

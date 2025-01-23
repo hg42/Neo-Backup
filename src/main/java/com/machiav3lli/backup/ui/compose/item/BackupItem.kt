@@ -42,11 +42,13 @@ import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.preferences.pref_altBackupDate
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Lock
 import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
 import com.machiav3lli.backup.ui.compose.icons.phosphor.TrashSimple
+import com.machiav3lli.backup.utils.getFormattedDate
 import java.io.File
 import java.time.LocalDateTime
 
@@ -94,7 +96,12 @@ fun BackupItem_supportingContent(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = item.backupDate.format(BACKUP_DATE_TIME_SHOW_FORMATTER),
+                text = (
+                    if (pref_altBackupDate.value)
+                        item.backupDate.format(BACKUP_DATE_TIME_SHOW_FORMATTER)
+                    else
+                        item.backupDate.getFormattedDate(true)
+                    ) ?: item.backupDate.format(BACKUP_DATE_TIME_SHOW_FORMATTER),
                 modifier = Modifier.align(Alignment.Top),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 2,
