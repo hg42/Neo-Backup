@@ -329,7 +329,7 @@ class MainActivityX : BaseActivity() {
 
             LaunchedEffect(true) {
                 withTimeoutOrNull(5000) {
-                    while (navController.graph.nodes.size() < 2)
+                    while (runCatching { navController.graph.nodes.size() }.getOrDefault(0) < 2)
                         delay(100)
                 }
                 doIntent(intent, "afterContent")
