@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.busyTick
 import com.machiav3lli.backup.OABX.Companion.isDebug
@@ -63,7 +62,6 @@ import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.PrefUI
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
-import com.machiav3lli.backup.utils.sortFilterModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -248,16 +246,20 @@ val pref_suCommand = SuCommandPref(
             Color.Red
         }
     },
-    defaultValue = suCommand_default,
+    defaultValue = "",
 ) {
     val pref = it as SuCommandPref
-    if (pref.value == "")
-        pref.value = suCommand_default
-    if (pref.value != suCommand) {
-        if (!validateSuCommand(pref.value)) {
+    var test = pref.value
+    if (test == "")
+        test = suCommand_default
+    if (test != suCommand) {
+        if (!validateSuCommand(test)) {
             findSuCommand()
             traceDebug { "findSuCommand: suCommand = $suCommand" }
         }
+    }
+    if (pref.value == "" && test.isNotEmpty()) {
+        pref.value = test
     }
     pref.summary = suCommand_summary
     traceDebug  { "summary: ${pref.summary}" }
