@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Environment.DIRECTORY_DOWNLOADS
+import android.os.FileUriExposedException
 import android.os.SystemClock
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
@@ -138,13 +139,6 @@ object SystemUtils {
     }
 
     fun share(file: StorageFile, asFile: Boolean = true) {
-        //if (asFile && file.file == null) {
-        //    OABX.context.getExternalFilesDir(DIRECTORY_DOWNLOADS)
-        //        ?.resolve(file.name ?: "NeoBackup-share.txt")
-        //        ?.also { it.writeText(file.readText()) }
-        //        ?.let { share(StorageFile(it)) }
-        //    return
-        //}
         MainScope().launch(Dispatchers.IO) {
             try {
                 val text = if (asFile) "" else file.readText()
@@ -162,6 +156,13 @@ object SystemUtils {
                 }
                 val shareIntent = Intent.createChooser(sendIntent, file.name)
                 OABX.activity?.startActivity(shareIntent)
+            } catch (e: FileUriExposedException) {
+                OABX.context.getExternalFilesDir(DIRECTORY_DOWNLOADS)
+                    ?.resolve(file.name ?: "NeoBackup-share.txt")
+                    ?.also { it.writeText(file.readText()) }
+                    ?.let {
+                        share(StorageFile(it))
+                    }
             } catch (e: Throwable) {
                 LogsHandler.unexpectedException(e)
             }
