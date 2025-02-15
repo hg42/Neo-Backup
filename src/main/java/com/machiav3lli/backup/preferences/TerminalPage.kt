@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -430,6 +431,9 @@ fun TerminalText(
     else
         text
 
+    val toolbarPadding = 8.dp
+    val toolbarHeight = ICON_SIZE_SMALL + toolbarPadding*2
+
     Box(
         modifier = modifier
             .ifThen(limitLines == 0) { Modifier.fillMaxHeight() }
@@ -465,6 +469,7 @@ fun TerminalText(
                     verticalArrangement = Arrangement.spacedBy(lineSpacing),
                     state = listState
                 ) {
+                    item { Spacer(Modifier.height(8.dp)) }
                     items(lines) {
                         val color =
                             when {
@@ -491,6 +496,7 @@ fun TerminalText(
                                 .padding(0.dp)
                         )
                     }
+                    item { Spacer(Modifier.height(toolbarHeight)) }
                 }
             }
         }
@@ -498,13 +504,15 @@ fun TerminalText(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)),
+                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f))
+                .height(toolbarHeight),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             //val focusManager = LocalFocusManager.current
 
             TextField(modifier = Modifier
+                .padding(0.dp)
                 .weight(1f),
                 value = search,
                 singleLine = true,
@@ -742,7 +750,8 @@ fun Terminal(
         Box(
             modifier = Modifier
                 .background(color = Color.Transparent)
-                .padding(4.dp)
+                .padding(vertical = 0.dp)
+                .padding(horizontal = 4.dp)
                 .blockBorder()
                 .weight(1f)
         ) {
@@ -753,21 +762,6 @@ fun Terminal(
                 scrollOnAdd = true
             )
         }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewTerminal() {
-
-    OABX.fakeContext = LocalContext.current.applicationContext
-
-    Box(
-        modifier = Modifier
-        //.height(500.dp)
-        //.width(500.dp)
-    ) {
-        TerminalPage()
     }
 }
 
@@ -862,6 +856,21 @@ fun PreviewTestTextWidth() {
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun PreviewTerminal() {
+
+    OABX.fakeContext = LocalContext.current.applicationContext
+
+    Box(
+        modifier = Modifier
+        //.height(500.dp)
+        //.width(500.dp)
+    ) {
+        TerminalPage()
     }
 }
 
