@@ -18,15 +18,19 @@
 package com.machiav3lli.backup.pages
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,13 +58,11 @@ import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.preferences.pref_singularBackupRestore
 import com.machiav3lli.backup.sheets.BatchPrefsSheet
 import com.machiav3lli.backup.sheets.SortFilterSheet
+import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.DiamondsFour
-import com.machiav3lli.backup.ui.compose.icons.phosphor.FunnelSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.HardDrives
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Nut
-import com.machiav3lli.backup.ui.compose.icons.phosphor.Prohibit
-import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.StateChip
@@ -117,54 +119,45 @@ fun BatchPage(viewModel: BatchViewModel, backupBoolean: Boolean) {
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         sheetShape = MaterialTheme.shapes.extraSmall,
         sheetContent = {
-            if (prefsNotFilter.value) BatchPrefsSheet(backupBoolean)
-            else SortFilterSheet(
-                onDismiss = {
+
+            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+
+                // BackHandler needs to be conditional, because all pages may be composed (sliding)
+                // and sheets are also compose when hidden
+                BackHandler {
+                    traceCompose { "BatchPage sheet BackHandler" }
                     scope.launch {
                         scaffoldState.bottomSheetState.partialExpand()
                     }
-                },
-            )
-        },
-        topBar = {
-            Column {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ActionChip(
-                        modifier = Modifier.weight(1f),
-                        icon = Phosphor.Prohibit,
-                        text = stringResource(id = R.string.sched_blocklist),
-                        positive = false,
-                        fullWidth = true,
-                    ) {
-                        openBlocklist.value = true
-                    }
-                    ActionChip(
-                        modifier = Modifier.weight(1f),
-                        icon = Phosphor.FunnelSimple,
-                        text = stringResource(id = R.string.sort_and_filter),
-                        positive = true,
-                        fullWidth = true,
-                    ) {
-                        scope.launch {
-                            prefsNotFilter.value = false
-                            scaffoldState.bottomSheetState.expand()
-                        }
-                    }
                 }
-                HorizontalDivider(
-                    thickness = 2.dp,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
+
+                if (prefsNotFilter.value)
+                    BatchPrefsSheet(backupBoolean)
+                else
+                    SortFilterSheet(
+                        onDismiss = {
+                            scope.launch {
+                                scaffoldState.bottomSheetState.partialExpand()
+                            }
+                        },
+                    )
+            } else {
+                // inexpensive and small placeholder while hidden,
+                // because bottom sheets even recomposite when hidden,
+                // which is bad when they contain live content,
+                // spacer is necessary because empty sheets never unhide
+                Spacer(modifier = Modifier.height(8.dp))
             }
-        }
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
         ) {
+            //BackHandler { //TODO wech
+            //    OABX.main?.finishAffinity()
+            //}
+
             BatchPackageRecycler(
                 modifier = Modifier
                     .weight(1f, true)

@@ -19,7 +19,9 @@ package com.machiav3lli.backup.pages
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -46,6 +49,7 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.sheets.ScheduleSheet
+import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.recycler.ScheduleRecycler
@@ -81,22 +85,34 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         sheetContent = {
 
-            BackHandler {
-                scope.launch {
-                    scaffoldState.bottomSheetState.hide()
-                }
-            }
+            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
 
-            ScheduleSheet(
-                viewModel = scheduleSheetVM,
-                scheduleId = scheduleSheetId.longValue,
-                onDismiss = {
+                // BackHandler needs to be conditional, because all pages may be composed (sliding)
+                // and sheets are also compose when hidden
+                BackHandler {
+                    traceCompose { "SchedulerPage sheet BackHandler" }
                     scope.launch {
                         scaffoldState.bottomSheetState.partialExpand()
-                        scheduleSheetId.longValue = -1L
                     }
                 }
-            )
+
+                ScheduleSheet(
+                    viewModel = scheduleSheetVM,
+                    scheduleId = scheduleSheetId.longValue,
+                    onDismiss = {
+                        scope.launch {
+                            scaffoldState.bottomSheetState.partialExpand()
+                            scheduleSheetId.longValue = -1L
+                        }
+                    }
+                )
+            } else {
+                // inexpensive and small placeholder while hidden,
+                // because bottom sheets even recomposite when hidden,
+                // which is bad when they contain live content,
+                // spacer is necessary because empty sheets never unhide
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     ) {
         Scaffold(

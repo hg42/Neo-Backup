@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.GearSix
@@ -178,6 +179,7 @@ fun LockPage(launchMain: () -> Unit) {
         }
     ) {
         BackHandler {
+            traceCompose { "LockPage BackHandler" }
             OABX.main?.finishAffinity()
         }
         Box(modifier = Modifier.fillMaxSize()) {}

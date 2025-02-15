@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.sheets.HelpSheet
+import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Info
@@ -72,12 +73,7 @@ fun PrefsPage(
 
     Shell.getShell()
 
-    BackHandler {
-        navController.navigateUp()
-    }
-
     FullScreenBackground {
-
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
             sheetPeekHeight = 0.dp,
@@ -85,6 +81,15 @@ fun PrefsPage(
             contentColor = MaterialTheme.colorScheme.onBackground,
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             sheetContent = {
+                // BackHandler needs to be conditional, because all pages may be composed (sliding)
+                // and sheets are also compose when hidden
+                BackHandler {
+                    traceCompose { "BatchPage sheet BackHandler" }
+                    scope.launch {
+                        scaffoldState.bottomSheetState.partialExpand()
+                    }
+                }
+
                 HelpSheet {
                     scope.launch {
                         scaffoldState.bottomSheetState.partialExpand()
@@ -92,6 +97,11 @@ fun PrefsPage(
                 }
             }
         ) {
+            BackHandler {
+                traceCompose { "PrefsPage BackHandler" }
+                navController.navigateUp()
+            }
+
             Scaffold(
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onSurface,

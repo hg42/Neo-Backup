@@ -30,6 +30,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -50,6 +51,7 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.sheets.SortFilterSheet
+import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FunnelSimple
@@ -82,45 +84,6 @@ fun MainPage(
     )
     val scaffoldState = rememberBottomSheetScaffoldState()
 
-    //TODO wech begin ??? or is this necessary with resume or similar?
-    //TODO would this not need SideEffect or LaunchEffect? what about life cycles?
-
-    //TODO why check again if this is recomposed?
-    //OABX.appsSuspendedChecked = false
-
-    //TODO isn't it enough to set this in OABX? (hg42: I added it there now)
-    //if (pref_catchUncaughtException.value) {
-    //    Thread.setDefaultUncaughtExceptionHandler { _, e ->
-    //        try {
-    //            Timber.i("\n\n" + "=".repeat(60))
-    //            LogsHandler.unexpectedException(e)
-    //            LogsHandler.logErrors("uncaught: ${e.message}")
-    //            if (pref_uncaughtExceptionsJumpToPreferences.value) {
-    //                context.restartApp(RESCUE_NAV)
-    //            }
-    //            object : Thread() {
-    //                override fun run() {
-    //                    Looper.prepare()
-    //                    Looper.loop()
-    //                }
-    //            }.start()
-    //        } catch (_: Throwable) {
-    //            // ignore
-    //        } finally {
-    //            exitProcess(2)
-    //        }
-    //    }
-    //}
-
-    //Shell.getShell()
-
-    //TODO wech end ???
-
-
-    BackHandler {
-        OABX.main?.finishAffinity()
-    }
-
     var query by rememberSaveable {
         mutableStateOf(
             OABX.main?.viewModel?.searchQuery?.value ?: ""
@@ -135,15 +98,33 @@ fun MainPage(
             contentColor = MaterialTheme.colorScheme.onBackground,
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             sheetContent = {
-                SortFilterSheet(
-                    onDismiss = {
+
+                if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+
+                    // BackHandler needs to be conditional, because sheets are also compose when hidden
+                    BackHandler {
+                        traceCompose { "MainPage sheet BackHandler" }
                         scope.launch {
                             scaffoldState.bottomSheetState.partialExpand()
                         }
-                    },
-                )
+                    }
+
+                    SortFilterSheet(
+                        onDismiss = {
+                            scope.launch {
+                                scaffoldState.bottomSheetState.partialExpand()
+                            }
+                        },
+                    )
+                }
             }
         ) {
+            BackHandler {
+                // navController.navigateUp() //TODO hg42 crashes at second time
+                traceCompose { "MainPage BackHandler" }
+                OABX.main?.finishAffinity()
+            }
+
             val pagerState = rememberPagerState(pageCount = { pages.size })
             val currentPage by remember { derivedStateOf { pages[pagerState.currentPage] } }
             val openBlocklist = rememberSaveable { mutableStateOf(false) }
