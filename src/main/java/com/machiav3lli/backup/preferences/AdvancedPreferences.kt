@@ -30,7 +30,6 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.busyTick
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
-import com.machiav3lli.backup.OABX.Companion.isRelease
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.handler.ShellHandler.Companion.findSuCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
@@ -457,7 +456,7 @@ val pref_fullScreenBackground = BooleanPref(
 
 val pref_restartAppOnLanguageChange = BooleanPref(
     key = "dev-alt.restartAppOnLanguageChange",
-    summary = "create human readable yaml format for preferences",
+    summary = "restart app, if the language changes",
     defaultValue = false
 )
 
@@ -564,7 +563,7 @@ val pref_useExpedited = BooleanPref(
 
 //---------------------------------------- developer settings - workarounds
 
-val pref_fixNavBarOverlap = IntPref(
+val pref_fixNavBarOverlap = IntPref( //TODO wech
     key = "dev-hack.fixNavBarOverlap",
     summary = "fix UI overlapping system navbars [in 'dp', usually needs something like 42]",
     entries = (0..64).toList(),
