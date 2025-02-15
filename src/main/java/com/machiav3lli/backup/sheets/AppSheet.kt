@@ -48,6 +48,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +67,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
@@ -157,12 +157,14 @@ fun AppSheet(
         val backups = pkg.backupsNewestFirst
         val hasBackups = pkg.hasBackups
 
-        traceCompose {
-            "AppPage ${thePackage.packageName} ${
-                TraceUtils.formatBackups(
-                    backups
-                )
-            }"
+        SideEffect {
+            traceCompose {
+                "AppPage ${thePackage.packageName} ${
+                    TraceUtils.formatBackups(
+                        backups
+                    )
+                }"
+            }
         }
 
         val imageData by remember(pkg) {
