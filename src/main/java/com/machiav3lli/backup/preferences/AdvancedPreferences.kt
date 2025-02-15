@@ -294,7 +294,7 @@ val pref_maxJobs = IntPref(
 val pref_menuButtonAlwaysVisible = BooleanPref(
     key = "dev-adv.menuButtonAlwaysVisible",
     summary = "also show context menu button when selection is empty",
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_busyIconTurnTime = IntPref(
@@ -428,7 +428,7 @@ val pref_useNoteIcon = BooleanPref(
         use icon instead of 'edit note' button and color note background
         to emphasize the note instead of the always existent edit button
         """.trimIndent().replace("\n", " ").trim(),
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_paranoidBackupLists = BooleanPref(
@@ -452,7 +452,7 @@ val pref_ignoreLockedInHousekeeping = BooleanPref(
 val pref_fullScreenBackground = BooleanPref(
     key = "dev-alt.fullScreenBackground",
     summary = "extend background (laser, version) to fullscreen",
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_restartAppOnLanguageChange = BooleanPref(
@@ -496,7 +496,7 @@ val pref_versionOpacity = IntPref(
     key = "dev-alt.versionOpacity",
     summary = "opacity of version [percent]",
     entries = ((0..9 step 1) + (10..100 step 5)).toList(),
-    defaultValue = if (isRelease) 1 else 75
+    defaultValue = 75
     // invisible but can be seen with image processing
 )
 

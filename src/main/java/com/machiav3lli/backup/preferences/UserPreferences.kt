@@ -247,7 +247,7 @@ val pref_multilineInfoChips = BooleanPref(
     summaryId = R.string.prefs_multilineinfochips_summary,
     icon = Phosphor.ArrowsOutLineVertical,
     iconTint = { ColorSystem },
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_singularBackupRestore = BooleanPref(
@@ -273,7 +273,7 @@ val pref_squeezeNavText = BooleanPref(
     summaryId = R.string.prefs_squeezenavtext_summary,
     icon = Phosphor.TextAa,
     iconTint = { ColorOBB },
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_altNavBarItem = BooleanPref(
@@ -281,7 +281,7 @@ val pref_altNavBarItem = BooleanPref(
     titleId = R.string.prefs_altnavbaritem,
     summaryId = R.string.prefs_altnavbaritem_summary,
     icon = Phosphor.TagSimple,
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_altBackupDate = BooleanPref(
