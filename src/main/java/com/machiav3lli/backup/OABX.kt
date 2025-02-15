@@ -456,8 +456,10 @@ class OABX : Application() {
         var logsDirectory: StorageFile? = null
             get() {
                 if (field == null) {
-                    field = context.getExternalFilesDir(null)?.let { StorageFile(it).ensureDirectory("logs") }
-                        ?: context.filesDir.let { StorageFile(it).ensureDirectory("logs") }
+                    //TODO hg42 immer intern und vielleicht auch in cache ???
+                    //field = context.getExternalFilesDir(null)?.let { StorageFile(it).ensureDirectory("logs") }
+                    //    ?: context.filesDir.let { StorageFile(it).ensureDirectory("logs") }
+                    field = context.cacheDir.let { StorageFile(it).ensureDirectory("logs") }
                 }
                 return field
             }
