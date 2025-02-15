@@ -149,12 +149,18 @@ private fun closeQuietly(closeable: AutoCloseable?) {
     }
 }
 
-fun uriFromFile(file: File): Uri =
-    FileProvider.getUriForFile(
-        OABX.context,
-        "${OABX.context.packageName}.provider",
-        file
-    )
+fun uriFromFile(file: File): Uri {
+    var uri = try {
+        FileProvider.getUriForFile(
+            OABX.context,
+            "${OABX.context.packageName}.provider",
+            file
+        )
+    } catch (e: Throwable) {
+        Uri.fromFile(file)
+    }
+    return uri
+}
 
 
 // TODO MAYBE migrate at some point to FuckSAF
@@ -184,12 +190,12 @@ open class StorageFile {
     private var _uri: Uri? = null
     val uri: Uri?
         get() = _uri ?: file?.let { f ->
-            parent?.let { p ->
+            _uri = parent?.let { p ->
                 name?.let { n ->
-                    _uri = p.findUri(n)
-                    _uri
+                    p.findUri(n)
                 }
             } ?: uriFromFile(f)
+            return _uri
         }
 
     data class DocumentInfo(
