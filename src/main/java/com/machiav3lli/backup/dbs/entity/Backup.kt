@@ -24,9 +24,9 @@ import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
-import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
+import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
 import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.serialization.Serializable
@@ -34,6 +34,7 @@ import kotlinx.serialization.Transient
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Entity(primaryKeys = ["packageName", "backupDate"])
 @Serializable
@@ -294,6 +295,8 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
             return null
         }
 
+        var invalidBackupId = 1L   // a runnning count
+
         fun createInvalidFrom(
             directory: StorageFile,
             propertiesFile: StorageFile? = null,
@@ -317,6 +320,12 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                         }
                 } ?: ""
 
+                // backups are identified by packageName and backupDate,
+                // so we need to create different backup dates
+                val backupDate =
+                    LocalDateTime.parse("2000-01-01T00:00:00").plusSeconds(invalidBackupId++)
+                        .format(DateTimeFormatter.ISO_DATE_TIME)
+
                 val backup = fromSerialized(
                     "{\n" +
                             "    \"backupVersionCode\": ${
@@ -324,12 +333,12 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
                                         com.machiav3lli.backup.BuildConfig.MINOR
                             },\n" +
                             "    \"packageName\": \"${"..." + if (why != null) "$why" else ""}\",\n" +
-                            "    \"packageLabel\": \"? INVALID\",\n" +
+                            "    \"packageLabel\": \"? INVALID BACKUPS\",\n" +
                             "    \"versionName\": \"$packageNameFixed\",\n" +
                             "    \"versionCode\": 0,\n" +
                             //"    \"sourceDir\": \"/data/app/~~oXzw9ZEl326kQh4Ay1vHJQ==/org.woheller69.weather-gWQaSUpYxRgFVvgMTqNb9A==/base.apk\",\n" +
                             "    \"splitSourceDirs\": [],\n" +
-                            "    \"backupDate\": \"2000-01-01T00:00:00\",\n" +
+                            "    \"backupDate\": \"$backupDate\",\n" +
                             "    \"hasApk\": false,\n" +
                             "    \"hasAppData\": false,\n" +
                             "    \"hasDevicesProtectedData\": false,\n" +
