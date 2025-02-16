@@ -33,8 +33,8 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
@@ -50,13 +50,13 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.sheets.ScheduleSheet
 import com.machiav3lli.backup.traceCompose
+import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.recycler.ScheduleRecycler
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import com.machiav3lli.backup.viewmodels.ScheduleViewModel
 import com.machiav3lli.backup.viewmodels.SchedulerViewModel
-import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,12 +67,14 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
     val schedules by viewModel.schedules.collectAsState(emptyList())
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scheduleSheetId = remember { mutableLongStateOf(-1L) }
-    val scheduleSheetVM by remember {
-        derivedStateOf {
-            ScheduleViewModel(
-                scheduleSheetId.longValue,
-                OABX.db.getScheduleDao(),
-            )
+
+    LaunchedEffect(scheduleSheetId.longValue) {
+        if(scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+            if (scheduleSheetId.longValue < 0)
+                scaffoldState.bottomSheetState.partialExpand()
+        } else {
+            if (scheduleSheetId.longValue >= 0)
+                scaffoldState.bottomSheetState.expand()
         }
     }
 
@@ -85,25 +87,28 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         sheetContent = {
 
-            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+            traceDebug { "SchedulerPage sheetContent ${scaffoldState.bottomSheetState.currentValue}" }
+
+            //if (scheduleSheetId.longValue >= 0) {
+            //if(scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded && scheduleSheetId.longValue >= 0) {
+            if (scaffoldState.bottomSheetState.isVisible && scheduleSheetId.longValue >= 0) {
 
                 // BackHandler needs to be conditional, because all pages may be composed (sliding)
-                // and sheets are also compose when hidden
+                // and sheets are also composed when hidden
                 BackHandler {
                     traceCompose { "SchedulerPage sheet BackHandler" }
-                    scope.launch {
-                        scaffoldState.bottomSheetState.partialExpand()
-                    }
+                    scheduleSheetId.longValue = -1L
                 }
 
                 ScheduleSheet(
-                    viewModel = scheduleSheetVM,
+                    //viewModel = scheduleSheetVM,
+                    viewModel = ScheduleViewModel(
+                        scheduleSheetId.longValue,
+                        OABX.db.getScheduleDao()
+                    ),
                     scheduleId = scheduleSheetId.longValue,
                     onDismiss = {
-                        scope.launch {
-                            scaffoldState.bottomSheetState.partialExpand()
-                            scheduleSheetId.longValue = -1L
-                        }
+                        scheduleSheetId.longValue = -1L
                     }
                 )
             } else {
@@ -135,10 +140,7 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 productsList = schedules,
                 onClick = { item ->
-                    scope.launch {
-                        scheduleSheetId.longValue = item.id
-                        scaffoldState.bottomSheetState.expand()
-                    }
+                    scheduleSheetId.longValue = item.id
                 },
                 onCheckChanged = { item: Schedule, b: Boolean ->
                     viewModel.updateSchedule(
