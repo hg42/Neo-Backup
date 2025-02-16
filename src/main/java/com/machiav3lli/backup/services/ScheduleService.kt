@@ -145,11 +145,27 @@ open class ScheduleService : Service() {
 
         if (scheduleId >= 0) {
 
-            if (runningSchedules[scheduleId] == null) {
+            traceSchedule { "[$scheduleId] check: $name -> ${runningSchedules[scheduleId]}" }
+
+            if (runningSchedules[scheduleId] != null) {
+
+                val message =
+                    "[$scheduleId] duplicate schedule detected: $name (as designed, ignored)"
+                Timber.w(message)
+                if (pref_autoLogSuspicious.value)
+                    textLog(
+                        listOf(
+                            "--- autoLogSuspicious $message"
+                        ) + supportInfo()
+                    )
+
+            } else {
 
                 runningSchedules[scheduleId] = false
 
-                repeat(1 + pref_fakeScheduleDups.value) { count ->
+                traceSchedule { "[$scheduleId] start: $name -> ${runningSchedules[scheduleId]}" }
+
+                repeat(1 + pref_fakeScheduleDups.value) { dup ->
 
                     val now = SystemUtils.now
 
@@ -157,7 +173,7 @@ open class ScheduleService : Service() {
                     // while it looks reasonable to re-schedule after the job is done,
                     // it seems to be less problematic to re-schedule *before* doing the job.
                     // that's because rescheduling would not happen, when
-                    // * not all exceptions catched and jumoing out of the batch
+                    // * not all exceptions catched and jumping out of the batch
                     // * the job doesn't finish and just hangs around
                     // the re-schedule is also more exact
                     //TODO hg42 it would probably be even better to use
@@ -276,20 +292,9 @@ open class ScheduleService : Service() {
                             super.onPostExecute(result)
                         }
                     }
-                    traceSchedule { "[$scheduleId] starting task for schedule${if (count > 0) " (dup $count)" else ""}" }
+                    traceSchedule { "[$scheduleId] starting task for schedule${if (dup > 0) " (dup $dup)" else ""}" }
                     scheduledActionTask.execute()
                 }
-            } else {
-                val message =
-                    "[$scheduleId ] duplicate schedule detected: $name (as designed, ignored)"
-                Timber.w(message)
-                if (pref_autoLogSuspicious.value)
-                    textLog(
-                        listOf(
-                            message,
-                            "--- autoLogSuspicious $scheduleId $name"
-                        ) + supportInfo()
-                    )
             }
         }
 
@@ -302,17 +307,17 @@ open class ScheduleService : Service() {
     fun beginSchedule(scheduleId: Long, name: String, details: String = ""): Boolean {
         return if (runningSchedules[scheduleId] != true) {
             runningSchedules[scheduleId] = true
+            traceSchedule { "[$scheduleId] beginSchedule: $name -> ${runningSchedules[scheduleId]}" }
             beginLogSection("schedule $name")
             true
         } else {
             val message =
-                "duplicate schedule detected: id=$scheduleId name='$name' (late, ignored) $details"
+                "[$scheduleId] duplicate schedule detected: name='$name' (late, ignored)${if (details.isEmpty()) "" else " ($details)"}"
             Timber.w(message)
             if (pref_autoLogSuspicious.value)
                 textLog(
                     listOf(
-                        message,
-                        "--- autoLogAfterSchedule $scheduleId $name${if (details.isEmpty()) "" else " ($details)"}"
+                        "--- autoLogSuspicious $message"
                     ) + supportInfo()
                 )
             false
@@ -322,10 +327,11 @@ open class ScheduleService : Service() {
     fun endSchedule(scheduleId: Long, name: String, details: String = "", intent: Intent?) {
         if (runningSchedules[scheduleId] != null) {
             runningSchedules.remove(scheduleId)
+            traceSchedule { "[$scheduleId] endSchedule: $name -> ${runningSchedules[scheduleId]}" }
             if (pref_autoLogAfterSchedule.value) {
                 textLog(
                     listOf(
-                        "--- autoLogAfterSchedule id=$scheduleId name=$name${if (details.isEmpty()) "" else " ($details)"}"
+                        "--- autoLogAfterSchedule id=$scheduleId name='$name'${if (details.isEmpty()) "" else " ($details)"}"
                     ) + supportInfo()
                 )
             }
