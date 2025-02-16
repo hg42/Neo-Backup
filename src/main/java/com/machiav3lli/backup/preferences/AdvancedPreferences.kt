@@ -446,7 +446,7 @@ val pref_paranoidHousekeeping = BooleanPref(
 val pref_ignoreLockedInHousekeeping = BooleanPref(
     key = "dev-alt.ignoreLockedInHousekeeping",
     summary = "keep the configured number of unlocked backups, instead of also counting locked backups",
-    defaultValue = false
+    defaultValue = true
 )
 
 val pref_fullScreenBackground = BooleanPref(
@@ -636,7 +636,7 @@ val pref_enableSpecialBackups = BooleanPref(
     summaryId = R.string.prefs_enablespecial_summary,
     icon = Phosphor.AsteriskSimple,
     iconTint = { ColorSpecial },
-    defaultValue = false,
+    defaultValue = true,
     onChanged = {
         // TODO hg42
         //NeoPrefs.getInstance().let {
