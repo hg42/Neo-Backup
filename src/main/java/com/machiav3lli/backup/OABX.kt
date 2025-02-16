@@ -182,6 +182,12 @@ val traceSchedule = TraceUtils.TracePrefBold(
     default = true
 )
 
+val traceInfo = TraceUtils.TracePrefBold(
+    name = "Info",
+    summary = "trace informational",
+    default = true
+)
+
 val tracePrefs = TraceUtils.TracePref(
     name = "Prefs",
     summary = "trace preferences",
