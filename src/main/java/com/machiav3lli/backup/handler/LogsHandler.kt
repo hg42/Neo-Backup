@@ -275,7 +275,7 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> runsOrLog(todo: suspend () -> T): T? {
+        suspend fun <T> runSusOrLog(todo: suspend () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
@@ -284,7 +284,7 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> runsOrLog(default: T, todo: suspend () -> T): T {
+        suspend fun <T> runSusOrLog(default: T, todo: suspend () -> T): T {
             return try {
                 todo()
             } catch (e: Throwable) {
@@ -309,7 +309,7 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> runsOr(todo: suspend () -> T): T? {
+        suspend fun <T> runSusOr(todo: suspend () -> T): T? {
             return try {
                 todo()
             } catch (e: Throwable) {
@@ -317,7 +317,7 @@ class LogsHandler {
             }
         }
 
-        suspend fun <T> runsOr(default: T, todo: suspend () -> T): T {
+        suspend fun <T> runSusOr(default: T, todo: suspend () -> T): T {
             return try {
                 todo()
             } catch (e: Throwable) {
