@@ -143,8 +143,8 @@ val buildNumber: String by extra { minutes.toString() }
 val buildLabel by extra {
     currentBranch
         .replace(Regex("^feature-"), "🍩")
-        .replace(Regex("^fix-"), "💊")
-        .replace(Regex("^try-"), "🚑")
+        .replace(Regex("\\bfix-"), "💊")
+        .replace(Regex("\\btry-"), "🚑")
         .replace(Regex("^PR-"), "📤")
         .replace(Regex("^wip$"), "🚧")
         .replace(Regex("^temp$"), "🦘")
