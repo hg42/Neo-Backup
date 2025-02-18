@@ -176,9 +176,9 @@ fun uriFromFile(file: File): Uri {
 // TODO hg42   or caching the relation
 // TODO hg42   or having a second implementation for some objects (that may be added later)
 
-class FileDuplicationException(message: String) : IOException(message)
-class FileDuplicationHandlingException(message: String, cause: Throwable) :
-    IOException(message, cause)
+class SAFmessedupNameRepairedException(message: String): IOException(message)
+class SAFmessedupNameGiveupException(message: String): IOException(message)
+class SAFmessedupNameRepairingException(message: String, cause: Throwable): IOException(message, cause)
 
 open class StorageFile {
 
@@ -447,98 +447,115 @@ open class StorageFile {
         return null
     }
 
-    fun createDirectory(displayName: String): StorageFile =
-        createFile(displayName, MIME_TYPE_DIR)
+    fun createDirectory(wantedName: String): StorageFile =
+        createFile(wantedName, MIME_TYPE_DIR)
 
     fun createFile(
-        displayName: String,
+        wantedName: String,
         mimeType: String = MIME_TYPE_FILE,
     ): StorageFile {
-        var newFile =
+        var createdFile =
             file?.let {
                 if (mimeType == MIME_TYPE_DIR) {
-                    val newDir = RootFile(it, displayName)
+                    val newDir = RootFile(it, wantedName)
                     newDir.mkdirs()
                     StorageFile(this, newDir)
                 } else {
-                    val newFile = RootFile(it, displayName)
+                    val newFile = RootFile(it, wantedName)
                     newFile.createNewFile()
                     StorageFile(this, newFile)
                 }
             } ?: run {
                 if (mimeType == MIME_TYPE_DIR) {
                     // if the directory already exists, just use it
-                    findFile(displayName)
+                    findFile(wantedName)
                     // otherwise a new one
                         ?: StorageFile(
                             this,
-                            createDocument(context, uri!!, mimeType, displayName),
+                            createDocument(context, uri!!, mimeType, wantedName),
                             //context,
-                            displayName
+                            wantedName
                         )
                 } else {
                     // if the file already exists, delete it, because we want to start it again
-                    findFile(displayName)?.delete()
+                    findFile(wantedName)?.delete()
                     // always use the new one
                     StorageFile(
                         this,
-                        createDocument(context, uri!!, mimeType, displayName),
+                        createDocument(context, uri!!, mimeType, wantedName),
                         //context,
-                        displayName
+                        wantedName
                     )
                 }
             }
-        if ((newFile.path?.endsWith(displayName) ?: true).not()) {
+        if ((createdFile.path?.endsWith(wantedName) ?: true).not()) {
             // should now be paranoid
             // it would mean, the first findFile didn't work (note, it was missing, so stay safe here)
             var message =
-                "(SAF) file duplication: '$displayName' is not last part of '${newFile.path}'"
+                "(SAF) messed up name: '$wantedName' is not last part of '${createdFile.path}'"
             try {
-                val found = findFile(displayName)
+                val foundFileOrNull = findFile(wantedName)
                 if (mimeType == MIME_TYPE_DIR) {
-                    found?.let {
+                    foundFileOrNull?.let { foundFile ->
                         // the directory (probably) exists
-                        message += ", delete ${newFile.path}, use ${it.path}"
-                        if (newFile.exists()) // do it safe, rumors are, it would delete the parent !!!
-                            newFile.delete()
-                        // use the found directory
-                        newFile = it
+                        if (createdFile.exists()) // do it safe, rumors are, it would delete the parent !!!
+                            createdFile.delete()
+                        if ((foundFile.path?.endsWith(wantedName) ?: true).not()) {
+                            // wow, that's really weird, SAF says we found the right name,
+                            // but it is still wrong, so rename it
+                            message += ", still wrong => rename the found directory"
+                            foundFile.renameTo(wantedName)
+                            createdFile = foundFile
+                        } else {
+                            // found directory has the right name, use it
+                            message += ", delete ${createdFile.path}, use existing ${foundFile.path}"
+                            createdFile = foundFile
+                        }
                     } ?: run {
                         // wow, even more paranoid
                         // SAF added a new duplicate, but the wanted name doesn't exist !!!
                         // so why would it create a duplicate?
                         // but one has already seen horses puking
-                        message += ", $displayName DOES NOT EXIST, rename new directory"
-                        newFile.renameTo(displayName)
+                        message += ", $wantedName DOES NOT EXIST, rename created directory"
+                        createdFile.renameTo(wantedName)
                     }
                 } else {
-                    // the file (probably) exists
-                    found?.let {
-                        message += ", delete ${it.path}"
+                    // the file (probably) exists, delete it and rename the created
+                    foundFileOrNull?.let { foundFile ->
+                        message += ", delete ${foundFile.path}"
                         try {
-                            it.delete()
+                            foundFile.delete()
                         } catch (e: Throwable) {
                             unexpectedException(
                                 e,
-                                "file duplication happened, but original file cannot be deleted"
+                                "SAF messed up name, but existing file cannot be deleted"
                             )
                         }
                     }
-                    message += ", rename new file"
-                    newFile.renameTo(displayName)
+                    message += ", rename created file"
+                    createdFile.renameTo(wantedName)
                 }
-                throw FileDuplicationException(message)
-            } catch (e: FileDuplicationException) {
+                message += ", now ${createdFile.path}"
+                if ((createdFile.path?.endsWith(wantedName) ?: true).not()) {
+                    message += ", STILL WRONG, giving up ${createdFile.documentInfo}"
+                    throw SAFmessedupNameGiveupException(message)
+                }
+                // always throw (and catch) in these cases, to log the message
+                throw SAFmessedupNameRepairedException(message)
+            } catch (e: SAFmessedupNameRepairedException) {
                 unexpectedException(e)
+            } catch (e: SAFmessedupNameGiveupException) {
+                unexpectedException(e)
+                throw e
             } catch (e: Throwable) {
                 unexpectedException(
-                    FileDuplicationHandlingException(message, e)
+                    SAFmessedupNameRepairingException(message, e)
                 )
             }
         }
         // creates a subobject inside this
-        path?.let { cacheFilesAdd(it, newFile) }
-        return newFile
+        path?.let { cacheFilesAdd(it, createdFile) }
+        return createdFile
     }
 
     fun delete(): Boolean { // delete only empty directories, full is a task for deleteRecursive
