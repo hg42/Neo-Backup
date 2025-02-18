@@ -256,21 +256,7 @@ fun cancelAlarm(context: Context, scheduleId: Long) {
     traceSchedule { "[$scheduleId] cancelled schedule" }
 }
 
-var alarmsHaveBeenScheduled = false
-
-fun scheduleAlarmsOnce() {
-
-    // schedule alarms only once
-    // whichever event comes first:
-    //   any activity started
-    //   after all current schedules are queued
-    //   the app is terminated (too early)
-    //   on a timeout
-
-    if (alarmsHaveBeenScheduled)
-        return
-    alarmsHaveBeenScheduled = true
-
+fun scheduleAlarms() {
     Thread {
         val scheduleDao = OABX.db.getScheduleDao()
         scheduleDao.getAll()
@@ -297,6 +283,25 @@ fun scheduleAlarmsOnce() {
             }
     }.start()
 }
+
+var alarmsHaveBeenScheduled = false
+
+fun scheduleAlarmsOnce() {
+
+    // schedule alarms only once
+    // whichever event comes first:
+    //   - any activity started
+    //   - after all current schedules are queued
+    //   - the app is terminated (too early)
+    //   - on a timeout
+
+    if (alarmsHaveBeenScheduled)
+        return
+    alarmsHaveBeenScheduled = true
+
+    scheduleAlarms()
+}
+
 
 fun createPendingIntent(context: Context, scheduleId: Long): PendingIntent {
     val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {

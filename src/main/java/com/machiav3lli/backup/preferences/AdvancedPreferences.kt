@@ -61,6 +61,7 @@ import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.PrefUI
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
+import com.machiav3lli.backup.utils.scheduleAlarms
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -615,9 +616,11 @@ val pref_fakeBackupSeconds = IntPref(
 val pref_fakeScheduleMin = IntPref(
     key = "dev-fake.fakeScheduleMin",
     summary = "[minutes] =1: day->hour, hour->minute, minutes->seconds  >1: run enabled schedules every x min [for testing only]",
-    entries = (listOf(0, 1) + (3..9 step 1) + (10..60 step 5)).toList(),
+    entries = listOf(0, 1) + ((2..9 step 1) + (10..60 step 5)).toList(),
     defaultValue = 0
-)
+) {
+    scheduleAlarms(reschedule = true)
+}
 
 val pref_forceCrash = LaunchPref(
     key = "dev-fake.forceCrash",
