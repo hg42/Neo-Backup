@@ -54,6 +54,7 @@ import com.machiav3lli.backup.preferences.pref_earlyEmptyBackups
 import com.machiav3lli.backup.preferences.pref_lookForEmptyBackups
 import com.machiav3lli.backup.traceBackupsScan
 import com.machiav3lli.backup.traceBackupsScanAll
+import com.machiav3lli.backup.traceInfo
 import com.machiav3lli.backup.traceTiming
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.SystemUtils.numCores
@@ -583,7 +584,7 @@ fun Context.findBackups(
 
         if (packageName.isEmpty()) {
 
-            traceBackupsScan { "*** --------------------> findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size}" }
+            traceInfo { "*** --------------------> findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size}" }
 
             setBackups(backupsMap)
 

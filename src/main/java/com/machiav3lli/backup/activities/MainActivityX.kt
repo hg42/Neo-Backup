@@ -58,9 +58,9 @@ import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.DialogKey
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.WorkHandler
-import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.pages.RootMissing
 import com.machiav3lli.backup.pages.SplashPage
@@ -68,6 +68,7 @@ import com.machiav3lli.backup.preferences.persist_beenWelcomed
 import com.machiav3lli.backup.preferences.persist_skippedEncryptionCounter
 import com.machiav3lli.backup.preferences.pref_appTheme
 import com.machiav3lli.backup.tasks.AppActionWork
+import com.machiav3lli.backup.traceInfo
 import com.machiav3lli.backup.ui.compose.ObservedEffect
 import com.machiav3lli.backup.ui.compose.item.DevTools
 import com.machiav3lli.backup.ui.compose.item.devToolsSearch
@@ -76,6 +77,7 @@ import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.ui.navigation.clearBackStack
 import com.machiav3lli.backup.ui.navigation.safeNavigate
+import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
@@ -254,10 +256,14 @@ class MainActivityX : BaseActivity() {
                             freshStart = false
                             traceBold { "******************** freshStart && Main ********************" }
                             mScope.launch(Dispatchers.IO) {
-                                runCatching { findBackups() }
+                                runOrLog {
+                                    val backupsMap = OABX.getBackups()
+                                    traceInfo { "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size} root: ${OABX.backupRoot}" }
+                                    ensureBackups()
+                                }
                                 startup =
                                     false     // ensure backups are no more reported as empty
-                                runCatching { updateAppTables() }
+                                runOrLog { updateAppTables() }
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
                             }

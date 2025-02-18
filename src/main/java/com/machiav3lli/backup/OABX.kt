@@ -280,7 +280,7 @@ class OABX : Application() {
         // do this early, context will be used immediately
         refNB = WeakReference(this)
 
-        Timber.w("======================================== app ${classAndId(this)} PID=${Process.myPid()}")
+        Timber.w("======================================== app create ${classAndId(this)} PID=${Process.myPid()}")
 
         super.onCreate()
 
@@ -350,6 +350,10 @@ class OABX : Application() {
     }
 
     override fun onTerminate() {
+
+        Timber.w(
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ app destroy ${classAndId(this)} PID=${Process.myPid()}"
+        )
 
         // in case the app is terminated too early
         scheduleAlarmsOnce()

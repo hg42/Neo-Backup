@@ -23,10 +23,11 @@ import com.machiav3lli.backup.OABX.Companion.backupRoot
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.StorageFile
+import com.machiav3lli.backup.traceInfo
 import java.io.File
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
@@ -65,10 +66,21 @@ object FileUtils {
     //TODO hg42 this may work (after invalidateBackups or on startup)
     //TODO hg42 but should probably check an empty backups map instead or additionally?
     //TODO hg42 the name does not reflect all cases
+
     fun ensureBackups(): Map<String, List<Backup>> {
-        runCatching {
-            if (backupRoot == null)
-                OABX.context.findBackups()
+
+        // be sure we have the backups, loop is not really necessary, but doesn't hurt, either
+        repeat(10) {
+            try {
+                if (OABX.getBackups().isEmpty()) {
+                    traceInfo { "ensureBackups: no backups, scanning..." }
+                    OABX.context.findBackups()
+                }
+                return OABX.getBackups()
+            } catch (e: Throwable) {
+                logException(e)
+                Thread.sleep(1000)
+            }
         }
         return OABX.getBackups()
     }
