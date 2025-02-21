@@ -60,26 +60,16 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
     val minTime = now + smallestIncrement // ensure it's not now
 
     val fakeMin = pref_fakeScheduleMin.value
-    if (fakeMin > 1) {
+    if (fakeMin > 0) {
         //c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = (c[Calendar.MINUTE] / fakeMin + 1) * fakeMin % 60
-        c[Calendar.SECOND] = 0
-        c[Calendar.MILLISECOND] = 0
+        c[Calendar.SECOND] = schedule.timeHour
+        c[Calendar.MILLISECOND] = schedule.timeMinute
         var increments = 0
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.MINUTE, fakeMin)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min" }
-    } else if (fakeMin == 1) {
-        //c[Calendar.HOUR_OF_DAY] = schedule.timeHour
-        c[Calendar.MINUTE] = schedule.timeHour
-        c[Calendar.SECOND] = schedule.timeMinute
-        c[Calendar.MILLISECOND] = 0
-        var increments = 0
-        while (c.timeInMillis < minTime && increments++ < limitIncrements) {
-            c.add(Calendar.HOUR, schedule.interval)
-        }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min" }
+        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min -> ${formatTime(c.timeInMillis)}" }
     } else {
         c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = schedule.timeMinute
@@ -89,18 +79,18 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.DAY_OF_MONTH, schedule.interval)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} days" }
+        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} days -> ${formatTime(c.timeInMillis)}" }
     }
 
     traceSchedule {
         "[${schedule.id}] calculateTimeToRun: next: ${
-            ISO_DATE_TIME_FORMAT_MS.format(c.timeInMillis)
+            formatTime(c.timeInMillis)
         } now: ${
-            ISO_DATE_TIME_FORMAT_MS.format(now)
+            formatTime(now)
         }${
-            if (now != minTime) "minimum: ${ISO_DATE_TIME_FORMAT_MS.format(minTime)}" else ""
+            if (now != minTime) "minimum: ${formatTime(minTime)}" else ""
         } placed: ${
-            ISO_DATE_TIME_FORMAT_MS.format(schedule.timePlaced)
+            formatTime(schedule.timePlaced)
         } interval: ${
             schedule.interval
         }"
@@ -152,75 +142,79 @@ fun timeLeft(
     return state
 }
 
+fun formatTime(time: Long): String {
+    return ISO_DATE_TIME_FORMAT_MS.format(time)
+}
 
-fun scheduleAlarm(context: Context, scheduleId: Long, reschedule: Boolean) {
+fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
+
+    val alarmManager = OABX.context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    val hasPermission: Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+
+    val pendingIntent = createPendingIntent(OABX.context, scheduleId)
+
+    if (hasPermission && pref_useAlarmClock.value) {
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(timeForAlarm, null),
+            pendingIntent
+        )
+        traceSchedule { "[${scheduleId}] alarmManager.setAlarmClock ${formatTime(timeForAlarm)}" }
+    } else {
+        if (hasPermission && pref_useExactAlarm.value) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                timeForAlarm,
+                pendingIntent
+            )
+            traceSchedule { "[${scheduleId}] alarmManager.setExactAndAllowWhileIdle ${formatTime(timeForAlarm)}" }
+        } else {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                timeForAlarm,
+                pendingIntent
+            )
+            traceSchedule { "[${scheduleId}] alarmManager.setAndAllowWhileIdle ${formatTime(timeForAlarm)}" }
+        }
+    }
+
+    traceSchedule {
+        "[$scheduleId] schedule starting in: ${
+            TimeUnit.MILLISECONDS.toMinutes(timeForAlarm - SystemUtils.now)
+        } minutes"
+    }
+}
+
+fun scheduleAlarm(scheduleId: Long, reschedule: Boolean) {
     if (scheduleId >= 0) {
         Thread {
             val scheduleDao = OABX.db.getScheduleDao()
             var schedule = scheduleDao.getSchedule(scheduleId)
             if (schedule?.enabled == true) {
 
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
                 if (reschedule) {
                     val now = SystemUtils.now
-                    val timeToRunNext = calculateTimeToRun(schedule, now + TimeUnit.SECONDS.toMillis(60 + 59))
+                    val timePlaced = now + TimeUnit.SECONDS.toMillis(60 + 59)
+                    val timeToRunNext = calculateTimeToRun(schedule, timePlaced)
                     schedule = schedule.copy(
-                        timePlaced = now,
+                        timePlaced = timePlaced,
                         timeToRun = timeToRunNext
                     )
-                    traceSchedule { "[${schedule?.id}] re-scheduling $schedule" }
+                    traceSchedule { "[${schedule.id}] re-scheduling $schedule" }
                     scheduleDao.update(schedule)
                 }
 
-                val hasPermission: Boolean =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        alarmManager.canScheduleExactAlarms()
-                    } else {
-                        true
-                    }
-
-                val pendingIntent = createPendingIntent(context, scheduleId)
-
-                //var timeForAlarm = max(   // ensure it's always in the future
-                //    schedule.timeToRun,
-                //    SystemUtils.now + TimeUnit.SECONDS.toMillis(60)
-                //)
-                val timeForAlarm = schedule.timeToRun
-                // set timeForAlarm as fast as possible to ensure time in the future, so trace after it
-                if (hasPermission && pref_useAlarmClock.value) {
-                    alarmManager.setAlarmClock(
-                        AlarmManager.AlarmClockInfo(timeForAlarm, null),
-                        pendingIntent
-                    )
-                    traceSchedule { "[${schedule.id}] alarmManager.setAlarmClock $schedule" }
-                } else {
-                    if (hasPermission && pref_useExactAlarm.value) {
-                        alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            timeForAlarm,
-                            pendingIntent
-                        )
-                        traceSchedule { "[${schedule.id}] alarmManager.setExactAndAllowWhileIdle $schedule" }
-                    } else {
-                        alarmManager.setAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            timeForAlarm,
-                            pendingIntent
-                        )
-                        traceSchedule { "[${schedule.id}] alarmManager.setAndAllowWhileIdle $schedule" }
-                    }
-                }
-                traceSchedule {
-                    "[$scheduleId] schedule starting in: ${
-                        TimeUnit.MILLISECONDS.toMinutes(schedule.timeToRun - SystemUtils.now)
-                    } minutes name=${schedule.name}"
-                }
+                setAlarmInSystem(schedule.id, schedule.timeToRun)
             } else
                 traceSchedule { "[$scheduleId] schedule is disabled. Nothing to schedule!" }
         }.start()
     } else {
-        Timber.e("[$scheduleId] got id from $context")
+        Timber.e("[$scheduleId] no valid scheduleId")
     }
 }
 
@@ -236,25 +230,25 @@ fun scheduleAlarms(reschedule: Boolean) {
     Thread {
         val scheduleDao = OABX.db.getScheduleDao()
         scheduleDao.getAll()
-            .forEach {
+            .forEach { schedule ->
                 // do not set or cancel schedules that are just going to be started
                 // (on boot or fresh start from an alarm)
-                // setting a past time as alarm will start it immediately
-                traceSchedule { "[${it.id}] ****** alarm for ${it.name} <- ${runningSchedules[it.id]}" }
-                val scheduleAlreadyRuns = runningSchedules[it.id] == true
+                // setting a past time as alarm will start schedule immediately
+                traceSchedule { "[${schedule.id}] ****** alarm for ${schedule.name} <- ${runningSchedules[schedule.id]}" }
+                val scheduleAlreadyRuns = runningSchedules[schedule.id] != null
                 when {
                     scheduleAlreadyRuns -> {
-                        traceSchedule { "[${it.id}] *** scheduleAlarms: ignore $it, it is running now" }
+                        traceSchedule { "[${schedule.id}] *** scheduleAlarms: ignore $schedule, schedule is running now" }
                     }
 
-                    it.enabled          -> {
-                        traceSchedule { "[${it.id}] *** scheduleAlarms: enable $it" }
-                        scheduleAlarm(OABX.context, it.id, reschedule)
+                    schedule.enabled          -> {
+                        traceSchedule { "[${schedule.id}] *** scheduleAlarms: enable $schedule" }
+                        scheduleAlarm(schedule.id, reschedule)
                     }
 
                     else                -> {
-                        traceSchedule { "[${it.id}] *** scheduleAlarms: cancel $it" }
-                        cancelAlarm(OABX.context, it.id)
+                        traceSchedule { "[${schedule.id}] *** scheduleAlarms: cancel $schedule" }
+                        cancelAlarm(OABX.context, schedule.id)
                     }
                 }
             }

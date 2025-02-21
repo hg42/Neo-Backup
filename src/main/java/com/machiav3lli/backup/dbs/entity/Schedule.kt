@@ -23,7 +23,6 @@ import androidx.room.PrimaryKey
 import androidx.room.RenameColumn
 import androidx.room.migration.AutoMigrationSpec
 import com.machiav3lli.backup.INSTALLED_FILTER_INSTALLED
-import com.machiav3lli.backup.ISO_DATE_TIME_FORMAT_MS
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.MAIN_FILTER_DEFAULT_WITHOUT_SPECIAL
 import com.machiav3lli.backup.MODE_APK
@@ -35,6 +34,7 @@ import com.machiav3lli.backup.items.SpecialFilter
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
+import com.machiav3lli.backup.utils.formatTime
 import kotlinx.serialization.Serializable
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -122,8 +122,8 @@ data class Schedule(
                 ", timeHour=" + timeHour +
                 ", timeMinute=" + timeMinute +
                 ", interval=" + interval +
-                ", timeToRun=" + timeToRun + "(" + ISO_DATE_TIME_FORMAT_MS.format(timeToRun) + ")" +
-                ", timePlaced=" + timePlaced + "(" + ISO_DATE_TIME_FORMAT_MS.format(timePlaced) + ")" +
+                ", timeToRun=" + formatTime(timeToRun) +
+                ", timePlaced=" + formatTime(timePlaced) +
                 ", filter=" + filter +
                 ", mode=" + mode +
                 ", launchableFilter=" + launchableFilter +

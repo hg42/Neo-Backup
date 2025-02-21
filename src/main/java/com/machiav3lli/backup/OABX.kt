@@ -862,7 +862,7 @@ class OABX : Application() {
 
         //------------------------------------------------------------------------------------------ runningSchedules
 
-        val runningSchedules = mutableMapOf<Long, Boolean>()
+        val runningSchedules = mutableMapOf<Long, Long>()
 
         //------------------------------------------------------------------------------------------ backups
 

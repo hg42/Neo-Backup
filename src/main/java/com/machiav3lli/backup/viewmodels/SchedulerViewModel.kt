@@ -67,7 +67,6 @@ class SchedulerViewModel(val database: ScheduleDao, appContext: Application) :
             if (schedule.enabled) {
                 traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> ${if (rescheduleBoolean) "re-" else ""}schedule"}
                 scheduleAlarm(
-                    getApplication<Application>().baseContext,
                     schedule.id,
                     rescheduleBoolean
                 )

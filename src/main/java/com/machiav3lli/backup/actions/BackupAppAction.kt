@@ -109,10 +109,10 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
                 val succeeded = true // random() < 0.75
 
                 return if (succeeded) {
-                    Timber.w("package: ${app.packageName} faking success")
+                    Timber.w("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fake backup: package: ${app.packageName} success")
                     ActionResult(app, null, "faked backup succeeded", true)
                 } else {
-                    Timber.w("package: ${app.packageName} faking failure")
+                    Timber.w("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fake backup: package: ${app.packageName} failure")
                     ActionResult(app, null, "faked backup failed", false)
                 }
             }

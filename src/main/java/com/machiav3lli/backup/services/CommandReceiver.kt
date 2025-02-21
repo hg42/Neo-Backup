@@ -65,7 +65,7 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                                 timeMinute = minute,
                             )
                             scheduleDao.update(newSched)
-                            scheduleAlarm(context, newSched.id, true)
+                            scheduleAlarm(newSched.id, true)
                         }
                     }.start()
                 }

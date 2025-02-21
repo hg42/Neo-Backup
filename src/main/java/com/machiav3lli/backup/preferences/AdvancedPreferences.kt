@@ -599,13 +599,6 @@ val pref_killThisApp = LaunchPref(
     System.exit(0)
 }
 
-val pref_fakeScheduleDups = IntPref(
-    key = "dev-fake.fakeScheduleDups",
-    summary = "count of additional equal schedules to run at once, 0 = do not fake [for testing only]",
-    entries = (0..9).toList(),
-    defaultValue = 0
-)
-
 val pref_fakeBackupSeconds = IntPref(
     key = "dev-fake.fakeBackupSeconds",
     summary = "[seconds] time for faked backups, 0 = do not fake [for testing only]",
@@ -615,8 +608,8 @@ val pref_fakeBackupSeconds = IntPref(
 
 val pref_fakeScheduleMin = IntPref(
     key = "dev-fake.fakeScheduleMin",
-    summary = "[minutes] =1: day->hour, hour->minute, minutes->seconds  >1: run enabled schedules every x min [for testing only]",
-    entries = listOf(0, 1) + ((2..9 step 1) + (10..60 step 5)).toList(),
+    summary = "[minutes] run enabled schedules every x min, using configured hours as seconds [for testing only]",
+    entries = ((0..9 step 1) + (10..60 step 5)).toList(),
     defaultValue = 0
 ) {
     scheduleAlarms(reschedule = true)

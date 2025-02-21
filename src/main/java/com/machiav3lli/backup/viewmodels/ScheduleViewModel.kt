@@ -79,7 +79,6 @@ class ScheduleViewModel(
             if (schedule.enabled) {
                 traceSchedule { "[$schedule.id] ScheduleViewModel.updateS -> ${if (rescheduleBoolean) "re-" else ""}schedule" }
                 scheduleAlarm(
-                    getApplication<Application>().baseContext,
                     schedule.id,
                     rescheduleBoolean
                 )
