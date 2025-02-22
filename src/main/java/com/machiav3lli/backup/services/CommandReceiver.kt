@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.Intent
 import com.machiav3lli.backup.ACTION_CANCEL
 import com.machiav3lli.backup.ACTION_CRASH
-import com.machiav3lli.backup.ACTION_RESCHEDULE
 import com.machiav3lli.backup.ACTION_SCHEDULE
+import com.machiav3lli.backup.ACTION_SCHEDULECONFIG
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.traceSchedule
 import com.machiav3lli.backup.utils.SystemUtils
@@ -31,7 +31,7 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                 OABX.addInfoLogText("$command $batchName")
                 OABX.work.cancel(batchName)
             }
-            ACTION_SCHEDULE   -> {
+            ACTION_SCHEDULE                          -> {
                 intent.getStringExtra("name")?.let { name ->
                     OABX.addInfoLogText("$command $name")
                     Timber.d("################################################### command intent schedule -------------> name=$name")
@@ -47,19 +47,19 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                     }.start()
                 }
             }
-            ACTION_RESCHEDULE -> {
+            ACTION_SCHEDULECONFIG -> {
                 intent.getStringExtra("name")?.let { name ->
                     val now = SystemUtils.now
                     val time = intent.getStringExtra("time")
                     val setTime = time ?: SimpleDateFormat("HH:mm", Locale.getDefault())
                         .format(now + 120)
                     OABX.addInfoLogText("$command $name $time -> $setTime")
-                    Timber.d("################################################### command intent reschedule -------------> name=$name time=$time -> $setTime")
+                    Timber.d("################################################### command intent scheduleNext -------------> name=$name time=$time -> $setTime")
                     Thread {
                         val scheduleDao = OABX.db.getScheduleDao()
                         scheduleDao.getSchedule(name)?.let { schedule ->
                             val (hour, minute) = setTime.split(":").map { it.toInt() }
-                            traceSchedule { "[${schedule.id}] command receiver -> re-schedule to hour=$hour minute=$minute" }
+                            traceSchedule { "[${schedule.id}] command receiver -> scheduleNext to hour=$hour minute=$minute" }
                             val newSched = schedule.copy(
                                 timeHour = hour,
                                 timeMinute = minute,

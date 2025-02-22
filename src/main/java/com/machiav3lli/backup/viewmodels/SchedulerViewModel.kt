@@ -55,20 +55,20 @@ class SchedulerViewModel(val database: ScheduleDao, appContext: Application) :
         }
     }
 
-    fun updateSchedule(schedule: Schedule?, rescheduleBoolean: Boolean) {
+    fun updateSchedule(schedule: Schedule?, scheduleNext: Boolean) {
         viewModelScope.launch {
-            schedule?.let { updateS(it, rescheduleBoolean) }
+            schedule?.let { updateS(it, scheduleNext) }
         }
     }
 
-    private suspend fun updateS(schedule: Schedule, rescheduleBoolean: Boolean) {
+    private suspend fun updateS(schedule: Schedule, scheduleNext: Boolean) {
         withContext(Dispatchers.IO) {
             database.update(schedule)
             if (schedule.enabled) {
-                traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> ${if (rescheduleBoolean) "re-" else ""}schedule"}
+                traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> ${if (scheduleNext) "re-" else ""}schedule"}
                 scheduleAlarm(
                     schedule.id,
-                    rescheduleBoolean
+                    scheduleNext
                 )
             } else {
                 traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> cancelAlarm"}

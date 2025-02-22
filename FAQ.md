@@ -764,9 +764,9 @@ cancel a schedule or all schedules
   am broadcast -a cancel -e name "the name of the schedule" -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
   ```
 
-**reschedule**
+**scheduleconfig**
 
-set a new time of a schedule
+set a new parameters of a named schedule (only time for now)
 
 * extras:
   * name = the name of the schedule
@@ -774,7 +774,7 @@ set a new time of a schedule
 * example: set a schedule to the time 12:34
 
   ```bash
-  am broadcast -a reschedule -e name "the name of the schedule" -e time 12:34 -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
+  am broadcast -a scheduleconfig -e name "the name of the schedule" -e time 12:34 -n com.machiav3lli.backup/com.machiav3lli.backup.services.CommandReceiver
   ```
 
 ### now I want to detect the end of the operation

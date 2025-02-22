@@ -612,7 +612,7 @@ val pref_fakeScheduleMin = IntPref(
     entries = ((0..9 step 1) + (10..60 step 5)).toList(),
     defaultValue = 0
 ) {
-    scheduleAlarms(reschedule = true)
+    scheduleAlarms(scheduleNext = true)
 }
 
 val pref_forceCrash = LaunchPref(

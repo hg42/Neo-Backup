@@ -80,6 +80,10 @@ val ISO_DATE_TIME_FORMAT_MS
         Locale.getDefault()
     )
 
+fun formatTimeTrace(time: Long): String {
+    return ISO_DATE_TIME_FORMAT_MS.format(time)
+}
+
 // must be ISO time format for sane sorting yyyy, MM, dd, ...
 // and only allowed file name characters (on all systems, Windows has the smallest set)
 // not used any more, because we don't create old format
@@ -121,7 +125,7 @@ const val PACKAGES_LIST_GLOBAL_ID = -1L
 
 const val ACTION_CANCEL = "cancel"
 const val ACTION_SCHEDULE = "schedule"
-const val ACTION_RESCHEDULE = "reschedule"
+const val ACTION_SCHEDULECONFIG = "scheduleconfig"
 const val ACTION_CRASH = "crash"
 
 const val NAV_MAIN = 0

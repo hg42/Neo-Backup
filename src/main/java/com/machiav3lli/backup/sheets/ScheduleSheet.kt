@@ -130,8 +130,8 @@ fun ScheduleSheet(
 
         fun refresh(
             schedule: Schedule,
-            rescheduleBoolean: Boolean,
-        ) = viewModel.updateSchedule(schedule, rescheduleBoolean)
+            scheduleNext: Boolean,
+        ) = viewModel.updateSchedule(schedule, scheduleNext)
 
 
         Scaffold(
@@ -415,7 +415,7 @@ fun ScheduleSheet(
                         ) { newSet ->
                             refresh(
                                 schedule.copy(blockList = newSet),
-                                rescheduleBoolean = false,
+                                scheduleNext = false,
                             )
                         }
 
@@ -426,7 +426,7 @@ fun ScheduleSheet(
                         ) { newSet ->
                             refresh(
                                 schedule.copy(customList = newSet),
-                                rescheduleBoolean = false,
+                                scheduleNext = false,
                             )
                         }
 
@@ -440,7 +440,7 @@ fun ScheduleSheet(
                             ) { hour, minute ->
                                 refresh(
                                     schedule.copy(timeHour = hour, timeMinute = minute),
-                                    rescheduleBoolean = true,
+                                    scheduleNext = true,
                                 )
                             }
                         }
@@ -454,7 +454,7 @@ fun ScheduleSheet(
                             ) {
                                 refresh(
                                     schedule.copy(interval = it),
-                                    rescheduleBoolean = true,
+                                    scheduleNext = true,
                                 )
                             }
                         }
@@ -467,7 +467,7 @@ fun ScheduleSheet(
                             ) {
                                 refresh(
                                     schedule.copy(name = it),
-                                    rescheduleBoolean = false,
+                                    scheduleNext = false,
                                 )
                             }
                         }

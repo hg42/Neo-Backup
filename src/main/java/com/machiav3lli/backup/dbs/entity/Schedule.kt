@@ -34,7 +34,7 @@ import com.machiav3lli.backup.items.SpecialFilter
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
-import com.machiav3lli.backup.utils.formatTime
+import com.machiav3lli.backup.formatTimeTrace
 import kotlinx.serialization.Serializable
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -122,8 +122,8 @@ data class Schedule(
                 ", timeHour=" + timeHour +
                 ", timeMinute=" + timeMinute +
                 ", interval=" + interval +
-                ", timeToRun=" + formatTime(timeToRun) +
-                ", timePlaced=" + formatTime(timePlaced) +
+                ", timeToRun=" + formatTimeTrace(timeToRun) +
+                ", timePlaced=" + formatTimeTrace(timePlaced) +
                 ", filter=" + filter +
                 ", mode=" + mode +
                 ", launchableFilter=" + launchableFilter +

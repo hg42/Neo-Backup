@@ -28,7 +28,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.machiav3lli.backup.ISO_DATE_TIME_FORMAT_MIN
-import com.machiav3lli.backup.ISO_DATE_TIME_FORMAT_MS
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.getString
@@ -36,6 +35,7 @@ import com.machiav3lli.backup.OABX.Companion.runningSchedules
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.dao.ScheduleDao
 import com.machiav3lli.backup.dbs.entity.Schedule
+import com.machiav3lli.backup.formatTimeTrace
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.preferences.pref_fakeScheduleMin
 import com.machiav3lli.backup.preferences.pref_useAlarmClock
@@ -69,7 +69,7 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.MINUTE, fakeMin)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min -> ${formatTime(c.timeInMillis)}" }
+        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min -> ${formatTimeTrace(c.timeInMillis)}" }
     } else {
         c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = schedule.timeMinute
@@ -79,18 +79,18 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.DAY_OF_MONTH, schedule.interval)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} days -> ${formatTime(c.timeInMillis)}" }
+        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} days -> ${formatTimeTrace(c.timeInMillis)}" }
     }
 
     traceSchedule {
         "[${schedule.id}] calculateTimeToRun: next: ${
-            formatTime(c.timeInMillis)
+            formatTimeTrace(c.timeInMillis)
         } now: ${
-            formatTime(now)
+            formatTimeTrace(now)
         }${
-            if (now != minTime) "minimum: ${formatTime(minTime)}" else ""
+            if (now != minTime) "minimum: ${formatTimeTrace(minTime)}" else ""
         } placed: ${
-            formatTime(schedule.timePlaced)
+            formatTimeTrace(schedule.timePlaced)
         } interval: ${
             schedule.interval
         }"
@@ -142,10 +142,6 @@ fun timeLeft(
     return state
 }
 
-fun formatTime(time: Long): String {
-    return ISO_DATE_TIME_FORMAT_MS.format(time)
-}
-
 fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
 
     val alarmManager = OABX.context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -164,7 +160,7 @@ fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
             AlarmManager.AlarmClockInfo(timeForAlarm, null),
             pendingIntent
         )
-        traceSchedule { "[${scheduleId}] alarmManager.setAlarmClock ${formatTime(timeForAlarm)}" }
+        traceSchedule { "[${scheduleId}] alarmManager.setAlarmClock ${formatTimeTrace(timeForAlarm)}" }
     } else {
         if (hasPermission && pref_useExactAlarm.value) {
             alarmManager.setExactAndAllowWhileIdle(
@@ -172,14 +168,14 @@ fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
                 timeForAlarm,
                 pendingIntent
             )
-            traceSchedule { "[${scheduleId}] alarmManager.setExactAndAllowWhileIdle ${formatTime(timeForAlarm)}" }
+            traceSchedule { "[${scheduleId}] alarmManager.setExactAndAllowWhileIdle ${formatTimeTrace(timeForAlarm)}" }
         } else {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 timeForAlarm,
                 pendingIntent
             )
-            traceSchedule { "[${scheduleId}] alarmManager.setAndAllowWhileIdle ${formatTime(timeForAlarm)}" }
+            traceSchedule { "[${scheduleId}] alarmManager.setAndAllowWhileIdle ${formatTimeTrace(timeForAlarm)}" }
         }
     }
 
@@ -190,14 +186,14 @@ fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
     }
 }
 
-fun scheduleAlarm(scheduleId: Long, reschedule: Boolean) {
+fun scheduleAlarm(scheduleId: Long, scheduleNext: Boolean) {
     if (scheduleId >= 0) {
         Thread {
             val scheduleDao = OABX.db.getScheduleDao()
             var schedule = scheduleDao.getSchedule(scheduleId)
             if (schedule?.enabled == true) {
 
-                if (reschedule) {
+                if (scheduleNext) {
                     val now = SystemUtils.now
                     val timePlaced = now + TimeUnit.SECONDS.toMillis(60 + 59)
                     val timeToRunNext = calculateTimeToRun(schedule, timePlaced)
@@ -226,7 +222,7 @@ fun cancelAlarm(context: Context, scheduleId: Long) {
     traceSchedule { "[$scheduleId] cancelled schedule" }
 }
 
-fun scheduleAlarms(reschedule: Boolean) {
+fun scheduleAlarms(scheduleNext: Boolean) {
     Thread {
         val scheduleDao = OABX.db.getScheduleDao()
         scheduleDao.getAll()
@@ -243,7 +239,7 @@ fun scheduleAlarms(reschedule: Boolean) {
 
                     schedule.enabled          -> {
                         traceSchedule { "[${schedule.id}] *** scheduleAlarms: enable $schedule" }
-                        scheduleAlarm(schedule.id, reschedule)
+                        scheduleAlarm(schedule.id, scheduleNext)
                     }
 
                     else                -> {
@@ -270,7 +266,7 @@ fun scheduleAlarmsOnce() {
         return
     alarmsHaveBeenScheduled = true
 
-    scheduleAlarms(reschedule = false)
+    scheduleAlarms(scheduleNext = false)
 }
 
 
