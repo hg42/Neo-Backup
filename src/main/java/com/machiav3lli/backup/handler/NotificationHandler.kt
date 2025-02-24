@@ -17,13 +17,17 @@
  */
 package com.machiav3lli.backup.handler
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.activities.BaseActivity
 import com.machiav3lli.backup.classAddress
@@ -59,7 +63,7 @@ fun showNotification(
     val notificationManager = NotificationManagerCompat.from(context!!)
     notificationManager.createNotificationChannel(notificationChannel)
     val notification = NotificationCompat.Builder(context, classAddress("NotificationHandler"))
-            .setGroup(SystemUtils.packageName)
+            .setGroup(OABX.packageName)
             .setSortKey("9")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setSmallIcon(R.drawable.ic_launcher_foreground)

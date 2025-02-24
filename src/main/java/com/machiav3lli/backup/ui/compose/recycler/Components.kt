@@ -61,8 +61,6 @@ import com.machiav3lli.backup.ui.compose.item.RefreshButton
 import com.machiav3lli.backup.ui.compose.item.SelectionChip
 import com.machiav3lli.backup.ui.item.ChipItem
 import com.machiav3lli.backup.utils.SystemUtils
-import com.machiav3lli.backup.utils.SystemUtils.applicationIssuer
-import com.machiav3lli.backup.utils.SystemUtils.versionName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.PI
@@ -415,7 +413,7 @@ fun FullScreenBackground(
 
         if (pref_versionOpacity.value > 0)
             Text(
-                text = "$versionName $applicationIssuer",
+                text = "${OABX.versionName} ${OABX.applicationIssuer}",
                 fontSize = 8.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = pref_versionOpacity.value / 100f),
                 modifier = Modifier

@@ -41,7 +41,7 @@ class Test_ignoredPackages {
 
     @Test
     fun test_doNotStop_matchesOwnPackage() {
-        val packageName = SystemUtils.packageName  // use explicit BuildConfig
+        val packageName = OABX.packageName  // use explicit BuildConfig
         assertTrue(
             "does not match: $packageName",
             packageName.matches(doNotStop)

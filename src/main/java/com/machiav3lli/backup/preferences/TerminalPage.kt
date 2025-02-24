@@ -157,9 +157,9 @@ fun shell(command: String, silent: Boolean = false): List<String> {
 fun appInfo(): List<String> {
     return listOf(
         "------ application",
-        "package   = ${SystemUtils.packageName}",
-        "version   = ${SystemUtils.versionName} : ${SystemUtils.versionCode}",
-        SystemUtils.applicationIssuer.let { "signed by = $it" },
+        "package   = ${OABX.packageName}",
+        "version   = ${OABX.versionName} : ${OABX.versionCode}",
+        OABX.applicationIssuer.let { "signed by = $it" },
     )
 }
 

@@ -25,7 +25,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.OABX.Companion.getBackups
 import com.machiav3lli.backup.PACKAGES_LIST_GLOBAL_ID
 import com.machiav3lli.backup.dbs.ODatabase
 import com.machiav3lli.backup.dbs.entity.AppExtras
@@ -171,8 +170,8 @@ class MainViewModel(
             // use the current backups instead of slow and async turn around from db
             // but keep backups in combine, because it signals changes of the backups
             //TODO hg42 might be done differently later
-            //val appinfos = appinfos.toPackageList(appContext, emptyList(), backups)
-            val pkgs = appinfos.toPackageList(appContext, emptyList(), getBackups())
+            val pkgs = appinfos.toPackageList(appContext, emptyList(), backups)
+            //val pkgs = appinfos.toPackageList(appContext, emptyList(), getBackups())
 
             IconCache.dropAllButUsed(pkgs.drop(0))
 

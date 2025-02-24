@@ -1,9 +1,6 @@
 package com.machiav3lli.backup.utils
 
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.os.FileUriExposedException
 import android.os.SystemClock
@@ -24,55 +21,9 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
-import java.io.ByteArrayInputStream
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
 
 
 object SystemUtils {
-
-    fun Context.getApplicationInfos(what: Int = 0): PackageInfo? {
-        val packageManager: PackageManager = getPackageManager()
-        return packageManager.getPackageInfo(packageName, what)
-    }
-
-    @Suppress("DEPRECATION")
-    private fun Context.getApplicationIssuer() : String? {
-        runCatching {
-            val signatures = if (OABX.minSDK(28)) {
-                val packageInfo = OABX.context.getApplicationInfos(PackageManager.GET_SIGNING_CERTIFICATES)
-                val signingInfo = packageInfo?.signingInfo
-                signingInfo?.getSigningCertificateHistory() ?: arrayOf()
-            } else {
-                val packageInfo = OABX.context.getApplicationInfos(PackageManager.GET_SIGNATURES)
-                packageInfo?.signatures ?: arrayOf()
-            }
-            if (signatures.isEmpty())
-                return null
-            val signature = signatures[0]
-            val signatureBytes = signature.toByteArray()
-            val cf = CertificateFactory.getInstance("X509")
-            val x509Certificate: X509Certificate =
-                cf.generateCertificate(ByteArrayInputStream(signatureBytes)) as X509Certificate
-            val DN = x509Certificate.getIssuerDN().getName()
-            val names = DN.split(",").map {
-                val (field, value) = it.split("=", limit = 2)
-                field to value
-            }.toMap()
-            var issuer = names["CN"]
-            names["O"]?.let { if (issuer != it) issuer = "$issuer / $it"}
-            return issuer ?: DN
-        }
-        return null
-    }
-
-    val packageName get() = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
-    val versionCode get() = com.machiav3lli.backup.BuildConfig.VERSION_CODE
-    val versionName get() = com.machiav3lli.backup.BuildConfig.VERSION_NAME
-    val updateId get() = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
-    val backupVersionCode get() = com.machiav3lli.backup.BuildConfig.MAJOR * 1000 + com.machiav3lli.backup.BuildConfig.MINOR
-
-    val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
 
     val numCores get() = Runtime.getRuntime().availableProcessors()
 

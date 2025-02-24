@@ -28,7 +28,6 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.regexPackageFolder
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.utils.LocalDateTimeSerializer
-import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.FileNotFoundException
@@ -85,7 +84,7 @@ data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::cla
         persistent: Boolean = false,
         note: String = "",
     ) : this(
-        backupVersionCode = SystemUtils.backupVersionCode,
+        backupVersionCode = OABX.backupVersionCode,
         packageName = base.packageName,
         packageLabel = base.packageLabel,
         versionName = base.versionName,

@@ -102,13 +102,13 @@ object BackupRestoreHelper {
 
     @Throws(IOException::class)
     fun copySelfApk(context: Context, shell: ShellHandler): Boolean {
-        val filename = SystemUtils.packageName + '-' + SystemUtils.versionName + ".apk"
+        val filename = OABX.packageName + '-' + OABX.versionName + ".apk"
         try {
             val backupRoot = OABX.backupRoot ?: return false
             val apkFile = backupRoot.findFile(filename)
             apkFile?.delete()
             try {
-                val myInfo = context.packageManager.getPackageInfo(SystemUtils.packageName, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
+                val myInfo = context.packageManager.getPackageInfo(OABX.packageName, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
                 val fileInfos =
                     shell.suGetDetailedDirectoryContents(myInfo.applicationInfo.sourceDir, false)
                 if (fileInfos.size != 1) {

@@ -59,7 +59,6 @@ import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.StringEditPref
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
-import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.backupFolderExists
 import com.machiav3lli.backup.utils.getLanguageList
@@ -141,7 +140,7 @@ val pref_appAccentColor = EnumPref(
     icon = Phosphor.EyedropperSample,
     //iconTint = { MaterialTheme.colorScheme.primary },
     entries = accentColorItems,
-    defaultValue = with(SystemUtils.packageName) {
+    defaultValue = with(OABX.packageName) {
         when {
             contains("hg42")  -> 8
             contains("debug") -> 4
@@ -157,7 +156,7 @@ val pref_appSecondaryColor = EnumPref(
     icon = Phosphor.EyedropperSample,
     //iconTint = { MaterialTheme.colorScheme.secondary },
     entries = secondaryColorItems,
-    defaultValue = with(SystemUtils.packageName) {
+    defaultValue = with(OABX.packageName) {
         when {
             contains(".rel")  -> 0
             contains("debug") -> 4

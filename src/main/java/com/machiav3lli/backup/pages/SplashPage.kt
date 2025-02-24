@@ -66,9 +66,9 @@ fun SplashPage() {
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = listOf(
-                    SystemUtils.packageName,
-                    SystemUtils.versionName,
-                    SystemUtils.applicationIssuer?.let { "signed by $it" } ?: "",
+                    OABX.packageName,
+                    OABX.versionName,
+                    OABX.applicationIssuer?.let { "signed by $it" } ?: "",
                 ).joinToString("\n"),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface

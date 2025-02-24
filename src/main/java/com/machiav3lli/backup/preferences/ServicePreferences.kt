@@ -17,10 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.COMPRESSION_TYPES
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.dialogs.BaseDialog
-import com.machiav3lli.backup.dialogs.EnumPrefDialogUI
-import com.machiav3lli.backup.dialogs.ListPrefDialogUI
-import com.machiav3lli.backup.dialogs.StringPrefDialogUI
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FileZip
@@ -47,13 +43,11 @@ import com.machiav3lli.backup.ui.compose.theme.ColorOBB
 import com.machiav3lli.backup.ui.compose.theme.ColorSpecial
 import com.machiav3lli.backup.ui.compose.theme.ColorUpdated
 import com.machiav3lli.backup.ui.item.BooleanPref
-import com.machiav3lli.backup.ui.item.EnumPref
 import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.ui.item.ListPref
 import com.machiav3lli.backup.ui.item.PasswordPref
 import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.StringPref
-import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -293,5 +287,5 @@ val pref_installationPackage = StringPref(
     titleId = R.string.prefs_installerpackagename,
     icon = Phosphor.Textbox,
     iconTint = { ColorOBB },
-    defaultValue = SystemUtils.packageName
+    defaultValue = OABX.packageName
 )

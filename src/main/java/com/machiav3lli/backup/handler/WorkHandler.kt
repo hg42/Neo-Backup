@@ -444,7 +444,7 @@ class WorkHandler(appContext: Context) {
                                 appContext,
                                 classAddress("NotificationHandler")
                             )
-                                .setGroup(SystemUtils.packageName)
+                                .setGroup(OABX.packageName)
                                 .setSortKey("1-$batchName")
                                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                                 .setContentTitle(title)

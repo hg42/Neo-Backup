@@ -63,8 +63,7 @@ import com.machiav3lli.backup.ui.compose.item.LegendItem
 import com.machiav3lli.backup.ui.compose.item.LinkItem
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TitleText
-import com.machiav3lli.backup.utils.SystemUtils
-import com.machiav3lli.backup.utils.SystemUtils.applicationIssuer
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.utils.gridItems
 import java.io.IOException
 import java.io.InputStream
@@ -94,7 +93,7 @@ fun HelpSheet(onDismiss: () -> Unit) {
                             maxLines = 1,
                         )
                         Text(
-                            text = SystemUtils.versionName,
+                            text = OABX.versionName,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 2,
@@ -103,7 +102,7 @@ fun HelpSheet(onDismiss: () -> Unit) {
                     }
                 },
                 supportingContent = {
-                    applicationIssuer?.let {
+                    OABX.applicationIssuer?.let {
                         Text(
                             text = "signed by $it",
                             modifier = Modifier.padding(horizontal = 8.dp),
