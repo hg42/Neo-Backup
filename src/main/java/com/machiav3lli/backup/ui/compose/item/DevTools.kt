@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -45,6 +47,7 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -102,6 +105,7 @@ import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
+import com.machiav3lli.backup.sheets.Sheet
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -109,6 +113,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowUUpLeft
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Pencil
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.ifThenElse
 import com.machiav3lli.backup.ui.compose.recycler.InnerBackground
 import com.machiav3lli.backup.ui.item.LaunchPref
 import com.machiav3lli.backup.ui.item.Pref
@@ -379,7 +384,9 @@ fun DevInfoLogTab() {
 @Composable
 fun DevLogsTab() {
 
-    Logs(viewModel = OABX.main?.logsViewModel ?: LogViewModel(OABX.NB)) // in case MainActivity is not existing yet
+    Logs(
+        viewModel = OABX.main?.logsViewModel ?: LogViewModel(OABX.NB)
+    ) // in case MainActivity is not existing yet
 }
 
 @Composable
@@ -521,7 +528,7 @@ fun PluginEditor(plugin: Plugin? = null, onSubmit: (plugin: Plugin?) -> Unit) {
     var editPlugin by remember { mutableStateOf(plugin) }
     var selectedType by remember {
         mutableStateOf(
-            editPlugin?.let { Plugin.typeFor(it) } ?: Plugin.DEFAULT_TYPE
+            editPlugin?.let { typeFor(it) } ?: Plugin.DEFAULT_TYPE
         )
     }
     val where = displayPath(editPlugin?.file?.path ?: "")
@@ -1082,15 +1089,20 @@ fun DevTools(
             devToolsTab.value = "devsett"
     }
 
+    var halfHeight by remember { mutableStateOf(false) }
     val tempShowInfo = remember { mutableStateOf(false) }
     val showInfo = OABX.showInfoLog || tempShowInfo.value
 
     Surface(
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surface.flatten(0.1f, Color.Gray),
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = AbsoluteRoundedCornerShape(16.dp),
         modifier = Modifier
-            .fillMaxSize()
+            .ifThenElse(
+                halfHeight,
+                { fillMaxHeight(0.5f) },
+                { fillMaxSize() }
+            )
     ) {
         InnerBackground {
 
@@ -1132,7 +1144,12 @@ fun DevTools(
                     //Text(text = tab, modifier = Modifier)
                     RefreshButton(hideIfNotBusy = true)
                     SimpleButton(
-                        "          close          "
+                        "%"
+                    ) {
+                        halfHeight = !halfHeight
+                    }
+                    SimpleButton(
+                        "        close        "
                     ) {
                         expanded.value = false
                         try {
@@ -1191,6 +1208,7 @@ fun DevTools(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SdCardPath")
 @Preview
 @Composable
@@ -1228,7 +1246,21 @@ fun DevToolsPreview() {
                 hitBusy(5000)
             }
         }
-        if (expanded.value)
-            DevTools(expanded)
+        if (expanded.value) {
+            //Dialog(
+            //    properties = DialogProperties(
+            //        dismissOnBackPress = false,
+            //        dismissOnClickOutside = false,
+            //        usePlatformDefaultWidth = false
+            //    ),
+            //    onDismissRequest = { expanded.value = false }
+            //) {
+            Sheet(
+                onDismissRequest = { },
+                sheetState = rememberModalBottomSheetState(),
+            ) {
+                DevTools(expanded)
+            }
+        }
     }
 }

@@ -39,7 +39,7 @@ fun BaseDialog(
 ) {
     Dialog(
         onDismissRequest = { openDialogCustom.value = false },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         dialogUI()
     }

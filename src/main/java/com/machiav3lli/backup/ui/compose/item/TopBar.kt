@@ -56,9 +56,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.preferences.pref_showInfoLogBar
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
@@ -223,7 +224,14 @@ fun TopBar(
                         )
                 )
                 if (showDevTools.value) {
-                    BaseDialog(openDialogCustom = showDevTools) {
+                    Dialog(
+                        onDismissRequest = { showDevTools.value = false },
+                        properties = DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            dismissOnBackPress = false,
+                            dismissOnClickOutside = false
+                        )
+                    ) {
                         DevTools(expanded = showDevTools)
                     }
                 }
