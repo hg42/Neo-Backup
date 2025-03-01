@@ -47,6 +47,7 @@ import com.machiav3lli.backup.utils.applyFilter
 import com.machiav3lli.backup.utils.sortFilterModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -172,7 +173,10 @@ class MainViewModel(
     val backupsMapFlow = MutableSharedFlow<Map<String, List<Backup>>>()
     @OptIn(ExperimentalCoroutinesApi::class)
     val backupsMapUpdate = backupsMapFlow
-        .mapLatest { it }
+        .mapLatest {
+            delay(50)
+            it
+        }
         .trace { "*** backupsMap update" }
         .stateIn(
             viewModelScope + Dispatchers.IO,
@@ -192,8 +196,8 @@ class MainViewModel(
         ) { appinfos, backups ->
 
             traceFlows {
-                "******************** packages-db: ${appinfos.size} backups: ${
-                    backups.map { it.value.size }.sum()
+                "******************** appinfos: ${appinfos.size} backups: ${
+                    backups.values.flatten().size
                 }"
             }
 
