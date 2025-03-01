@@ -55,7 +55,6 @@ import com.machiav3lli.backup.preferences.pref_busyFadeTime
 import com.machiav3lli.backup.preferences.pref_busyLaserBackground
 import com.machiav3lli.backup.preferences.pref_busyTurnTime
 import com.machiav3lli.backup.preferences.pref_fullScreenBackground
-import com.machiav3lli.backup.preferences.pref_versionOpacity
 import com.machiav3lli.backup.ui.compose.item.ActionChip
 import com.machiav3lli.backup.ui.compose.item.RefreshButton
 import com.machiav3lli.backup.ui.compose.item.SelectionChip
@@ -410,16 +409,6 @@ fun FullScreenBackground(
             BusyBackground(modifier = modifier, content = content)
         else
             content()
-
-        if (pref_versionOpacity.value > 0)
-            Text(
-                text = "${OABX.versionName} ${OABX.applicationIssuer}",
-                fontSize = 8.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = pref_versionOpacity.value / 100f),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentSize(Alignment.TopCenter)
-            )
     }
 }
 

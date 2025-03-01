@@ -3,7 +3,6 @@ package com.machiav3lli.backup.ui.compose.item
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +60,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.preferences.pref_showInfoLogBar
+import com.machiav3lli.backup.preferences.pref_versionOpacity
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
@@ -100,12 +100,20 @@ fun ProgressIndicator() {
 
 @Composable
 fun GlobalIndicators() {
-    Column(
-        verticalArrangement = Arrangement.SpaceEvenly,
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
+    Box {
         ProgressIndicator()
+
+        if (pref_versionOpacity.value > 0)
+            Text(
+                text = "${OABX.versionName} ${OABX.applicationIssuer}",
+                fontSize = 8.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = pref_versionOpacity.value / 100f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp)
+                    .height(16.dp)
+                    .wrapContentSize(Alignment.BottomCenter)
+            )
     }
 }
 
@@ -200,7 +208,7 @@ fun TopBar(
     val showInfo =
         !showDevTools.value && (OABX.showInfoLog || tempShowInfo.value) && pref_showInfoLogBar.value
 
-    Box { // overlay TopBar and indicators
+    Column {
 
         TopAppBar(
             modifier = modifier.wrapContentHeight(),
@@ -245,9 +253,7 @@ fun TopBar(
             actions = actions
         )
 
-        // must be second item to overlay first
         GlobalIndicators()
-
     }
 }
 
