@@ -462,28 +462,28 @@ val pref_restartAppOnLanguageChange = BooleanPref(
     defaultValue = false
 )
 
+val pref_prettyJson = BooleanPref(  //TODO hg42 to be removed
+    key = "dev-alt.prettyJson",
+    summary = "create human readable json files. Note: NB can read all variants",
+    defaultValue = true
+)
+
 val pref_useYamlPreferences = BooleanPref(
     key = "$debug-alt.useYamlPreferences",
-    summary = "create human readable yaml format for preferences",
+    summary = "create human readable yaml format for preferences. Note: NB can read all variants [do not use, experimental]",
     defaultValue = false
 )
 
 val pref_useYamlSchedules = BooleanPref(
     key = "$debug-alt.useYamlSchedules",
-    summary = "create human readable yaml format for schedules",
+    summary = "create human readable yaml format for schedules. Note: NB can read all variants [do not use, experimental]",
     defaultValue = false
 )
 
 val pref_useYamlProperties = BooleanPref(
     key = "$debug-alt.useYamlProperties",
-    summary = "create human readable yaml format for backup properties",
+    summary = "create human readable yaml format for backup properties. Note: NB can read all variants [do not use, experimental]",
     defaultValue = false
-)
-
-val pref_prettyJson = BooleanPref(  //TODO hg42 to be removed
-    key = "dev-alt.prettyJson",
-    summary = "create human readable json files. Note they should be compatible in both directions",
-    defaultValue = true
 )
 
 val pref_busyTurnTime = IntPref(
@@ -522,7 +522,7 @@ val pref_earlyEmptyBackups = BooleanPref(   //TODO hg42 to be removed
 
 val pref_flatStructure = BooleanPref(
     key = "dev-alt.flatStructure",
-    summary = "use a flat directory structure",
+    summary = "use a flat directory structure (theoretically this should be faster, less directory reads)",
     defaultValue = false
 )
 
