@@ -35,6 +35,7 @@ import com.machiav3lli.backup.handler.toPackageList
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.items.Package.Companion.invalidateCacheForPackage
 import com.machiav3lli.backup.preferences.pref_newAndUpdatedNotification
+import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
 import com.machiav3lli.backup.traceBackups
 import com.machiav3lli.backup.traceFlows
 import com.machiav3lli.backup.ui.compose.MutableComposableFlow
@@ -103,46 +104,57 @@ class MainViewModel(
                 emptyList()
             )
 
+    //TODO wech
     @OptIn(ExperimentalCoroutinesApi::class)
     val backupsMapDb =
         //------------------------------------------------------------------------------------------ backupsMap
-        db.getBackupDao().getAllFlow()
-            .mapLatest { it.groupBy(Backup::packageName) }
-            .trace { "*** backupsMapDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
-            //.trace { "*** backupsMap <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
-            .stateIn(
-                viewModelScope + Dispatchers.IO,
-                SharingStarted.Eagerly,
-                emptyMap()
-            )
-
-    val backupsUpdateFlow = MutableSharedFlow<Pair<String, List<Backup>>?>()
-    val backupsUpdate = backupsUpdateFlow
-        // don't skip anything here (no conflate or map Latest etc.)
-        // we need to process each update as it's the update for a single package
-        .filterNotNull()
-        //.buffer(UNLIMITED)   // use in case the flow isn't collected, yet, e.g. if using Lazily
-        .trace { "*** backupsUpdate <<- ${it.first} ${formatSortedBackups(it.second)}" }
-        .onEach {
-            viewModelScope.launch(Dispatchers.IO) {
-                traceBackups {
-                    "*** updating database ---------------------------> ${it.first} ${
-                        formatSortedBackups(
-                            it.second
-                        )
-                    }"
-                }
-                db.getBackupDao().updateList(
-                    it.first,
-                    it.second.sortedByDescending { it.backupDate },
+        if (pref_skipBackupsDatabase.value)
+            MutableSharedFlow()
+        else {
+            db.getBackupDao().getAllFlow()
+                .mapLatest { it.groupBy(Backup::packageName) }
+                .trace { "*** backupsMapDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
+                //.trace { "*** backupsMap <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
+                .stateIn(
+                    viewModelScope + Dispatchers.IO,
+                    SharingStarted.Eagerly,
+                    emptyMap()
                 )
-            }
         }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Eagerly,
-            null
-        )
+
+    //TODO wech
+    val backupsUpdateFlow = MutableSharedFlow<Pair<String, List<Backup>>?>()
+    val backupsUpdate =
+        if (pref_skipBackupsDatabase.value)
+            MutableSharedFlow()
+        else {
+            backupsUpdateFlow
+                // don't skip anything here (no conflate or map Latest etc.)
+                // we need to process each update as it's the update for a single package
+                .filterNotNull()
+                //.buffer(UNLIMITED)   // use in case the flow isn't collected, yet, e.g. if using Lazily
+                .trace { "*** backupsUpdate <<- ${it.first} ${formatSortedBackups(it.second)}" }
+                .onEach {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        traceBackups {
+                            "*** updating database ---------------------------> ${it.first} ${
+                                formatSortedBackups(
+                                    it.second
+                                )
+                            }"
+                        }
+                        db.getBackupDao().updateList(
+                            it.first,
+                            it.second.sortedByDescending { it.backupDate },
+                        )
+                    }
+                }
+                .stateIn(
+                    viewModelScope + Dispatchers.IO,
+                    SharingStarted.Eagerly,
+                    null
+                )
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val appExtrasMap =
@@ -156,13 +168,31 @@ class MainViewModel(
                 emptyMap()
             )
 
+    //val appinfoList = MutableSharedFlow<List<AppInfo>>()
+    val backupsMapFlow = MutableSharedFlow<Map<String, List<Backup>>>()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val backupsMapUpdate = backupsMapFlow
+        .mapLatest { it }
+        .trace { "*** backupsMap update" }
+        .stateIn(
+            viewModelScope + Dispatchers.IO,
+            SharingStarted.Eagerly,
+            emptyMap()
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val packageList =
         //========================================================================================== packageList
-        combine(db.getAppInfoDao().getAllFlow(), backupsMapDb) { appinfos, backups ->
+        combine(
+            db.getAppInfoDao().getAllFlow(),
+            if (pref_skipBackupsDatabase.value)
+                backupsMapUpdate
+            else
+                backupsMapDb
+        ) { appinfos, backups ->
 
             traceFlows {
-                "******************** packages-db: ${appinfos.size} backups-db: ${
+                "******************** packages-db: ${appinfos.size} backups: ${
                     backups.map { it.value.size }.sum()
                 }"
             }

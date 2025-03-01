@@ -61,6 +61,7 @@ import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.PrefUI
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
+import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarms
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
@@ -560,6 +561,14 @@ val pref_useExpedited = BooleanPref(
     summaryId = R.string.prefs_useexpedited_summary,
     defaultValue = true
 )
+
+val pref_skipBackupsDatabase = BooleanPref(
+    key = "dev-alt.skipBackupsDatabase",
+    summary = "don't use backups database, instead use the internal data",
+    defaultValue = true
+) {
+    OABX.context.restartApp()
+}
 
 
 //---------------------------------------- developer settings - workarounds

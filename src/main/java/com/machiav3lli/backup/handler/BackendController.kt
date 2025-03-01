@@ -52,6 +52,7 @@ import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
 import com.machiav3lli.backup.preferences.pref_earlyEmptyBackups
 import com.machiav3lli.backup.preferences.pref_lookForEmptyBackups
+import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
 import com.machiav3lli.backup.traceBackupsScan
 import com.machiav3lli.backup.traceBackupsScanAll
 import com.machiav3lli.backup.traceInfo
@@ -610,6 +611,7 @@ fun Context.findBackups(
         if (packageName.isEmpty()) {
 
             val time = OABX.endBusy("findBackups")
+
             OABX.addInfoLogText("findBackups: ${"%.3f".format(time / 1E9)} sec")
 
             if (traceTiming.pref.value) {
@@ -725,25 +727,24 @@ fun List<AppInfo>.toPackageList(
     var packageList: MutableList<Package> = mutableListOf()
 
     try {
-        OABX.beginBusy("toPackageList")
 
         val includeSpecial = specialBackupsEnabled
 
-        packageList =
-            this.filterNot {
+        packageList = this
+            .filterNot {
                 it.packageName.matches(ignoredPackages)
             }
-                .mapNotNull {
-                    val pkg = try {
-                        Package(context, it)
-                    } catch (e: AssertionError) {
-                        Timber.e("Could not create Package for ${it}: $e")
-                        null
-                    }
-                    //pkg?.updateBackupList(backupMap[pkg.packageName].orEmpty())
-                    pkg
+            .mapNotNull {
+                val pkg = try {
+                    Package(context, it)
+                } catch (e: AssertionError) {
+                    Timber.e("Could not create Package for ${it}: $e")
+                    null
                 }
-                .toMutableList()
+                //pkg?.updateBackupList(backupMap[pkg.packageName].orEmpty())
+                pkg
+            }
+            .toMutableList()
 
         // Special Backups must added before the uninstalled packages, because otherwise it would
         // discover the backup directory and run in a special case where no the directory is empty.
@@ -763,8 +764,6 @@ fun List<AppInfo>.toPackageList(
 
     } catch (e: Throwable) {
         LogsHandler.unexpectedException(e)
-    } finally {
-        OABX.endBusy("toPackageList")
     }
 
     return packageList
@@ -843,7 +842,8 @@ fun Context.updateAppTables() {
         try {
             beginNanoTimer("dbUpdate")
 
-            OABX.db.getBackupDao().updateList(*backups.toTypedArray())
+            if (!pref_skipBackupsDatabase.value)
+                OABX.db.getBackupDao().updateList(*backups.toTypedArray())
             OABX.db.getAppInfoDao().updateList(*appInfoList.toTypedArray())
         } catch (e: Throwable) {
             logException(e, backTrace = true)

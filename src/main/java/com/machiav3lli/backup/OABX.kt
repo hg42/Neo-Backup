@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.charleskorn.kaml.Yaml
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
@@ -916,33 +917,15 @@ class OABX : Application() {
 
         private var theBackupsMap = mutableMapOf<String, List<Backup>>()
 
+        fun updateUI() {
+            main?.viewModel?.viewModelScope?.launch {
+                main!!.viewModel.backupsMapFlow.emit(theBackupsMap)
+            }
+        }
+
         fun getBackups(): ImmutableMap<String, List<Backup>> {
             synchronized(theBackupsMap) {
                 return theBackupsMap.toImmutableMap()
-            }
-        }
-
-        fun clearBackups() {
-            synchronized(theBackupsMap) {
-                theBackupsMap.clear()
-            }
-        }
-
-        fun setBackups(backupsMap: Map<String, List<Backup>>) {
-            synchronized(theBackupsMap) {
-                backupsMap.forEach { (packageName, backups) ->
-                    theBackupsMap.put(packageName, backups)
-                }
-                // clear no more existing packages
-                (theBackupsMap.keys - backupsMap.keys).forEach {
-                    theBackupsMap.remove(it)
-                }
-            }
-        }
-
-        fun putBackups(packageName: String, backups: List<Backup>) {
-            synchronized(theBackupsMap) {
-                theBackupsMap.put(packageName, backups)
             }
         }
 
@@ -961,9 +944,37 @@ class OABX : Application() {
             }
         }
 
+        fun clearBackups() {
+            synchronized(theBackupsMap) {
+                theBackupsMap.clear()
+                updateUI()
+            }
+        }
+
+        fun setBackups(backupsMap: Map<String, List<Backup>>) {
+            synchronized(theBackupsMap) {
+                backupsMap.forEach { (packageName, backups) ->
+                    theBackupsMap.put(packageName, backups)
+                }
+                // clear no more existing packages
+                (theBackupsMap.keys - backupsMap.keys).forEach {
+                    theBackupsMap.remove(it)
+                }
+                updateUI()
+            }
+        }
+
+        fun putBackups(packageName: String, backups: List<Backup>) {
+            synchronized(theBackupsMap) {
+                theBackupsMap.put(packageName, backups)
+                updateUI()
+            }
+        }
+
         fun removeBackups(packageName: String) {
             synchronized(theBackupsMap) {
                 theBackupsMap.remove(packageName)
+                updateUI()
             }
         }
 
@@ -971,6 +982,7 @@ class OABX : Application() {
             synchronized(theBackupsMap) {
                 (packageNames - theBackupsMap.keys).forEach {
                     theBackupsMap.put(it, emptyList())
+                    updateUI()
                 }
             }
         }
@@ -979,6 +991,7 @@ class OABX : Application() {
             synchronized(theBackupsMap) {
                 packageNames.forEach {
                     theBackupsMap.put(it, emptyList())
+                    updateUI()
                 }
             }
         }

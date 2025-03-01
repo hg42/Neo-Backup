@@ -32,6 +32,7 @@ import com.machiav3lli.backup.handler.getPackageStorageStats
 import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.preferences.pref_ignoreLockedInHousekeeping
 import com.machiav3lli.backup.preferences.pref_paranoidBackupLists
+import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
 import com.machiav3lli.backup.traceBackups
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
@@ -170,10 +171,14 @@ class Package {
             } ${TraceUtils.methodName(2)}"
         }
         backupList = backups
-        OABX.main?.viewModel?.viewModelScope?.launch {
-            OABX.main?.viewModel?.backupsUpdateFlow?.emit(
-                Pair(packageName, backups.sortedByDescending { it.backupDate })
-            )
+
+        //TODO wech
+        if (!pref_skipBackupsDatabase.value) {
+            OABX.main?.viewModel?.viewModelScope?.launch {
+                OABX.main?.viewModel?.backupsUpdateFlow?.emit(
+                    Pair(packageName, backups.sortedByDescending { it.backupDate })
+                )
+            }
         }
     }
 
@@ -348,10 +353,14 @@ class Package {
             }
         }
         backupList = backups
-        OABX.main?.viewModel?.viewModelScope?.launch {
-            OABX.main?.viewModel?.backupsUpdateFlow?.emit(
-                Pair(packageName, backups.sortedByDescending { it.backupDate })
-            )
+
+        //TODO wech
+        if (!pref_skipBackupsDatabase.value) {
+            OABX.main?.viewModel?.viewModelScope?.launch {
+                OABX.main?.viewModel?.backupsUpdateFlow?.emit(
+                    Pair(packageName, backups.sortedByDescending { it.backupDate })
+                )
+            }
         }
     }
 
