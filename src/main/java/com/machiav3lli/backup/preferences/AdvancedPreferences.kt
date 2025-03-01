@@ -292,6 +292,12 @@ val pref_maxJobs = IntPref(
     defaultValue = 0
 )
 
+val pref_cancelJobsOnStart = BooleanPref(
+    key = "dev-adv.cancelJobsOnStart",
+    summary = "cancel all remaining jobs on app start [needs reboot]",
+    defaultValue = true
+)
+
 val pref_menuButtonAlwaysVisible = BooleanPref(
     key = "dev-adv.menuButtonAlwaysVisible",
     summary = "also show context menu button when selection is empty",
@@ -317,12 +323,6 @@ val pref_busyFadeTime = IntPref(
     summary = "time to fade busy color (ms)",
     entries = (0..5000 step 250).toList(),
     defaultValue = 2000
-)
-
-val pref_cancelOnStart = BooleanPref(
-    key = "dev-adv.cancelOnStart",
-    summaryId = R.string.prefs_cancelonstart_summary,
-    defaultValue = false
 )
 
 val pref_showInfoLogBar = BooleanPref(

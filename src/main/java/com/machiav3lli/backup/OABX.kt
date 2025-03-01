@@ -53,7 +53,7 @@ import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
-import com.machiav3lli.backup.preferences.pref_cancelOnStart
+import com.machiav3lli.backup.preferences.pref_cancelJobsOnStart
 import com.machiav3lli.backup.preferences.pref_prettyJson
 import com.machiav3lli.backup.preferences.pref_useYamlPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlProperties
@@ -345,8 +345,9 @@ class OABX : Application() {
         Timber.d("registerReceiver: PackageUnInstalledReceiver = $result")
 
         work = WorkHandler(context)
-        if (pref_cancelOnStart.value)
+        if (pref_cancelJobsOnStart.value) {
             work?.cancel()
+        }
         work?.prune()
 
         MainScope().launch {
