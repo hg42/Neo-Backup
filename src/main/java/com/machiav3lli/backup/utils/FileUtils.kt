@@ -102,10 +102,10 @@ object FileUtils {
      * `getBackupDir` will set it again.
      */
     fun invalidateBackupLocation() {
-        Package.invalidateBackupCacheForPackage()
-        SpecialInfo.clearCache()
-        backupRoot = null // after clearing caches, because they probably need the location
         try {
+            Package.invalidateBackupCacheForPackage()
+            SpecialInfo.clearCache()
+            backupRoot = null // after clearing caches, because they probably need the location
             OABX.clearBackups()
             // updateAppTables does ensureBackups, but make intention clear here
             OABX.context.findBackups()

@@ -64,6 +64,7 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
+import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import kotlinx.coroutines.Dispatchers
@@ -518,7 +519,7 @@ fun Context.findBackups(
 
             // preset installed packages with empty backups lists
             // this prevents scanning them again when a package needs it's backups later
-            // doing it here also avoids setting all packages to empty lists when findbackups fails
+            // doing it here also avoids setting all packages to empty lists when findBackups fails
             // so there is a chance that scanning for backups of a single package will work later
 
             //val installedPackages = getInstalledPackageList()   // would scan for backups
@@ -594,7 +595,7 @@ fun Context.findBackups(
 
         } else {
             if (OABX.startup)
-                traceBackupsScan {
+                traceBold {
                     "<$packageName> single scan (DURING STARTUP!!!) ${
                         formatBackups(
                             backupsMap[packageName] ?: listOf()

@@ -498,7 +498,7 @@ val pref_versionOpacity = IntPref(
     summary = "opacity of version [percent]",
     entries = ((0..9 step 1) + (10..100 step 5)).toList(),
     defaultValue = 75
-    // invisible but can be seen with image processing
+    // small values are invisible but can be seen with image processing
 )
 
 val pref_busyHitTime = IntPref(
