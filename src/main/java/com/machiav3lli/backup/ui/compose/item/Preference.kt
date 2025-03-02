@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.ICON_SIZE_MEDIUM
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
@@ -149,12 +148,26 @@ fun BasePreference(
         ),
         leadingContent = { PrefIcon(pref) },
         headlineContent = {
-            Text(
-                text = if (titleId != -1) stringResource(id = titleId) else pref.key,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = 16.sp
-            )
+            if (titleId != -1) {
+                Column {
+                    Text(
+                        text = stringResource(id = titleId),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = pref.key,
+                        color = MaterialTheme.colorScheme.onSurface.flatten(surface = surfaceColor),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                }
+            } else {
+                Text(
+                    text = pref.key,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
         },
         supportingContent = {
             Column(
