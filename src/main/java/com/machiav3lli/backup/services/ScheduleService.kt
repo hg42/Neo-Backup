@@ -50,7 +50,6 @@ import com.machiav3lli.backup.tasks.ScheduledActionTask
 import com.machiav3lli.backup.traceSchedule
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.scheduleAlarm
-import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 
 open class ScheduleService : Service() {
     private lateinit var scheduledActionTask: ScheduledActionTask
@@ -281,8 +280,6 @@ open class ScheduleService : Service() {
             traceSchedule { "[$scheduleId] starting task for schedule}" }
             scheduledActionTask.execute()
         }
-
-        scheduleAlarmsOnce()
 
         OABX.wakelock(false)
         return START_NOT_STICKY
