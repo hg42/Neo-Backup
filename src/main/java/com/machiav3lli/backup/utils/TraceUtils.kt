@@ -108,11 +108,13 @@ object TraceUtils {
 
     val warmup = 3L
 
-    fun endNanoTimer(name: String): Long {
+    fun endNanoTimer(name: String, log: Boolean = false): Long {
         synchronized(nanoTimers) {
             var t = System.nanoTime()
             nanoTimers.get(name)?.let {
                 t -= it
+                if (log)
+                    traceTiming { "%-40s %12.6f ms".format(name, t/1E6) }
                 nanoTime.put(name, t)
                 val (average, n) = nanoTiming.getOrPut(name) { 0f to -warmup }
                 if (n < 0L)
