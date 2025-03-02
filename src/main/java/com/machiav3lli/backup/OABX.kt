@@ -876,7 +876,7 @@ class OABX : Application() {
                             val next = it - 1
                             busyCountDown.value = next
                             busyLevel.value = busyLevelAtomic.get()
-                            if (next == 0)
+                            if (next <= 0)
                                 busy.value = false
                             else if (busy.value == false)
                                 busy.value = true
@@ -906,8 +906,7 @@ class OABX : Application() {
 
         fun endBusy(name: String? = null): Long {
             val time = endNanoTimer("busy.$name")
-            busyLevelAtomic.decrementAndGet()
-            if (busyLevelAtomic.get() == 0) {
+            if (busyLevelAtomic.decrementAndGet() <= 0) {
                 busyCountDownAtomic.set(1)
             }
             traceBusy {
