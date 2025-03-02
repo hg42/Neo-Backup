@@ -861,7 +861,7 @@ class OABX : Application() {
 
         var busyCountDownAtomic = AtomicInteger(0)
         var busyLevelAtomic = AtomicInteger(0)
-        val busyTick = 250
+        val busyTick = 500
         var busy = mutableStateOf(false)
         var busyLevel = mutableStateOf(0)
         var busyCountDown = mutableStateOf(0)
@@ -875,9 +875,10 @@ class OABX : Application() {
                             val next = it - 1
                             busyCountDown.value = next
                             busyLevel.value = busyLevelAtomic.get()
-                            if (next <= 0)
-                                busy.value = false
-                            else if (busy.value == false)
+                            if (next <= 0) {
+                                if (!startup)
+                                    busy.value = false
+                            } else if (busy.value == false)
                                 busy.value = true
                             next
                         } else
