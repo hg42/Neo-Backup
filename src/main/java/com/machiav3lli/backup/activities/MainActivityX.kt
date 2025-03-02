@@ -257,7 +257,7 @@ class MainActivityX : BaseActivity() {
                             mScope.launch(Dispatchers.IO) {
                                 runOrLog {
                                     val backupsMap = OABX.getBackups()
-                                    traceInfo { "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size} root: ${OABX.backupRoot}" }
+                                    traceInfo { "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.map { it.size }.sum()} root: ${OABX.backupRoot}" }
                                     ensureBackups()
                                 }
                                 runOrLog { updateAppTables() }

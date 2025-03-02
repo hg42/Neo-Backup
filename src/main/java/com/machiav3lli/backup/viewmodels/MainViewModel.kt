@@ -197,7 +197,7 @@ class MainViewModel(
 
             traceFlows {
                 "******************** appinfos: ${appinfos.size} backups: ${
-                    backups.values.flatten().size
+                    backups.values.map { it.size }.sum()
                 }"
             }
 

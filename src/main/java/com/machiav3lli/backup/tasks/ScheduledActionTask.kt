@@ -63,7 +63,7 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
             // findBackups *is* necessary, because it's *not* done in OABX.onCreate any more
             ensureBackups()
 
-            traceSchedule { "packages: ${OABX.getBackups().keys.size} backups: ${OABX.getBackups().values.flatten().size}" }
+            traceSchedule { "packages: ${OABX.getBackups().keys.size} backups: ${OABX.getBackups().values.map { it.size }.sum()}" }
 
             context.getInstalledPackageList()
 

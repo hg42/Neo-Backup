@@ -586,7 +586,7 @@ fun Context.findBackups(
 
         if (packageName.isEmpty()) {
 
-            traceInfo { "*** --------------------> findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size}" }
+            traceInfo { "*** --------------------> findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.map { it.size }.sum()}" }
 
             setBackups(backupsMap)
 
