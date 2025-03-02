@@ -20,6 +20,8 @@ package com.machiav3lli.backup.utils
 import android.content.Context
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.backupRoot
+import com.machiav3lli.backup.OABX.Companion.beginBusy
+import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler
@@ -27,7 +29,7 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.traceInfo
+import com.machiav3lli.backup.traceDebug
 import java.io.File
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
@@ -69,19 +71,24 @@ object FileUtils {
 
     fun ensureBackups(): Map<String, List<Backup>> {
 
+        traceDebug { "ensureBackups" }
+
         // be sure we have the backups, loop is not really necessary, but doesn't hurt, either
-        repeat(10) {
+        repeat(10) { count ->
             try {
-                if (OABX.getBackups().isEmpty()) {
-                    traceInfo { "ensureBackups: no backups, scanning..." }
+                if (OABX.getBackups().values.map { it.size }.sum() == 0) {
+                    beginBusy("ensureBackups")
                     OABX.context.findBackups()
+                    endBusy("ensureBackups")
                 }
-                return OABX.getBackups()
+                return@repeat
             } catch (e: Throwable) {
                 logException(e)
+                traceDebug { "ensureBackups.$count" }
                 Thread.sleep(1000)
             }
         }
+
         return OABX.getBackups()
     }
 
