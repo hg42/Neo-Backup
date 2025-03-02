@@ -177,7 +177,7 @@ val pref_pathBackupFolder = StringEditPref(
         else if (backupFolderExists(pref.value)) Color.Green.copy(alpha = alpha)
         else Color.Red.copy(alpha = alpha)
     },
-    UI = { it, onDialogUI, index, groupSize ->
+    UI = { it, onDialogUI ->
         val pref = it as StringEditPref
         val launcher =
             rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -207,8 +207,6 @@ val pref_pathBackupFolder = StringEditPref(
         }
         StringEditPreference(
             pref = pref,
-            index = index,
-            groupSize = groupSize,
             onClick = onClick,
         )
     },

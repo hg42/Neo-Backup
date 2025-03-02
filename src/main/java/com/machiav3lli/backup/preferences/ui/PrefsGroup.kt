@@ -82,8 +82,6 @@ fun PrefsGroup(
                 PrefsBuilder(
                     pref,
                     onPrefDialog,
-                    index,
-                    size,
                 )
                 if (index < size - 1)
                     Spacer(modifier = Modifier.height(4.dp))

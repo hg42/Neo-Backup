@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 
 // for now it's done the wrong way, but object oriented
 
-typealias PrefUI = @Composable (pref: Pref, onDialogPref: (Pref) -> Unit, index: Int, groupSize: Int) -> Unit
+typealias PrefUI = @Composable (pref: Pref, onDialogPref: (Pref) -> Unit) -> Unit
 
 // dirty is used to force recomposition when value, summary, icon, tint change
 // dirty as a state would trigger recomposition, but only where dirty is used,
@@ -313,8 +313,8 @@ class BooleanPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
-        BooleanPreference(pref = pref as BooleanPref, index = index, groupSize = groupSize)
+    UI = UI ?: { pref, onDialogUI ->
+        BooleanPreference(pref = pref as BooleanPref)
     },
     icon = icon,
     iconTint = iconTint,
@@ -356,8 +356,8 @@ class IntPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
-        IntPreference(pref = pref as IntPref, index = index, groupSize = groupSize)
+    UI = UI ?: { pref, onDialogUI ->
+        IntPreference(pref = pref as IntPref)
     },
     icon = icon,
     iconTint = iconTint,
@@ -398,9 +398,9 @@ open class StringPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI ->
         val openDialog = remember { mutableStateOf(false) }
-        StringPreference(pref = pref as StringPref, index = index, groupSize = groupSize) {
+        StringPreference(pref = pref as StringPref) {
             openDialog.value = true
         }
         if (openDialog.value) {
@@ -451,8 +451,8 @@ class StringEditPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
-        StringEditPreference(pref = pref as StringEditPref, index = index, groupSize = groupSize)
+    UI = UI ?: { pref, onDialogUI ->
+        StringEditPreference(pref = pref as StringEditPref)
     },
     icon = icon,
     iconTint = iconTint,
@@ -480,9 +480,9 @@ class PasswordPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI ->
         val openDialog = remember { mutableStateOf(false) }
-        PasswordPreference(pref = pref as PasswordPref, index = index, groupSize = groupSize) {
+        PasswordPreference(pref = pref as PasswordPref) {
             openDialog.value = true
         }
         if (openDialog.value) {
@@ -523,9 +523,9 @@ class ListPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI ->
         val openDialog = remember { mutableStateOf(false) }
-        ListPreference(pref = pref as ListPref, index = index, groupSize = groupSize) {
+        ListPreference(pref = pref as ListPref) {
             openDialog.value = true
         }
         if (openDialog.value) {
@@ -564,9 +564,9 @@ class EnumPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI ->
         val openDialog = remember { mutableStateOf(false) }
-        EnumPreference(pref = pref as EnumPref, index = index, groupSize = groupSize) {
+        EnumPreference(pref = pref as EnumPref) {
             openDialog.value = true
         }
         if (openDialog.value) {
@@ -644,11 +644,9 @@ class LaunchPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
+    UI = UI ?: { pref, onDialogUI ->
         LaunchPreference(
             pref = pref as LaunchPref,
-            index = index,
-            groupSize = groupSize,
             summary = pref.summary,
             onClick = pref.onClick
         )

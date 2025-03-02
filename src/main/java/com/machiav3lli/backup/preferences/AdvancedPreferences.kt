@@ -214,8 +214,8 @@ class SuCommandPref(
     titleId = titleId,
     summaryId = summaryId,
     summary = summary,
-    UI = UI ?: { pref, onDialogUI, index, groupSize ->
-        SuCommandPreference(pref = pref as SuCommandPref, index = index, groupSize = groupSize)
+    UI = UI ?: { pref, onDialogUI ->
+        SuCommandPreference(pref = pref as SuCommandPref)
     },
     icon = icon,
     iconTint = iconTint,

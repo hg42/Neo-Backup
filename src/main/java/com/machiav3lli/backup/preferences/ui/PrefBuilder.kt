@@ -6,11 +6,9 @@ import com.machiav3lli.backup.ui.item.Pref
 @Composable
 fun PrefsBuilder(
     pref: Pref,
-    onDialogPref: (Pref) -> Unit,
-    index: Int,
-    size: Int,
+    onDialogPref: (Pref) -> Unit
 ) {
     pref.UI?.let { ui ->
-        ui(pref, onDialogPref, index, size)
+        ui(pref, onDialogPref)
     }
 }
