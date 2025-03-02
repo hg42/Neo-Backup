@@ -150,6 +150,12 @@ val pref_autoLogSuspicious = BooleanPref(
     defaultValue = false
 )
 
+val pref_autoLogBeforeSchedule = BooleanPref(
+    key = "dev-log.autoLogBeforeSchedule",
+    summary = "create a log before the schedule starts it's jobs, allows to catch schedule calculations",
+    defaultValue = false
+)
+
 val pref_autoLogAfterSchedule = BooleanPref(
     key = "dev-log.autoLogAfterSchedule",
     summary = "create a log after each schedule execution",

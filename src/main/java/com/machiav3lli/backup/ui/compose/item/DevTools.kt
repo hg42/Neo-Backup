@@ -92,6 +92,7 @@ import com.machiav3lli.backup.plugins.Plugin.Companion.typeFor
 import com.machiav3lli.backup.plugins.SpecialFilesPlugin
 import com.machiav3lli.backup.plugins.TextPlugin
 import com.machiav3lli.backup.pref_autoLogAfterSchedule
+import com.machiav3lli.backup.pref_autoLogBeforeSchedule
 import com.machiav3lli.backup.pref_autoLogExceptions
 import com.machiav3lli.backup.pref_autoLogSuspicious
 import com.machiav3lli.backup.pref_catchUncaughtException
@@ -1026,6 +1027,7 @@ val pref_prepareSupport = LaunchPref(
     pref_catchUncaughtException.value = true
     pref_autoLogExceptions.value = true
     pref_autoLogSuspicious.value = true
+    pref_autoLogBeforeSchedule.value = true
     pref_autoLogAfterSchedule.value = true
 }
 
@@ -1051,6 +1053,7 @@ val pref_afterSupport = LaunchPref(
     pref_catchUncaughtException.apply { value = defaultValue as Boolean }
     pref_autoLogExceptions.apply { value = defaultValue as Boolean }
     pref_autoLogSuspicious.apply { value = defaultValue as Boolean }
+    pref_autoLogBeforeSchedule.apply { value = defaultValue as Boolean }
     pref_autoLogAfterSchedule.apply { value = defaultValue as Boolean }
 }
 

@@ -42,6 +42,7 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.handler.showNotification
 import com.machiav3lli.backup.pref_autoLogAfterSchedule
+import com.machiav3lli.backup.pref_autoLogBeforeSchedule
 import com.machiav3lli.backup.preferences.pref_useForegroundInService
 import com.machiav3lli.backup.preferences.supportInfo
 import com.machiav3lli.backup.preferences.textLog
@@ -288,6 +289,13 @@ open class ScheduleService : Service() {
     fun beginSchedule(scheduleId: Long, name: String, details: String = ""): Boolean {
         traceSchedule { "[$scheduleId] beginSchedule: $name -> ${runningSchedules[scheduleId]} ${details}" }
         beginLogSection("schedule $name")
+        if (pref_autoLogBeforeSchedule.value) {
+            textLog(
+                listOf(
+                    "--- autoLogBeforeSchedule id=$scheduleId name='$name' ${details}"
+                ) + supportInfo()
+            )
+        }
         return true
     }
 
@@ -301,7 +309,7 @@ open class ScheduleService : Service() {
             )
         }
         OABX.endLogSection("schedule $name")
-        // do this globally
+        // do this globally based on work manager jobs
         //if (runningSchedules <= 0)
         //    stopService(intent)
         //    stopSelf()
