@@ -347,8 +347,9 @@ class OABX : Application() {
         work = WorkHandler(context)
         if (pref_cancelJobsOnStart.value) {
             work?.cancel()
+        } else {
+            work?.prune()
         }
-        work?.prune()
 
         MainScope().launch {
             addInfoLogText("--> click title to keep infobox open")
