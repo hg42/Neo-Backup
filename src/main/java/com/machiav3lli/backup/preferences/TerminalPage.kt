@@ -71,6 +71,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -431,7 +432,7 @@ fun TerminalText(
     else
         text
 
-    val toolbarPadding = 8.dp
+    val toolbarPadding = 16.dp
     val toolbarHeight = ICON_SIZE_SMALL + toolbarPadding*2
 
     Box(
@@ -443,10 +444,10 @@ fun TerminalText(
     ) {
         Box(
             modifier = Modifier
+                .padding(0.dp)
                 .fillMaxWidth()
                 .ifThen(limitLines == 0) { fillMaxHeight() }
                 //.ifThen(!wrap) { horizontalScroll(hscroll) }
-                .padding(0.dp)
                 .background(color = Color(0.2f, 0.2f, 0.3f, alpha = 0.9f))
         ) {
             SelectionContainer(
@@ -503,9 +504,10 @@ fun TerminalText(
 
         Row(
             modifier = Modifier
+                .padding(0.dp)
                 .fillMaxWidth()
-                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f))
-                .height(toolbarHeight),
+                //.height(toolbarHeight)
+                .background(color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -513,6 +515,7 @@ fun TerminalText(
 
             TextField(modifier = Modifier
                 .padding(0.dp)
+                //.wrapContentSize(Alignment.CenterStart)
                 .weight(1f),
                 value = search,
                 singleLine = true,
@@ -530,7 +533,8 @@ fun TerminalText(
                 ),
                 textStyle = TextStyle(
                     fontSize = fontSize * searchFontFactor,
-                    lineHeight = lineHeightSp * searchFontFactor
+                    lineHeight = lineHeightSp * searchFontFactor,
+                    textDecoration = TextDecoration.Underline
                 ),
                 trailingIcon = {
                     if (search.isEmpty())
@@ -572,7 +576,6 @@ fun TerminalText(
             SmallButton(icon = if (wrap) Phosphor.ArrowUDownLeft else Phosphor.Equals) {
                 wrap = !wrap
             }
-            // TODO move nav actions above the bar
             SmallButton(
                 icon = Phosphor.ArrowUp,
                 tint = if (listState.isAtTop()) Color.Transparent else null
