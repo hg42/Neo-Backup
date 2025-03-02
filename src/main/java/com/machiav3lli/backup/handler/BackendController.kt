@@ -774,11 +774,22 @@ fun Context.updateAppTables() {
     try {
         OABX.beginBusy("updateAppTables")
 
-        val installedPackageInfos = packageManager.getInstalledPackageInfosWithPermissions()
+        val installedPackageInfos =
+            try {
+                beginNanoTimer("updateAppTables.installedPackageInfos")
+
+                packageManager.getInstalledPackageInfosWithPermissions()
+
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
+                emptyList()
+            } finally {
+                endNanoTimer("updateAppTables.installedPackageInfos", log = true)
+            }
         val installedNames = installedPackageInfos.map { it.packageName }.toSet()
 
         try {
-            beginNanoTimer("unsuspend")
+            beginNanoTimer("updateAppTables.unsuspend")
 
             if (!OABX.appsSuspendedChecked && pref_backupSuspendApps.value) {
                 installedNames.filter { packageName ->
@@ -801,54 +812,79 @@ fun Context.updateAppTables() {
         } catch (e: Throwable) {
             logException(e, backTrace = true)
         } finally {
-            endNanoTimer("unsuspend")
+            endNanoTimer("updateAppTables.unsuspend", log = true)
         }
 
-        val backupsMap = ensureBackups()
+        val backupsMap =
+            try {
+                beginNanoTimer("updateAppTables.backupsMap")
+
+                ensureBackups()
+
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
+                emptyMap()
+            } finally {
+                endNanoTimer("updateAppTables.backupsMap", log = true)
+            }
         val backups = backupsMap.values.flatten()
 
-        val specialInfos = SpecialInfo.getSpecialInfos(this)
+        val specialInfos =
+            try {
+                beginNanoTimer("updateAppTables.specialInfos")
+
+                SpecialInfo.getSpecialInfos(this)
+
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
+                emptyList()
+            } finally {
+                endNanoTimer("updateAppTables.specialInfos", log = true)
+            }
         val specialNames = specialInfos.map { it.packageName }.toSet()
 
         val uninstalledPackagesWithBackup =
             try {
-                beginNanoTimer("uninstalledPackagesWithBackup")
+                beginNanoTimer("updateAppTables.uninstalledPackagesWithBackup")
 
                 (backupsMap.keys - installedNames - specialNames)
                     .mapNotNull {
                         backupsMap[it]?.maxByOrNull { it.backupDate }?.toAppInfo()
                     }
+
             } catch (e: Throwable) {
                 logException(e, backTrace = true)
                 emptyList()
             } finally {
-                endNanoTimer("uninstalledPackagesWithBackup")
+                endNanoTimer("updateAppTables.uninstalledPackagesWithBackup", log = true)
             }
 
         val appInfoList =
             try {
-                beginNanoTimer("appInfoList")
+                beginNanoTimer("updateAppTables.appInfoList")
 
                 installedPackageInfos
                     .map { AppInfo(this, it) }
                     .union(uninstalledPackagesWithBackup)
+
             } catch (e: Throwable) {
                 logException(e, backTrace = true)
                 emptyList()
             } finally {
-                endNanoTimer("appInfoList")
+                endNanoTimer("updateAppTables.appInfoList", log = true)
             }
 
         try {
-            beginNanoTimer("dbUpdate")
+            beginNanoTimer("updateAppTables.dbUpdate")
 
             if (!pref_skipBackupsDatabase.value)
                 OABX.db.getBackupDao().updateList(*backups.toTypedArray())
             OABX.db.getAppInfoDao().updateList(*appInfoList.toTypedArray())
+
         } catch (e: Throwable) {
             logException(e, backTrace = true)
         } finally {
-            endNanoTimer("dbUpdate")
+            endNanoTimer("updateAppTables.dbUpdate", log = true)
         }
 
     } catch (e: Throwable) {
