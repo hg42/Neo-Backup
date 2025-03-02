@@ -69,6 +69,10 @@ object FileUtils {
     //TODO hg42 but should probably check an empty backups map instead or additionally?
     //TODO hg42 the name does not reflect all cases
 
+    //TODO hg42 ensureBackups needs to be changed to something like ensureTables
+    //TODO hg42 or better use open/closeBackups and open/closePackages
+    //TODO hg42 and combine them in ensureRequirements
+
     fun ensureBackups(): Map<String, List<Backup>> {
 
         traceDebug { "ensureBackups" }
@@ -79,6 +83,7 @@ object FileUtils {
                 if (OABX.getBackups().values.map { it.size }.sum() == 0) {
                     beginBusy("ensureBackups")
                     OABX.context.findBackups()
+                    OABX.startup = false
                     endBusy("ensureBackups")
                 }
                 return@repeat

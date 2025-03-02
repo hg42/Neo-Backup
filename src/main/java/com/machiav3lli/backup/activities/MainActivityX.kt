@@ -50,7 +50,6 @@ import com.machiav3lli.backup.ALT_MODE_BOTH
 import com.machiav3lli.backup.ALT_MODE_DATA
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
-import com.machiav3lli.backup.OABX.Companion.startup
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.RESCUE_NAV
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
@@ -261,8 +260,6 @@ class MainActivityX : BaseActivity() {
                                     traceInfo { "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.flatten().size} root: ${OABX.backupRoot}" }
                                     ensureBackups()
                                 }
-                                startup =
-                                    false     // ensure backups are no more reported as empty
                                 runOrLog { updateAppTables() }
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
