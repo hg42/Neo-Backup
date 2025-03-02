@@ -1196,6 +1196,8 @@ fun DevTools(
                     }
                 }
 
+                GlobalIndicators()
+
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()

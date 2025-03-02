@@ -111,7 +111,7 @@ fun GlobalIndicators() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(0.dp)
-                    .height(16.dp)
+                    .height(20.dp)
                     .wrapContentSize(Alignment.BottomCenter)
             )
     }
