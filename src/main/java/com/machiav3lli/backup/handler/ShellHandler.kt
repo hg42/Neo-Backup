@@ -686,8 +686,9 @@ class ShellHandler {
                         else                 -> "unknown code ${Shell.getShell().status}"
                     }
                 }",
-                "libsu uses root shell          = $libsuUsesRootShell",               //TODO wech (never becasue initialized as non-root)
+                "libsu uses root shell          = $libsuUsesRootShell",      //TODO wech (never because initialized as non-root)
                 "su command run to gain root    = $suCommand",
+                "normal profileId               = ${ShellHandler.profileId}",
             )
 
         var suCommand by mutableStateOf("")
