@@ -214,14 +214,14 @@ val traceFlows = TraceUtils.TracePrefBold(
 
 val traceBusy = TraceUtils.TracePrefBold(
     name = "Busy",
+    summary = "trace beginBusy/endBusy (busy indicator)",
     default = true,
-    summary = "trace beginBusy/endBusy (busy indicator)"
 )
 
 val traceTiming = TraceUtils.TracePrefBold(
     name = "Timing",
+    summary = "show code segment timers",
     default = true,
-    summary = "show code segment timers"
 )
 
 val traceContextMenu = TraceUtils.TracePref(
