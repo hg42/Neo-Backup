@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,7 +48,6 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -106,7 +107,6 @@ import com.machiav3lli.backup.preferences.TerminalText
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
-import com.machiav3lli.backup.sheets.Sheet
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.flatten
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -418,7 +418,7 @@ fun DevSettingsTab() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
-            placeholder = "search (and='+' or=',')",
+            placeholder = "search preference keys(comma for help)",
             trailingIcon = {
                 if (search.text.isEmpty())
                     Icon(
@@ -454,21 +454,35 @@ fun DevSettingsTab() {
             if (search.text.isEmpty())
                 DevPrefGroups()
             else {
-                val alternates = search.text.split(',').map {
-                    it.split("+").filter { it.length >= 2 }
-                }.filter { it.isNotEmpty() }
-                PrefsGroup(
-                    prefs =
-                    Pref.prefGroups.values.flatten()
-                        .filter { pref ->
-                            pref.group !in listOf("persist", "kill") &&
-                                    alternates.any {
-                                        it.all {
-                                            pref.key.contains(it, ignoreCase = true)
+                if (search.text.length < 2) {
+                    val style = MaterialTheme.typography.bodyMedium
+                    Column(
+                        modifier = Modifier
+                            .wrapContentSize(Alignment.Center)
+                            .padding(32.dp)
+                    ) {
+                        Text("search starts at 2 characters", style = style)
+                        Text("use plus to delimit terms that must all match (AND)", style = style)
+                        Text("use comma to delimit alternates (OR)", style = style)
+                        Text("two commas show all entries", style = style)
+                    }
+                } else {
+                    val alternates = search.text.split(',').map {
+                        it.split("+")
+                    }.filter { it.isNotEmpty() }
+                    PrefsGroup(
+                        prefs =
+                        Pref.prefGroups.values.flatten().sortedBy { it.key }
+                            .filter { pref ->
+                                pref.group !in listOf("persist", "kill") &&
+                                        alternates.any {
+                                            it.all {
+                                                pref.key.contains(it, ignoreCase = true)
+                                            }
                                         }
-                                    }
-                        }.toPersistentList()
-                )
+                            }.toPersistentList()
+                    )
+                }
             }
         }
     }
@@ -1234,7 +1248,7 @@ fun DevToolsPreview() {
 
     Column(
         modifier = Modifier
-            .width(500.dp)
+            .width(400.dp)
             .height(1000.dp)
     ) {
         Row {
@@ -1250,17 +1264,13 @@ fun DevToolsPreview() {
             }
         }
         if (expanded.value) {
-            //Dialog(
-            //    properties = DialogProperties(
-            //        dismissOnBackPress = false,
-            //        dismissOnClickOutside = false,
-            //        usePlatformDefaultWidth = false
-            //    ),
-            //    onDismissRequest = { expanded.value = false }
-            //) {
-            Sheet(
-                onDismissRequest = { },
-                sheetState = rememberModalBottomSheetState(),
+            Dialog(
+                onDismissRequest = { expanded.value = false },
+                properties = DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
             ) {
                 DevTools(expanded)
             }
