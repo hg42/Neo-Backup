@@ -106,6 +106,7 @@ object FileUtils {
         SpecialInfo.clearCache()
         backupRoot = null // after clearing caches, because they probably need the location
         try {
+            OABX.clearBackups()
             // updateAppTables does ensureBackups, but make intention clear here
             OABX.context.findBackups()
             OABX.context.updateAppTables()
