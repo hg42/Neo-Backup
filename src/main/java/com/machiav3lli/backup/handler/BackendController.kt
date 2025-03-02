@@ -590,7 +590,7 @@ fun Context.findBackups(
             setBackups(backupsMap)
 
             // preset installed packages that don't have backups with empty backups lists
-            OABX.emptyBackupsForMissingPackages(installedNames)
+            //OABX.emptyBackupsForMissingPackages(installedNames) //TODO wech
 
         } else {
             if (OABX.startup)

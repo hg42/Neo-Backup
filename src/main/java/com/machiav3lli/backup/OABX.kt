@@ -49,7 +49,6 @@ import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
-import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
@@ -937,18 +936,10 @@ class OABX : Application() {
         }
 
         fun getBackups(packageName: String): List<Backup> {
-            synchronized(theBackupsMap) {       // could be synchronized for a shorter time
-                return theBackupsMap.getOrPut(packageName) {
-                    if (startup) {
-                        emptyList()
-                    } else {
-                        val backups =
-                            context.findBackups(packageName)  //TODO hg42 may also find glob *packageName* for now
-                        backups[packageName]
-                            ?: emptyList()  // so we need to take the correct package here
-                    }
-                }.drop(0)  // copy
+            val backups = synchronized(theBackupsMap) {
+                theBackupsMap.get(packageName) ?: emptyList()
             }
+            return backups.drop(0)  // copy
         }
 
         fun clearBackups() {
