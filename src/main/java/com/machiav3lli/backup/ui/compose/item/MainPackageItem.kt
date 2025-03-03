@@ -282,7 +282,7 @@ fun Selections(
 
     if (action in listOf("get", "put")) {
         val scheduleDao = OABX.db.getScheduleDao()
-        val schedules = OABX.main?.viewModel?.schedules?.value ?: emptyList()
+        val schedules = OABX.main?.viewModel?.schedulesDb?.value ?: emptyList()
         if (schedules.isEmpty())
             DropdownMenuItem(
                 text = { Text("--- no schedules ---") },

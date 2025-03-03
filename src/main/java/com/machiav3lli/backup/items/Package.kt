@@ -175,7 +175,7 @@ class Package {
         //TODO wech
         if (!pref_skipBackupsDatabase.value) {
             OABX.main?.viewModel?.viewModelScope?.launch {
-                OABX.main?.viewModel?.backupsUpdateFlow?.emit(
+                OABX.main?.viewModel?.packageBackupsUpdated?.emit(
                     Pair(packageName, backups.sortedByDescending { it.backupDate })
                 )
             }
@@ -357,7 +357,7 @@ class Package {
         //TODO wech
         if (!pref_skipBackupsDatabase.value) {
             OABX.main?.viewModel?.viewModelScope?.launch {
-                OABX.main?.viewModel?.backupsUpdateFlow?.emit(
+                OABX.main?.viewModel?.packageBackupsUpdated?.emit(
                     Pair(packageName, backups.sortedByDescending { it.backupDate })
                 )
             }

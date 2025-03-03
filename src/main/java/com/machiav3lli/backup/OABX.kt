@@ -926,7 +926,7 @@ class OABX : Application() {
 
         fun updateUI() {
             main?.viewModel?.viewModelScope?.launch {
-                main!!.viewModel.backupsMapFlow.emit(theBackupsMap)
+                main!!.viewModel.backupsUpdated.emit(theBackupsMap)
             }
         }
 

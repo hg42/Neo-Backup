@@ -79,7 +79,7 @@ import kotlinx.coroutines.launch
 fun BatchPage(viewModel: BatchViewModel, backupBoolean: Boolean) {
     val main = OABX.main!!
     val scope = rememberCoroutineScope()
-    val filteredList by main.viewModel.filteredList.collectAsState(emptyList())
+    val filteredList by main.viewModel.filteredPackages.collectAsState(emptyList())
     val scaffoldState = rememberBottomSheetScaffoldState()
     val openBatchDialog = remember { mutableStateOf(false) }
     val openBlocklist = rememberSaveable { mutableStateOf(false) }

@@ -88,7 +88,7 @@ fun HomePage() {
     val scope = rememberCoroutineScope()
     val viewModel = mActivity.viewModel
 
-    val filteredList by viewModel.filteredList.collectAsState(emptyList())
+    val filteredList by viewModel.filteredPackages.collectAsState(emptyList())
     val updatedPackages by viewModel.updatedPackages.collectAsState(emptyList())
     val updaterVisible = updatedPackages.isNotEmpty()  // recompose is already triggered above
     var updaterExpanded by remember { mutableStateOf(false) }

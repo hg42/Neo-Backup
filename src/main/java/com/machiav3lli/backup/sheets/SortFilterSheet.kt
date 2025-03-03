@@ -52,7 +52,6 @@ import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.SPECIAL_FILTER_ALL
-import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.enabledFilterChipItems
 import com.machiav3lli.backup.installedFilterChipItems
 import com.machiav3lli.backup.items.SortFilterModel
@@ -89,7 +88,7 @@ fun SortFilterSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val mActivity = OABX.main!!
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
-    val packageList by mActivity.viewModel.notBlockedList.collectAsState()
+    val packageList by mActivity.viewModel.packages.collectAsState()
     var model by rememberSaveable { mutableStateOf(sortFilterModel) }
     fun currentStats() = getStats(
         packageList.applyFilter(

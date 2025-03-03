@@ -136,7 +136,7 @@ private fun Context.onClickUninstalledBackupsDelete(
 ): Boolean {
     val deleteList = ArrayList<Package>()
     val message = StringBuilder()
-    val packageList = OABX.main?.viewModel?.packageList?.value ?: emptyList()
+    val packageList = OABX.main?.viewModel?.allPackages?.value ?: emptyList()
     if (packageList.isNotEmpty()) {
         packageList.forEach { appInfo ->
             if (!appInfo.isInstalled) {
@@ -274,7 +274,7 @@ private fun Context.onClickSaveAppsList(
     snackbarHostState: SnackbarHostState,
     coroutineScope: CoroutineScope,
 ): Boolean {
-    val packageList = OABX.main?.viewModel?.packageList?.value ?: emptyList()
+    val packageList = OABX.main?.viewModel?.allPackages?.value ?: emptyList()
     if (packageList.isNotEmpty()) {
         AlertDialog.Builder(this)
             .setTitle(R.string.prefs_saveappslist)

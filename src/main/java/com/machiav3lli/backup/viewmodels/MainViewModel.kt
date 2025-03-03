@@ -85,20 +85,20 @@ class MainViewModel(
     //   if f_in > f_proc, then there is no output at all
     //   this is much like processing on idle only
 
-    val schedules =
+    val schedulesDb =
         //------------------------------------------------------------------------------------------ blocklist
         db.getScheduleDao().getAllFlow()
-            .trace { "*** schedules <<- ${it.size}" }
+            .trace { "*** schedulesDb <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
-    val blocklist =
+    val blocklistDb =
         //------------------------------------------------------------------------------------------ blocklist
         db.getBlocklistDao().getAllFlow()
-            .trace { "*** blocklist <<- ${it.size}" }
+            .trace { "*** blocklistDb <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -107,15 +107,15 @@ class MainViewModel(
 
     //TODO wech
     @OptIn(ExperimentalCoroutinesApi::class)
-    val backupsMapDb =
+    val backupsDb =
         //------------------------------------------------------------------------------------------ backupsMap
         if (pref_skipBackupsDatabase.value)
             MutableSharedFlow()
         else {
             db.getBackupDao().getAllFlow()
                 .mapLatest { it.groupBy(Backup::packageName) }
-                .trace { "*** backupsMapDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
-                //.trace { "*** backupsMap <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
+                .trace { "*** backupsDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
+                //.trace { "*** backupsDb <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
                 .stateIn(
                     viewModelScope + Dispatchers.IO,
                     SharingStarted.Eagerly,
@@ -123,18 +123,26 @@ class MainViewModel(
                 )
         }
 
+    val appInfosDb = db.getAppInfoDao().getAllFlow()
+        .trace { "*** appInfosDb <<- ${it.size}" }
+        .stateIn(
+            viewModelScope + Dispatchers.IO,
+            SharingStarted.Eagerly,
+            emptyList()
+        )
+
     //TODO wech
-    val backupsUpdateFlow = MutableSharedFlow<Pair<String, List<Backup>>?>()
-    val backupsUpdate =
+    val packageBackupsUpdated = MutableSharedFlow<Pair<String, List<Backup>>?>()
+    val packageBackupsUpdate =
         if (pref_skipBackupsDatabase.value)
             MutableSharedFlow()
         else {
-            backupsUpdateFlow
+            packageBackupsUpdated
                 // don't skip anything here (no conflate or map Latest etc.)
                 // we need to process each update as it's the update for a single package
                 .filterNotNull()
                 //.buffer(UNLIMITED)   // use in case the flow isn't collected, yet, e.g. if using Lazily
-                .trace { "*** backupsUpdate <<- ${it.first} ${formatSortedBackups(it.second)}" }
+                .trace { "*** packageBackupsUpdate <<- ${it.first} ${formatSortedBackups(it.second)}" }
                 .onEach {
                     viewModelScope.launch(Dispatchers.IO) {
                         traceBackups {
@@ -158,11 +166,11 @@ class MainViewModel(
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val appExtrasMap =
+    val appExtrasDb =
         //------------------------------------------------------------------------------------------ appExtrasMap
         db.getAppExtrasDao().getAllFlow()
             .mapLatest { it.associateBy(AppExtras::packageName) }
-            .trace { "*** appExtrasMap <<- ${it.size}" }
+            .trace { "*** appExtrasDb <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -170,14 +178,18 @@ class MainViewModel(
             )
 
     //val appinfoList = MutableSharedFlow<List<AppInfo>>()
-    val backupsMapFlow = MutableSharedFlow<Map<String, List<Backup>>>()
+    val backupsUpdated = MutableSharedFlow<Map<String, List<Backup>>>()
     @OptIn(ExperimentalCoroutinesApi::class)
-    val backupsMapUpdate = backupsMapFlow
+    val backupsUpdate = backupsUpdated
         .mapLatest {
-            delay(50)
+            delay(100)
             it
         }
-        .trace { "*** backupsMap update" }
+        .trace {
+            "*** backupsUpdate: packages: ${it.keys.size} backups: ${
+                it.values.map { it.size }.sum()
+            }"
+        }
         .stateIn(
             viewModelScope + Dispatchers.IO,
             SharingStarted.Eagerly,
@@ -185,35 +197,31 @@ class MainViewModel(
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val packageList =
+    val allPackages =
         //========================================================================================== packageList
         combine(
-            db.getAppInfoDao().getAllFlow(),
+            appInfosDb,
             if (pref_skipBackupsDatabase.value)
-                backupsMapUpdate
+                backupsUpdate
             else
-                backupsMapDb
+                backupsDb
         ) { appinfos, backups ->
 
             traceFlows {
-                "******************** appinfos: ${appinfos.size} backups: ${
+                "******************** allPackages: appinfos: ${appinfos.size} backups: ${
                     backups.values.map { it.size }.sum()
                 }"
             }
 
-            // use the current backups instead of slow and async turn around from db
-            // but keep backups in combine, because it signals changes of the backups
-            //TODO hg42 might be done differently later
             val pkgs = appinfos.toPackageList(appContext, emptyList(), backups)
-            //val pkgs = appinfos.toPackageList(appContext, emptyList(), getBackups())
 
             IconCache.dropAllButUsed(pkgs.drop(0))
 
-            traceFlows { "***** packages ->> ${pkgs.size}" }
+            traceFlows { "***** allPackages ->> ${pkgs.size}" }
             pkgs
         }
             .mapLatest { it }
-            .trace { "*** packageList <<- ${it.size}" }
+            .trace { "*** allPackages <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -221,11 +229,11 @@ class MainViewModel(
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val packageMap =
+    val allPackagesByNames =
         //------------------------------------------------------------------------------------------ packageMap
-        packageList
+        allPackages
             .mapLatest { it.associateBy(Package::packageName) }
-            .trace { "*** packageMap <<- ${it.size}" }
+            .trace { "*** allPackagesByNames <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -233,9 +241,9 @@ class MainViewModel(
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val notBlockedList =
+    val packages =
         //========================================================================================== notBlockedList
-        combine(packageList, blocklist) { pkgs, blocked ->
+        combine(allPackages, blocklistDb) { pkgs, blocked ->
 
             traceFlows {
                 "******************** blocking - list: ${pkgs.size} block: ${
@@ -246,11 +254,11 @@ class MainViewModel(
             val block = blocked.map { it.packageName }
             val list = pkgs.filterNot { block.contains(it.packageName) }
 
-            traceFlows { "***** blocked ->> ${list.size}" }
+            traceFlows { "***** packages ->> ${list.size}" }
             list
         }
             .mapLatest { it }
-            .trace { "*** notBlockedList <<- ${it.size}" }
+            .trace { "*** packages <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -274,20 +282,20 @@ class MainViewModel(
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val filteredList =
+    val filteredPackages =
         //========================================================================================== filteredList
         combine(
-            notBlockedList,
+            packages,
             modelSortFilter.flow,
             searchQuery.flow,
-            appExtrasMap
+            appExtrasDb
         ) { pkgs, filter, search, extras ->
 
-            var list = emptyList<Package>()
+            var filtered = emptyList<Package>()
 
-            traceFlows { "******************** filtering - list: ${pkgs.size} filter: $filter" }
+            traceFlows { "******************** filtering - packages: ${pkgs.size} filter: $filter" }
 
-            list = pkgs
+            filtered = pkgs
                 .filter { item: Package ->
                     search.isEmpty() || (
                             (extras[item.packageName]?.customTags ?: emptySet()).plus(
@@ -302,13 +310,13 @@ class MainViewModel(
                 }
                 .applyFilter(filter, OABX.context)
 
-            traceFlows { "***** filtered ->> ${list.size}" }
+            traceFlows { "***** filteredPackages ->> ${filtered.size}" }
 
-            list
+            filtered
         }
             // if the filter changes we can drop the older filters
             .mapLatest { it }
-            .trace { "*** filteredList <<- ${it.size}" }
+            .trace { "*** filteredPackages <<- ${it.size}" }
             .stateIn(
                 viewModelScope + Dispatchers.IO,
                 SharingStarted.Eagerly,
@@ -318,8 +326,7 @@ class MainViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val updatedPackages =
         //------------------------------------------------------------------------------------------ updatedPackages
-        notBlockedList
-            .trace { "updatePackages? ..." }
+        packages
             .mapLatest {
                 it.filter { it.isUpdated || (pref_newAndUpdatedNotification.value && it.isNew) }
                     .toMutableList()
@@ -361,7 +368,7 @@ class MainViewModel(
 
     fun updatePackage(packageName: String) {
         viewModelScope.launch {
-            packageMap.value[packageName]?.let {
+            allPackagesByNames.value[packageName]?.let {
                 updateDataOf(packageName)
             }
         }
@@ -371,7 +378,7 @@ class MainViewModel(
         withContext(Dispatchers.IO) {
             try {
                 invalidateCacheForPackage(packageName)
-                val appPackage = packageMap.value[packageName]
+                val appPackage = allPackagesByNames.value[packageName]
                 appPackage?.apply {
                     val new = Package(appContext, packageName)
                     if (!isSpecial) {
@@ -451,7 +458,7 @@ class MainViewModel(
         }
     }
 
-    fun getBlocklist() = blocklist.value.mapNotNull { it.packageName }
+    fun getBlocklist() = blocklistDb.value.mapNotNull { it.packageName }
 
     private suspend fun insertIntoBlocklistDB(newList: Set<String>) =
         withContext(Dispatchers.IO) {

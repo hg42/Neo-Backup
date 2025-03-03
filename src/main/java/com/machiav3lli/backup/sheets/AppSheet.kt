@@ -140,7 +140,7 @@ fun AppSheet(
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))
     }
 
-    val thePackages by mActivity.viewModel.packageMap.collectAsState()
+    val thePackages by mActivity.viewModel.allPackagesByNames.collectAsState()
     val thePackage: Package? = thePackages[packageName]
     val snackbarText by viewModel.snackbarText.flow.collectAsState("")
     val appExtras by viewModel.appExtras.collectAsState()
