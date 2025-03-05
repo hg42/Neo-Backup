@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -41,8 +43,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.busyTick
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.preferences.pref_busyIconScale
 import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
@@ -54,7 +58,7 @@ import kotlin.math.max
 fun DialogPositiveButton(
     modifier: Modifier = Modifier,
     text: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     TextButton(
         shape = MaterialTheme.shapes.large,
@@ -78,7 +82,7 @@ fun DialogPositiveButton(
     modifier: Modifier = Modifier,
     text: String,
     icon: ImageVector?,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     ElevatedButton(
         shape = MaterialTheme.shapes.large,
@@ -107,7 +111,7 @@ fun DialogPositiveButton(
 fun DialogNegativeButton(
     modifier: Modifier = Modifier,
     text: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     TextButton(
         shape = MaterialTheme.shapes.large,
@@ -331,16 +335,33 @@ fun RefreshButton(
         0f to 1f
     }
 
-    RoundButton(
-        description = stringResource(id = R.string.refresh),
-        icon = Phosphor.ArrowsClockwise,
-        size = size,
-        tint = if (isBusy) Color.Red else tint,
-        modifier = modifier
-            .scale(scale)
-            .rotate(angle),
-        onClick = onClick
-    )
+    Box {
+        if (isBusy) {
+            Text(
+                text = "${OABX.busyCountDown.value * busyTick / 100}",
+                modifier = Modifier.align(Alignment.Center),
+                fontSize = 8.sp,
+                //style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+            Text(
+                text = ".".repeat(OABX.busyLevel.value),
+                modifier = Modifier.align(Alignment.BottomCenter),
+                style = MaterialTheme.typography.labelMedium,
+                //color = Color.Gray
+            )
+        }
+        RoundButton(
+            description = stringResource(id = R.string.refresh),
+            icon = Phosphor.ArrowsClockwise,
+            size = size,
+            tint = if (isBusy) Color.Red else tint,
+            modifier = modifier
+                .scale(scale)
+                .rotate(angle),
+            onClick = onClick
+        )
+    }
 }
 
 
@@ -349,7 +370,7 @@ fun RefreshButton(
 fun RefreshButtonPreview() {
     OABX.fakeContext = LocalContext.current.applicationContext
 
-    val level by remember { OABX.busyLevel }
+    val level = OABX.busyLevel.value
     val factor = 1.0 / max(1, level)
 
     Column {
