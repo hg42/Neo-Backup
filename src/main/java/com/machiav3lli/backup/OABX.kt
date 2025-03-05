@@ -347,6 +347,8 @@ class OABX : Application() {
         )
 
         //TODO hg42 beginBusy(startupMsg)
+        busyCountDownAtomic.set(0)
+        busyLevelAtomic.set(0)
         hitBusy(60000)
 
         Plugin.ensureScanned()  // before ShellHandler, because plugins are used there
