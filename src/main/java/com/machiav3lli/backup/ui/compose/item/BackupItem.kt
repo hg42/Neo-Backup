@@ -2,7 +2,6 @@ package com.machiav3lli.backup.ui.compose.item
 
 import android.os.Build
 import android.text.format.Formatter
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +42,7 @@ import com.machiav3lli.backup.dbs.entity.PackageInfo
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.pref_altBackupDate
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Lock
@@ -70,7 +70,7 @@ fun BackupItem_headlineContent(
         Row(
             horizontalArrangement = Arrangement.End
         ) {
-            AnimatedVisibility(visible = (item.cpuArch != Build.SUPPORTED_ABIS[0])) {
+            ShowIf(item.cpuArch != Build.SUPPORTED_ABIS[0]) {
                 Text(
                     text = " ${item.cpuArch} ",
                     color = Color.Red,
@@ -162,7 +162,7 @@ fun BackupItem_supportingContent(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
-                AnimatedVisibility(visible = (item.profileId != currentProfile)) {
+                ShowIf(item.profileId != currentProfile) {
                     Row {
                         Text(
                             text = " 👤",

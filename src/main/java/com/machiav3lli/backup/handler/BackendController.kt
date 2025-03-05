@@ -24,6 +24,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Process
+import androidx.lifecycle.viewModelScope
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.BACKUP_PACKAGE_FOLDER_REGEX_PATTERN
@@ -52,7 +53,6 @@ import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.pref_backupSuspendApps
 import com.machiav3lli.backup.preferences.pref_earlyEmptyBackups
 import com.machiav3lli.backup.preferences.pref_lookForEmptyBackups
-import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
 import com.machiav3lli.backup.traceBackupsScan
 import com.machiav3lli.backup.traceBackupsScanAll
 import com.machiav3lli.backup.traceInfo
@@ -64,6 +64,7 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.specialBackupsEnabled
@@ -273,7 +274,7 @@ suspend fun scanBackups(
         }
     }
 
-   suspend fun handleDirectory(
+    suspend fun handleDirectory(
         file: StorageFile,
         collector: FlowCollector<StorageFile>? = null,
     ): Boolean {
@@ -332,7 +333,14 @@ suspend fun scanBackups(
             !name.contains(regexSpecialFile)
         ) {
             val props = file
-            traceBackupsScanPackage { traceLine(">", level, props, "++++++++++++++++++++ props ok") }
+            traceBackupsScanPackage {
+                traceLine(
+                    ">",
+                    level,
+                    props,
+                    "++++++++++++++++++++ props ok"
+                )
+            }
 
             handleProps(props, path, name, onValidBackup)
 
@@ -352,7 +360,14 @@ suspend fun scanBackups(
                         dir.findFile(BACKUP_INSTANCE_PROPERTIES_INDIR)  // indir props
                             ?.let { props ->
 
-                                traceBackupsScanPackage { traceLine(">", level, props, "++++++++++++++++++++ props indir ok") }
+                                traceBackupsScanPackage {
+                                    traceLine(
+                                        ">",
+                                        level,
+                                        props,
+                                        "++++++++++++++++++++ props indir ok"
+                                    )
+                                }
 
                                 handleProps(props, props.path, props.name, onValidBackup) {
                                     runCatching {
@@ -410,7 +425,14 @@ suspend fun scanBackups(
             name.contains(regexBackupInstance)                      // or backup instance
         ) {
             if (forceTrace)
-                traceBackupsScanPackage { traceLine("B", level, file, "++++++++++++++++++++ backup") }
+                traceBackupsScanPackage {
+                    traceLine(
+                        "B",
+                        level,
+                        file,
+                        "++++++++++++++++++++ backup"
+                    )
+                }
 
             if (path.contains(packageName)) {                           // package matches, empty matches all
 
@@ -423,14 +445,28 @@ suspend fun scanBackups(
                     if (file.isPropertyFile &&
                         !name.contains(regexSpecialFile)                        // non-instance props (wtf is that? probably a saved file)
                     ) {
-                        traceBackupsScanPackage { traceLine(">", level, file, "++++++++++++++++++++ non-instance props ok (a renamed backup?)") }
+                        traceBackupsScanPackage {
+                            traceLine(
+                                ">",
+                                level,
+                                file,
+                                "++++++++++++++++++++ non-instance props ok (a renamed backup?)"
+                            )
+                        }
 
                         handleProps(file, path, name, onValidBackup)
 
                     } else {
                         if (file.isDirectory) {                                 // non-instance-directory
                             val dir = file
-                            traceBackupsScanPackage { traceLine("/", level, file, "++++++++++++++++++++ //////////////////// dir ok") }
+                            traceBackupsScanPackage {
+                                traceLine(
+                                    "/",
+                                    level,
+                                    file,
+                                    "++++++++++++++++++++ //////////////////// dir ok"
+                                )
+                            }
 
                             if (handleDirectory(dir).not()) {
                                 // renameDamagedToERROR(dir, "empty-folder")
@@ -450,7 +486,14 @@ suspend fun scanBackups(
             ) {
                 val dir = file
                 if (forceTrace)
-                    traceBackupsScanPackage { traceLine("F", level, file, "/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\ folder ok") }
+                    traceBackupsScanPackage {
+                        traceLine(
+                            "F",
+                            level,
+                            file,
+                            "/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\ folder ok"
+                        )
+                    }
 
                 if (handleDirectory(dir).not()) {
                     // renameDamagedToERROR(dir, "empty-folder")
@@ -531,7 +574,7 @@ fun Context.findBackups(
                 installedPackages.map { it.packageName } + specialInfos.map { it.packageName }
 
             if (pref_earlyEmptyBackups.value)
-                OABX.emptyBackupsForAllPackages(installedNames)
+                OABX.emptyBackupsForPackages(installedNames)
 
             clearThreadStats()
         }
@@ -586,7 +629,9 @@ fun Context.findBackups(
 
         if (packageName.isEmpty()) {
 
-            traceInfo { "*** --------------------> findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.map { it.size }.sum()}" }
+            traceInfo {
+                "*** --------------------> findBackups: ${formatBackups(backupsMap)}"
+            }
 
             setBackups(backupsMap)
 
@@ -866,7 +911,7 @@ fun Context.updateAppTables() {
 
                 installedPackageInfos
                     .map { AppInfo(this, it) }
-                    .union(uninstalledPackagesWithBackup)
+                    .plus(uninstalledPackagesWithBackup)
 
             } catch (e: Throwable) {
                 logException(e, backTrace = true)
@@ -875,24 +920,29 @@ fun Context.updateAppTables() {
                 endNanoTimer("updateAppTables.appInfoList", log = true)
             }
 
-        try {
-            beginNanoTimer("updateAppTables.dbUpdate")
+        OABX.main?.viewModel?.apply {
+            viewModelScope.launch {
+                try {
+                    beginNanoTimer("updateAppTables.appInfosChanged")
 
-            if (!pref_skipBackupsDatabase.value)
-                OABX.db.getBackupDao().updateList(*backups.toTypedArray())
-            OABX.db.getAppInfoDao().updateList(*appInfoList.toTypedArray())
+                    appInfosChanged.update.emit(appInfoList)
 
-        } catch (e: Throwable) {
-            logException(e, backTrace = true)
-        } finally {
-            endNanoTimer("updateAppTables.dbUpdate", log = true)
+                } catch (e: Throwable) {
+                    logException(e, backTrace = true)
+                } finally {
+                    endNanoTimer("updateAppTables.appInfosChanged", log = true)
+                }
+            }
         }
 
     } catch (e: Throwable) {
         logException(e, backTrace = true)
     } finally {
         val time = OABX.endBusy("updateAppTables")
-        OABX.addInfoLogText("updateAppTables: ${"%.3f".format(time / 1E9)} sec")
+        OABX.startup = false
+        hitBusy(2000)
+        trace { "******************** startup end" }
+        addInfoLogText("updateAppTables: ${"%.3f".format(time / 1E9)} sec")
     }
 }
 

@@ -2,11 +2,6 @@ package com.machiav3lli.backup.preferences
 
 import android.os.Build
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,6 +35,7 @@ import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
 import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
@@ -61,7 +57,6 @@ import com.machiav3lli.backup.ui.item.Pref
 import com.machiav3lli.backup.ui.item.PrefUI
 import com.machiav3lli.backup.ui.item.StringPref
 import com.machiav3lli.backup.utils.SystemUtils.numCores
-import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarms
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
@@ -125,17 +120,9 @@ fun AdvancedPrefsPage() {
                 }
             }
             item {
-                //Box {  // hg42: use Box as workaround for weird animation behavior  //TODO hg42 seems to be fixed now? //TODO wech
-                AnimatedVisibility(
-                    visible = expanded,
-                    //enter = EnterTransition.None,
-                    //exit = ExitTransition.None
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
+                ShowIf(expanded) {
                     DevPrefGroups()
                 }
-                //}
             }
         }
     }
@@ -561,14 +548,6 @@ val pref_useExpedited = BooleanPref(
     summaryId = R.string.prefs_useexpedited_summary,
     defaultValue = true
 )
-
-val pref_skipBackupsDatabase = BooleanPref(
-    key = "dev-alt.skipBackupsDatabase",
-    summary = "don't use backups database, instead use the internal data",
-    defaultValue = true
-) {
-    OABX.context.restartApp()
-}
 
 
 //---------------------------------------- developer settings - workarounds

@@ -68,14 +68,13 @@ import com.machiav3lli.backup.utils.TraceUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.methodName
 import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -504,7 +503,6 @@ class OABX : Application() {
             .withDefault { 0 }     //TODO hg42 use AtomicInteger? but map is synchronized anyways
 
         var startup = true
-        val startupMsg = "******************** startup" // ensure it's the same for begin/end
 
         init {
 
@@ -876,7 +874,9 @@ class OABX : Application() {
                             busyCountDown.value = next
                             busyLevel.value = busyLevelAtomic.get()
                             if (next <= 0) {
-                                if (!startup)
+                                if (startup)
+                                    busy.value = true
+                                else
                                     busy.value = false
                             } else if (busy.value == false)
                                 busy.value = true
@@ -925,14 +925,16 @@ class OABX : Application() {
         private var theBackupsMap = mutableMapOf<String, List<Backup>>()
 
         fun updateUI() {
-            main?.viewModel?.viewModelScope?.launch {
-                main!!.viewModel.backupsUpdated.emit(theBackupsMap)
+            main?.viewModel?.apply {
+                viewModelScope.launch {
+                    backupsChanged.update.emit(theBackupsMap)
+                }
             }
         }
 
-        fun getBackups(): ImmutableMap<String, List<Backup>> {
+        fun getBackups(): Map<String, List<Backup>> {
             synchronized(theBackupsMap) {
-                return theBackupsMap.toImmutableMap()
+                return theBackupsMap
             }
         }
 
@@ -941,6 +943,7 @@ class OABX : Application() {
                 theBackupsMap.get(packageName) ?: emptyList()
             }
             return backups.drop(0)  // copy
+            //return backups
         }
 
         fun clearBackups() {
@@ -965,28 +968,14 @@ class OABX : Application() {
 
         fun putBackups(packageName: String, backups: List<Backup>) {
             synchronized(theBackupsMap) {
+                traceBackups { "putBackups: $packageName \\ : ${classAndId(theBackupsMap.get(packageName))} ${formatBackups(theBackupsMap.get(packageName))}" }
                 theBackupsMap.put(packageName, backups)
+                traceBackups { "putBackups: $packageName / = ${classAndId(theBackupsMap.get(packageName))} ${formatBackups(theBackupsMap.get(packageName))}" }
                 updateUI()
             }
         }
 
-        fun removeBackups(packageName: String) {
-            synchronized(theBackupsMap) {
-                theBackupsMap.remove(packageName)
-                updateUI()
-            }
-        }
-
-        fun emptyBackupsForMissingPackages(packageNames: List<String>) {
-            synchronized(theBackupsMap) {
-                (packageNames - theBackupsMap.keys).forEach {
-                    theBackupsMap.put(it, emptyList())
-                    updateUI()
-                }
-            }
-        }
-
-        fun emptyBackupsForAllPackages(packageNames: List<String>) {
+        fun emptyBackupsForPackages(packageNames: List<String>) {
             synchronized(theBackupsMap) {
                 packageNames.forEach {
                     theBackupsMap.put(it, emptyList())
@@ -1001,7 +990,7 @@ class OABX : Application() {
                 SpecialInfo.getSpecialInfos(context)  //TODO hg42 these probably scan for backups
             val installedNames =
                 installedPackages.map { it.packageName } + specialInfos.map { it.packageName }
-            emptyBackupsForAllPackages(installedNames)
+            emptyBackupsForPackages(installedNames)
         }
     }
 }

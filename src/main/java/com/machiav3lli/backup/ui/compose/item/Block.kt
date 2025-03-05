@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CaretDown
 
@@ -59,7 +60,7 @@ fun ExpandableBlock(
     ) {
         Column(modifier = modifier) {
             ExpandableBlockHeader(heading, icon)
-            AnimatedVisibility(visible = expanded) {
+            ShowIf(expanded) {
                 Column(
                     Modifier.padding(
                         bottom = 16.dp,

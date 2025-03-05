@@ -20,26 +20,24 @@ package com.machiav3lli.backup.items
 import android.app.usage.StorageStats
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.lifecycle.viewModelScope
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.getPackageStorageStats
 import com.machiav3lli.backup.preferences.pref_flatStructure
 import com.machiav3lli.backup.preferences.pref_ignoreLockedInHousekeeping
 import com.machiav3lli.backup.preferences.pref_paranoidBackupLists
-import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
 import com.machiav3lli.backup.traceBackups
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
 import com.machiav3lli.backup.utils.TraceUtils
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 
@@ -51,13 +49,11 @@ class Package {
 
     var backupList: List<Backup>
         get() {
-            val backups = OABX.getBackups(packageName)
-            //Timber.w("-------------------> backups $packageName -> ${formatSortedBackups(backups)}")
-            return backups
+            return OABX.getBackups(packageName)
         }
         set(backups) {
-            //Timber.w("<=================== backups $packageName <- ${formatSortedBackups(backups)}")
-            OABX.putBackups(packageName, backups)
+            // ensure it's always sorted
+            OABX.putBackups(packageName, backups.sortedByDescending { it.backupDate })
         }
 
     // toPackageList
@@ -117,14 +113,6 @@ class Package {
         }
     }
 
-    fun runOrLog(todo: () -> Unit) {
-        try {
-            todo()
-        } catch (e: Throwable) {
-            LogsHandler.unexpectedException(e, packageName)
-        }
-    }
-
     private fun isPlausiblePath(path: String?): Boolean {
         return !path.isNullOrEmpty() &&
                 path.contains(packageName) &&
@@ -155,33 +143,6 @@ class Package {
         return true
     }
 
-    fun updateBackupList(backups: List<Backup>) {
-        traceBackups {
-            "<$packageName> updateBackupList: ${
-                TraceUtils.formatSortedBackups(backups)
-            } ${TraceUtils.methodName(2)}"
-        }
-        backupList = backups
-    }
-
-    fun updateBackupListAndDatabase(backups: List<Backup>) {
-        traceBackups {
-            "<$packageName> updateBackupListAndDatabase: ${
-                TraceUtils.formatSortedBackups(backups)
-            } ${TraceUtils.methodName(2)}"
-        }
-        backupList = backups
-
-        //TODO wech
-        if (!pref_skipBackupsDatabase.value) {
-            OABX.main?.viewModel?.viewModelScope?.launch {
-                OABX.main?.viewModel?.packageBackupsUpdated?.emit(
-                    Pair(packageName, backups.sortedByDescending { it.backupDate })
-                )
-            }
-        }
-    }
-
     fun getBackupsFromBackupDir(): List<Backup> {
         // TODO hg42 may also find glob *packageName* for now so we need to take the correct package
         return OABX.context.findBackups(packageName)[packageName] ?: emptyList()
@@ -189,12 +150,7 @@ class Package {
 
     fun refreshBackupList(): List<Backup> {
         traceBackups { "<$packageName> refreshbackupList" }
-        val backups = getBackupsFromBackupDir()
-        updateBackupListAndDatabase(backups)
-        return backups
-    }
-
-    private fun needBackupList(): List<Backup> {
+        backupList = getBackupsFromBackupDir()
         return backupList
     }
 
@@ -246,7 +202,6 @@ class Package {
         else {
             //backupList = backupList + changedBackup
             addBackupToList(backup)
-            updateBackupListAndDatabase(backupList)
         }
     }
 
@@ -266,7 +221,6 @@ class Package {
             runOrLog {
                 //backupList = backupList - backup
                 removeBackupFromList(backup)
-                updateBackupListAndDatabase(backupList)
             }
     }
 
@@ -302,7 +256,6 @@ class Package {
             //backupList = backupList - backup + changedBackup
             removeBackupFromList(backup)
             addBackupToList(changedBackup)
-            updateBackupListAndDatabase(backupList)
         }
     }
 
@@ -353,24 +306,15 @@ class Package {
             }
         }
         backupList = backups
-
-        //TODO wech
-        if (!pref_skipBackupsDatabase.value) {
-            OABX.main?.viewModel?.viewModelScope?.launch {
-                OABX.main?.viewModel?.packageBackupsUpdated?.emit(
-                    Pair(packageName, backups.sortedByDescending { it.backupDate })
-                )
-            }
-        }
     }
 
     val backupsNewestFirst: List<Backup>
-        get() = needBackupList().sortedByDescending { it.backupDate }
+        get() = backupList  // always sorted // .sortedByDescending { it.backupDate }
 
     val latestBackup: Backup?
-        get() = needBackupList().maxByOrNull { it.backupDate }
+        get() = backupList.maxByOrNull { it.backupDate }
 
-    val numberOfBackups: Int get() = needBackupList().size
+    val numberOfBackups: Int get() = backupList.size
 
     val isApp: Boolean
         get() = packageInfo is AppInfo && !packageInfo.isSpecial
@@ -409,8 +353,10 @@ class Package {
         get() = if (isApp) (packageInfo as AppInfo).deDataDir ?: "" else ""
 
     val iconData: Any
-        get() = if (isSpecial) packageInfo.icon
-        else "android.resource://${packageName}/${packageInfo.icon}"
+        get() = if (isSpecial)
+            packageInfo.icon
+        else
+            "android.resource://${packageName}/${packageInfo.icon}"
 
     fun getExternalDataPath(): String {
         val user = ShellCommands.currentProfile.toString()

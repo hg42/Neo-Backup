@@ -20,7 +20,6 @@ package com.machiav3lli.backup.sheets
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -86,6 +85,7 @@ import com.machiav3lli.backup.preferences.pref_useWorkManagerForSingleManualJob
 import com.machiav3lli.backup.tasks.BackupActionTask
 import com.machiav3lli.backup.tasks.RestoreActionTask
 import com.machiav3lli.backup.traceCompose
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Icon
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -134,14 +134,33 @@ fun AppSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val mActivity = OABX.main!!
+    val activity = OABX.main!!
     val openDialog = remember { mutableStateOf(false) }
     val dialogProps: MutableState<Pair<Int, Any>> = remember {
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))
     }
 
-    val thePackages by mActivity.viewModel.allPackagesByNames.collectAsState()
-    val thePackage: Package? = thePackages[packageName]
+    val pkgs by activity.viewModel.allPackagesByNames.collectAsState()
+    val pkgFound = pkgs[packageName]
+    //
+    //val pkgs = activity.viewModel.allPackages.state.collectAsState()
+    //val pkgFound = remember(pkgs) { mutableStateOf(pkgs.value.find { it.packageName == packageName }) }
+    //
+    //val pkgFound = viewModel.thePackage.collectAsState()
+
+    if (pkgFound == null)
+       return
+
+    //val pkg = pkgFound!!
+    val pkg = pkgFound
+
+    val backups = pkg.backupsNewestFirst
+    val hasBackups = pkg.hasBackups
+
+    SideEffect {
+        traceCompose { "AppSheet ${pkg.packageName} ${TraceUtils.formatBackups(backups)}" }
+    }
+
     val snackbarText by viewModel.snackbarText.flow.collectAsState("")
     val appExtras by viewModel.appExtras.collectAsState()
     val refreshNow by viewModel.refreshNow
@@ -152,634 +171,610 @@ fun AppSheet(
     val coroutineScope = rememberCoroutineScope()
     val columns = 2
 
-    thePackage?.let { pkg ->
+    val imageData by remember(pkg) {
+        mutableStateOf(
+            if (pkg.isSpecial) pkg.packageInfo.icon
+            else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
+        )
+    }
+    if (refreshNow) {
+        viewModel.refreshNow.value = false
+        activity.updatePackage(pkg.packageName)
+    }
+    if (dismissNow) {
+        viewModel.dismissNow.value = false
+        onDismiss()
+    }
 
-        val backups = pkg.backupsNewestFirst
-        val hasBackups = pkg.hasBackups
-
-        SideEffect {
-            traceCompose {
-                "AppPage ${thePackage.packageName} ${
-                    TraceUtils.formatBackups(
-                        backups
-                    )
-                }"
-            }
-        }
-
-        val imageData by remember(pkg) {
-            mutableStateOf(
-                if (pkg.isSpecial) pkg.packageInfo.icon
-                else "android.resource://${pkg.packageName}/${pkg.packageInfo.icon}"
-            )
-        }
-        if (refreshNow) {
-            viewModel.refreshNow.value = false
-            mActivity.updatePackage(pkg.packageName)
-        }
-        if (dismissNow) {
-            viewModel.dismissNow.value = false
-            onDismiss()
-        }
-
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            topBar = {
-                Column(
-                    modifier = Modifier.padding(
-                        start = 8.dp,
-                        end = 8.dp,
-                        top = 8.dp,
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Min)
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        PackageIcon(item = pkg, imageData = imageData)
-
-                        Column(
-                            modifier = Modifier
-                                .wrapContentHeight()
-                                .weight(1f),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = pkg.packageLabel,
-                                overflow = TextOverflow.Ellipsis,
-                                maxLines = 1,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = pkg.packageName,
-                                overflow = TextOverflow.Ellipsis,
-                                maxLines = 1,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                        AnimatedVisibility(visible = pkg.isInstalled && !pkg.isSpecial) {
-                            RoundButton(
-                                icon = Phosphor.Info,
-                                modifier = Modifier.fillMaxHeight(),
-                                description = stringResource(id = R.string.app_info)
-                            ) {
-                                val intent =
-                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                intent.data =
-                                    Uri.fromParts(
-                                        "package",
-                                        pkg.packageName,
-                                        null
-                                    )
-                                context.startActivity(intent)
-                            }
-                        }
-                        AnimatedVisibility(visible = !pkg.isInstalled && !pkg.isSpecial) {
-                            RoundButton(
-                                icon = Phosphor.MagnifyingGlass,
-                                modifier = Modifier.fillMaxHeight(),
-                                description = stringResource(id = R.string.search_package)
-                            ) {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        Uri.parse("market://search?q=${pkg.packageName}")
-                                    )
-                                )
-                            }
-                        }
-                        RoundButton(
-                            icon = Phosphor.CaretDown,
-                            modifier = Modifier.fillMaxHeight()
-                        ) {
-                            onDismiss()
-                        }
-                    }
-                    AnimatedVisibility(visible = snackbarVisible) {
-                        Text(
-                            text = snackbarText,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.titleMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    InfoChipsBlock(list = pkg.infoChips())
-                    Spacer(Modifier.height(8.dp))
-                    if (snackbarVisible)
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(5.dp),
-                            trackColor = MaterialTheme.colorScheme.surface,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                }
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { paddingValues ->
-            LazyVerticalGrid(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .blockBorder()
-                    .nestedScroll(nestedScrollConnection)
-                    .fillMaxSize(),
-                columns = GridCells.Fixed(columns),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(8.dp)
+    Scaffold(
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        topBar = {
+            Column(
+                modifier = Modifier.padding(
+                    start = 8.dp,
+                    end = 8.dp,
+                    top = 8.dp,
+                )
             ) {
-                item {
-                    AnimatedVisibility(visible = !pkg.isSpecial) {
-                        CardButton(
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PackageIcon(item = pkg, imageData = imageData)
+
+                    Column(
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = pkg.packageLabel,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = pkg.packageName,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                    ShowIf(pkg.isInstalled && !pkg.isSpecial) {
+                        RoundButton(
+                            icon = Phosphor.Info,
                             modifier = Modifier.fillMaxHeight(),
-                            icon = Icon.Exodus,
-                            contentColor = colorResource(id = R.color.ic_exodus),
-                            description = stringResource(id = R.string.exodus_report)
+                            description = stringResource(id = R.string.app_info)
+                        ) {
+                            val intent =
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            intent.data =
+                                Uri.fromParts(
+                                    "package",
+                                    pkg.packageName,
+                                    null
+                                )
+                            context.startActivity(intent)
+                        }
+                    }
+                    ShowIf(!pkg.isInstalled && !pkg.isSpecial) {
+                        RoundButton(
+                            icon = Phosphor.MagnifyingGlass,
+                            modifier = Modifier.fillMaxHeight(),
+                            description = stringResource(id = R.string.search_package)
                         ) {
                             context.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse(exodusUrl(pkg.packageName))
+                                    Uri.parse("market://search?q=${pkg.packageName}")
                                 )
                             )
                         }
                     }
+                    RoundButton(
+                        icon = Phosphor.CaretDown,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        onDismiss()
+                    }
                 }
-                item {
+                ShowIf(snackbarVisible) {
+                    Text(
+                        text = snackbarText,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                InfoChipsBlock(list = pkg.infoChips())
+                Spacer(Modifier.height(8.dp))
+                if (snackbarVisible)
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(5.dp),
+                        trackColor = MaterialTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyVerticalGrid(
+            modifier = Modifier
+                .padding(paddingValues)
+                .blockBorder()
+                .nestedScroll(nestedScrollConnection)
+                .fillMaxSize(),
+            columns = GridCells.Fixed(columns),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            item {
+                ShowIf(!pkg.isSpecial) {
+                    CardButton(
+                        modifier = Modifier.fillMaxHeight(),
+                        icon = Icon.Exodus,
+                        contentColor = colorResource(id = R.color.ic_exodus),
+                        description = stringResource(id = R.string.exodus_report)
+                    ) {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(exodusUrl(pkg.packageName))
+                            )
+                        )
+                    }
+                }
+            }
+            item {
+                CardButton(
+                    modifier = Modifier,
+                    icon = Phosphor.Prohibit,
+                    description = stringResource(id = R.string.global_blocklist_add)
+                ) {
+                    activity.viewModel.addToBlocklist(
+                        pkg.packageName
+                    )
+                }
+            }
+            item {
+                val launchIntent = context.packageManager
+                    .getLaunchIntentForPackage(pkg.packageName)
+                ShowIf(launchIntent != null) {
+                    CardButton(
+                        modifier = Modifier.fillMaxHeight(),
+                        icon = Phosphor.ArrowSquareOut,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        description = stringResource(id = R.string.launch_app)
+                    ) {
+                        launchIntent?.let {
+                            context.startActivity(it)
+                        }
+                    }
+                }
+            }
+            item {
+                ShowIf(pkg.isInstalled && !pkg.isSpecial) {
                     CardButton(
                         modifier = Modifier,
-                        icon = Phosphor.Prohibit,
-                        description = stringResource(id = R.string.global_blocklist_add)
+                        icon = Phosphor.Warning,
+                        contentColor = colorResource(id = R.color.ic_updated),
+                        description = stringResource(id = R.string.forceKill)
                     ) {
-                        mActivity.viewModel.addToBlocklist(
-                            pkg.packageName
-                        )
+                        dialogProps.value = Pair(DIALOG_FORCEKILL, pkg)
+                        openDialog.value = true
                     }
                 }
-                item {
-                    val launchIntent = context.packageManager
-                        .getLaunchIntentForPackage(pkg.packageName)
-                    AnimatedVisibility(visible = launchIntent != null) {
-                        CardButton(
-                            modifier = Modifier.fillMaxHeight(),
-                            icon = Phosphor.ArrowSquareOut,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            description = stringResource(id = R.string.launch_app)
-                        ) {
-                            launchIntent?.let {
-                                context.startActivity(it)
-                            }
-                        }
-                    }
-                }
-                item {
-                    AnimatedVisibility(
-                        visible = pkg.isInstalled && !pkg.isSpecial
-                    ) {
-                        CardButton(
-                            modifier = Modifier,
-                            icon = Phosphor.Warning,
-                            contentColor = colorResource(id = R.color.ic_updated),
-                            description = stringResource(id = R.string.forceKill)
-                        ) {
-                            dialogProps.value = Pair(DIALOG_FORCEKILL, pkg)
+            }
+            item {
+                ShowIf(pkg.isInstalled && !pkg.isSpecial) {
+                    CardButton(
+                        modifier = Modifier.fillMaxHeight(),
+                        icon = if (pkg.isDisabled) Phosphor.Leaf
+                        else Phosphor.ProhibitInset,
+                        contentColor = if (pkg.isDisabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.tertiary,
+                        description = stringResource(
+                            id = if (pkg.isDisabled) R.string.enablePackage
+                            else R.string.disablePackage
+                        ),
+                        onClick = {
+                            dialogProps.value = Pair(DIALOG_ENABLEDISABLE, pkg.isDisabled)
                             openDialog.value = true
-                        }
-                    }
-                }
-                item {
-                    AnimatedVisibility(
-                        visible = pkg.isInstalled && !pkg.isSpecial
-                    ) {
-                        CardButton(
-                            modifier = Modifier.fillMaxHeight(),
-                            icon = if (pkg.isDisabled) Phosphor.Leaf
-                            else Phosphor.ProhibitInset,
-                            contentColor = if (pkg.isDisabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.tertiary,
-                            description = stringResource(
-                                id = if (pkg.isDisabled) R.string.enablePackage
-                                else R.string.disablePackage
-                            ),
-                            onClick = {
-                                dialogProps.value = Pair(DIALOG_ENABLEDISABLE, pkg.isDisabled)
-                                openDialog.value = true
-                            }
-                        )
-                    }
-                }
-                item {
-                    AnimatedVisibility(
-                        visible = pkg.isInstalled && !pkg.isSystem,
-                    ) {
-                        CardButton(
-                            modifier = Modifier.fillMaxHeight(),
-                            icon = Phosphor.TrashSimple,
-                            contentColor = MaterialTheme.colorScheme.tertiary,
-                            description = stringResource(id = R.string.uninstall),
-                            onClick = {
-                                dialogProps.value = Pair(DIALOG_UNINSTALL, pkg)
-                                openDialog.value = true
-                            }
-                        )
-                    }
-                }
-                item(span = { GridItemSpan(columns) }) {
-                    Column {
-                        TitleText(textId = R.string.title_tags)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TagsBlock(
-                            tags = appExtras.customTags,
-                            onRemove = {
-                                viewModel.setExtras(
-                                    appExtras.copy(
-                                        customTags = appExtras.customTags.minus(it)
-                                    )
-                                )
-                            },
-                            onAdd = {
-                                dialogProps.value = Pair(DIALOG_ADDTAG, "")
-                                openDialog.value = true
-                            }
-                        )
-                    }
-                }
-                item(span = { GridItemSpan(columns) }) {
-                    Column {
-                        TitleText(textId = R.string.title_note)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.outlinedCardColors(
-                                containerColor = Color.Transparent
-                            ),
-                            shape = MaterialTheme.shapes.large,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            onClick = {
-                                dialogProps.value = Pair(DIALOG_NOTE, appExtras.note)
-                                openDialog.value = true
-                            }
-                        ) {
-                            Text(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 16.dp),
-                                text = appExtras.note,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                }
-                item(span = { GridItemSpan(columns) }) {
-                    TitleText(textId = R.string.available_actions)
-                }
-                item {
-                    AnimatedVisibility(visible = pkg.isInstalled || pkg.isSpecial) {
-                        CardButton(
-                            icon = Phosphor.ArchiveTray,
-                            description = stringResource(id = R.string.backup),
-                            enabled = !snackbarVisible,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ) {
-                            dialogProps.value = Pair(DIALOG_BACKUP, pkg)
-                            openDialog.value = true
-                        }
-                    }
-                }
-                item {
-                    AnimatedVisibility(
-                        visible = pkg.isInstalled &&
-                                !pkg.isSpecial &&
-                                ((pkg.storageStats?.dataBytes ?: 0L) >= 0L)
-                    ) {
-                        CardButton(
-                            icon = Phosphor.TrashSimple,
-                            description = stringResource(id = R.string.clear_cache),
-                        ) {
-                            dialogProps.value = Pair(DIALOG_CLEANCACHE, pkg)
-                            openDialog.value = true
-                        }
-                    }
-                }
-                item {
-                    AnimatedVisibility(visible = hasBackups) {
-                        CardButton(
-                            icon = Phosphor.TrashSimple,
-                            description = stringResource(id = R.string.delete_all_backups),
-                            enabled = !snackbarVisible,
-                            contentColor = MaterialTheme.colorScheme.tertiary,
-                        ) {
-                            dialogProps.value = Pair(DIALOG_DELETEALL, pkg)
-                            openDialog.value = true
-                        }
-                    }
-                }
-                item {
-                    AnimatedVisibility(
-                        visible = pkg.hasBackups
-                    ) {
-                        CardButton(
-                            icon = Phosphor.Hash,
-                            description = stringResource(id = R.string.enforce_backups_limit),
-                            enabled = !snackbarVisible,
-                            contentColor = colorResource(id = R.color.ic_updated),
-                        ) {
-                            dialogProps.value = Pair(DIALOG_ENFORCE_LIMIT, pkg)
-                            openDialog.value = true
-                        }
-                    }
-                }
-                item(span = { GridItemSpan(columns) }) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TitleText(textId = R.string.stats_backups)
-                        if (pref_numBackupRevisions.value > 0) Text(
-                            text = "(${
-                                stringResource(
-                                    id = R.string.backup_revisions_limit,
-                                    pref_numBackupRevisions.value
-                                )
-                            })"
-                        )
-                    }
-                }
-                this.items(
-                    items = backups,
-                    span = { GridItemSpan(columns) }) {
-                    BackupItem(
-                        it,
-                        onRestore = { item ->
-                            pkg.let { app ->
-                                if (!app.isSpecial && !app.isInstalled
-                                    && !item.hasApk && item.hasAppData
-                                ) {
-                                    snackbarHostState.show(
-                                        coroutineScope = coroutineScope,
-                                        message = context.getString(R.string.notInstalledModeDataWarning)
-                                    )
-                                } else {
-                                    dialogProps.value = Pair(DIALOG_RESTORE, item)
-                                    openDialog.value = true
-                                }
-                            }
-                        },
-                        onDelete = { item ->
-                            dialogProps.value = Pair(DIALOG_DELETE, item)
-                            openDialog.value = true
-                        },
-                        onNote = { item ->
-                            dialogProps.value = Pair(DIALOG_NOTE_BACKUP, item)
-                            openDialog.value = true
-                        },
-                        rewriteBackup = { backup, changedBackup ->
-                            viewModel.rewriteBackup(backup, changedBackup)
                         }
                     )
                 }
             }
+            item {
+                ShowIf(pkg.isInstalled && !pkg.isSystem) {
+                    CardButton(
+                        modifier = Modifier.fillMaxHeight(),
+                        icon = Phosphor.TrashSimple,
+                        contentColor = MaterialTheme.colorScheme.tertiary,
+                        description = stringResource(id = R.string.uninstall),
+                        onClick = {
+                            dialogProps.value = Pair(DIALOG_UNINSTALL, pkg)
+                            openDialog.value = true
+                        }
+                    )
+                }
+            }
+            item(span = { GridItemSpan(columns) }) {
+                Column {
+                    TitleText(textId = R.string.title_tags)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TagsBlock(
+                        tags = appExtras.customTags,
+                        onRemove = {
+                            viewModel.setExtras(
+                                appExtras.copy(
+                                    customTags = appExtras.customTags.minus(it)
+                                )
+                            )
+                        },
+                        onAdd = {
+                            dialogProps.value = Pair(DIALOG_ADDTAG, "")
+                            openDialog.value = true
+                        }
+                    )
+                }
+            }
+            item(span = { GridItemSpan(columns) }) {
+                Column {
+                    TitleText(textId = R.string.title_note)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = Color.Transparent
+                        ),
+                        shape = MaterialTheme.shapes.large,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        onClick = {
+                            dialogProps.value = Pair(DIALOG_NOTE, appExtras.note)
+                            openDialog.value = true
+                        }
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 16.dp),
+                            text = appExtras.note,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+            item(span = { GridItemSpan(columns) }) {
+                TitleText(textId = R.string.available_actions)
+            }
+            item {
+                ShowIf(pkg.isInstalled || pkg.isSpecial) {
+                    CardButton(
+                        icon = Phosphor.ArchiveTray,
+                        description = stringResource(id = R.string.backup),
+                        enabled = !snackbarVisible,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ) {
+                        dialogProps.value = Pair(DIALOG_BACKUP, pkg)
+                        openDialog.value = true
+                    }
+                }
+            }
+            item {
+                ShowIf(
+                    pkg.isInstalled &&
+                            !pkg.isSpecial &&
+                            ((pkg.storageStats?.dataBytes ?: 0L) >= 0L)
+                ) {
+                    CardButton(
+                        icon = Phosphor.TrashSimple,
+                        description = stringResource(id = R.string.clear_cache),
+                    ) {
+                        dialogProps.value = Pair(DIALOG_CLEANCACHE, pkg)
+                        openDialog.value = true
+                    }
+                }
+            }
+            item {
+                ShowIf(hasBackups) {
+                    CardButton(
+                        icon = Phosphor.TrashSimple,
+                        description = stringResource(id = R.string.delete_all_backups),
+                        enabled = !snackbarVisible,
+                        contentColor = MaterialTheme.colorScheme.tertiary,
+                    ) {
+                        dialogProps.value = Pair(DIALOG_DELETEALL, pkg)
+                        openDialog.value = true
+                    }
+                }
+            }
+            item {
+                ShowIf(hasBackups) {
+                    CardButton(
+                        icon = Phosphor.Hash,
+                        description = stringResource(id = R.string.enforce_backups_limit),
+                        enabled = !snackbarVisible,
+                        contentColor = colorResource(id = R.color.ic_updated),
+                    ) {
+                        dialogProps.value = Pair(DIALOG_ENFORCE_LIMIT, pkg)
+                        openDialog.value = true
+                    }
+                }
+            }
+            item(span = { GridItemSpan(columns) }) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TitleText(textId = R.string.stats_backups)
+                    if (pref_numBackupRevisions.value > 0) Text(
+                        text = "(${
+                            stringResource(
+                                id = R.string.backup_revisions_limit,
+                                pref_numBackupRevisions.value
+                            )
+                        })"
+                    )
+                }
+            }
+            items(
+                items = backups,
+                span = { GridItemSpan(columns) }) {
+                BackupItem(
+                    it,
+                    onRestore = { item ->
+                        pkg.let { app ->
+                            if (!app.isSpecial && !app.isInstalled
+                                && !item.hasApk && item.hasAppData
+                            ) {
+                                snackbarHostState.show(
+                                    coroutineScope = coroutineScope,
+                                    message = context.getString(R.string.notInstalledModeDataWarning)
+                                )
+                            } else {
+                                dialogProps.value = Pair(DIALOG_RESTORE, item)
+                                openDialog.value = true
+                            }
+                        }
+                    },
+                    onDelete = { item ->
+                        dialogProps.value = Pair(DIALOG_DELETE, item)
+                        openDialog.value = true
+                    },
+                    onNote = { item ->
+                        dialogProps.value = Pair(DIALOG_NOTE_BACKUP, item)
+                        openDialog.value = true
+                    },
+                    rewriteBackup = { backup, changedBackup ->
+                        viewModel.rewriteBackup(backup, changedBackup)
+                    }
+                )
+            }
+        }
 
-            if (openDialog.value) BaseDialog(openDialogCustom = openDialog) {
-                dialogProps.value.let { (dialogMode, obj) ->
-                    when (dialogMode) {
-                        DIALOG_BACKUP        -> {
-                            BackupDialogUI(
-                                appPackage = thePackage,
-                                openDialogCustom = openDialog,
-                            ) { mode ->
-                                if (pref_useWorkManagerForSingleManualJob.value) {
-                                    OABX.main?.startBatchAction(
-                                        true,
-                                        listOf(packageName),
-                                        listOf(mode)
-                                    )
-                                } else {
-                                    BackupActionTask(
-                                        thePackage, mActivity, OABX.shellHandler!!, mode,
+        if (openDialog.value) BaseDialog(openDialogCustom = openDialog) {
+            dialogProps.value.let { (dialogMode, obj) ->
+                when (dialogMode) {
+                    DIALOG_BACKUP        -> {
+                        BackupDialogUI(
+                            appPackage = pkg,
+                            openDialogCustom = openDialog,
+                        ) { mode ->
+                            if (pref_useWorkManagerForSingleManualJob.value) {
+                                OABX.main?.startBatchAction(
+                                    true,
+                                    listOf(packageName),
+                                    listOf(mode)
+                                )
+                            } else {
+                                BackupActionTask(
+                                    pkg, activity, OABX.shellHandler!!, mode,
+                                ) { message ->
+                                    viewModel.snackbarText.value = message
+                                }.execute()
+                            }
+                        }
+                    }
+
+                    DIALOG_RESTORE       -> {
+                        RestoreDialogUI(
+                            appPackage = pkg,
+                            backup = obj as Backup,
+                            openDialogCustom = openDialog,
+                        ) { mode ->
+                            if (pref_useWorkManagerForSingleManualJob.value) {
+                                OABX.main?.startBatchAction(
+                                    false,
+                                    listOf(packageName),
+                                    listOf(mode)
+                                )
+                            } else {
+                                obj.let {
+                                    RestoreActionTask(
+                                        pkg, activity, OABX.shellHandler!!, mode,
+                                        it
                                     ) { message ->
                                         viewModel.snackbarText.value = message
                                     }.execute()
                                 }
                             }
                         }
+                    }
 
-                        DIALOG_RESTORE       -> {
-                            RestoreDialogUI(
-                                appPackage = thePackage,
-                                backup = obj as Backup,
-                                openDialogCustom = openDialog,
-                            ) { mode ->
-                                if (pref_useWorkManagerForSingleManualJob.value) {
-                                    OABX.main?.startBatchAction(
-                                        false,
-                                        listOf(packageName),
-                                        listOf(mode)
-                                    )
-                                } else {
-                                    obj.let {
-                                        RestoreActionTask(
-                                            thePackage, mActivity, OABX.shellHandler!!, mode,
-                                            it
-                                        ) { message ->
-                                            viewModel.snackbarText.value = message
-                                        }.execute()
-                                    }
+                    DIALOG_DELETE        -> {
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(id = R.string.deleteBackupDialogMessage),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                snackbarHostState.show(
+                                    coroutineScope = coroutineScope,
+                                    message = "${pkg.packageLabel}: ${
+                                        context.getString(
+                                            R.string.deleteBackup
+                                        )
+                                    }"
+                                )
+                                if (!pkg.hasBackups) {
+                                    Timber.w("UI Issue! Tried to delete backups for app without backups.")
+                                    openDialog.value = false
                                 }
+                                viewModel.deleteBackup(dialogProps.value.second as Backup)
                             }
-                        }
+                        )
+                    }
 
-                        DIALOG_DELETE        -> {
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(id = R.string.deleteBackupDialogMessage),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    snackbarHostState.show(
-                                        coroutineScope = coroutineScope,
-                                        message = "${thePackage.packageLabel}: ${
-                                            context.getString(
-                                                R.string.deleteBackup
-                                            )
-                                        }"
-                                    )
-                                    if (!thePackage.hasBackups) {
-                                        Timber.w("UI Issue! Tried to delete backups for app without backups.")
-                                        openDialog.value = false
-                                    }
-                                    viewModel.deleteBackup(dialogProps.value.second as Backup)
-                                }
-                            )
-                        }
-
-                        DIALOG_DELETEALL     -> {
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(id = R.string.delete_all_backups),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    viewModel.deleteAllBackups()
-                                    snackbarHostState.show(
-                                        coroutineScope = coroutineScope,
-                                        message = "${thePackage.packageLabel}: ${
-                                            context.getString(
-                                                R.string.delete_all_backups
-                                            )
-                                        }"
-                                    )
-                                }
-                            )
-                        }
-
-                        DIALOG_CLEANCACHE    -> {
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(id = R.string.clear_cache),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    try {
-                                        Timber.i("${thePackage.packageLabel}: Wiping cache")
-                                        ShellCommands.wipeCache(context, thePackage)
-                                        viewModel.refreshNow.value = true
-                                    } catch (e: ShellCommands.ShellActionFailedException) {
-                                        // Not a critical issue
-                                        val errorMessage: String =
-                                            when (val cause = e.cause) {
-                                                is ShellHandler.ShellCommandFailedException -> {
-                                                    cause.shellResult.err.joinToString(
-                                                        " "
-                                                    )
-                                                }
-
-                                                else                                        -> {
-                                                    cause?.message ?: "unknown error"
-                                                }
-                                            }
-                                        Timber.w("Cache couldn't be deleted: $errorMessage")
-                                    }
-                                }
-                            )
-                        }
-
-                        DIALOG_FORCEKILL     -> {
-                            val profileId = currentProfile
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(id = R.string.forceKillMessage),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    //TODO hg42 force-stop, force-close, ... ? I think these are different ones, and I don't know which.
-                                    //TODO hg42 killBackgroundProcesses seems to be am kill
-                                    //TODO in api33 A13 there is am stop-app which doesn't kill alarms and
-                                    runAsRoot("am stop-app --user $profileId ${pkg.packageName} || am force-stop --user $profileId ${pkg.packageName}")
-                                }
-                            )
-                        }
-
-                        DIALOG_ENABLEDISABLE -> {
-                            val enable = dialogProps.value.second as Boolean
-
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(
-                                    id = if (enable) R.string.enablePackage
-                                    else R.string.disablePackage
-                                ),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    try {
-                                        viewModel.enableDisableApp(enable)
-                                        // TODO (re-)add user selection support
-                                    } catch (e: ShellCommands.ShellActionFailedException) {
-                                        mActivity.showError(e.message)
-                                    }
-                                }
-                            )
-                        }
-
-                        DIALOG_UNINSTALL     -> {
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(id = R.string.uninstallDialogMessage),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    viewModel.uninstallApp()
-                                    snackbarHostState.show(
-                                        coroutineScope = coroutineScope,
-                                        message = "${thePackage.packageLabel}: ${
-                                            context.getString(
-                                                R.string.uninstallProgress
-                                            )
-                                        }"
-                                    )
-                                }
-                            )
-                        }
-
-                        DIALOG_NOTE          -> {
-                            StringInputDialogUI(
-                                titleText = stringResource(id = R.string.edit_note),
-                                initValue = dialogProps.value.second as String,
-                                openDialogCustom = openDialog,
-                            ) {
-                                viewModel.setExtras(appExtras.copy(note = it))
-                            }
-                        }
-
-                        DIALOG_NOTE_BACKUP   -> {
-                            val backup = dialogProps.value.second as Backup
-
-                            StringInputDialogUI(
-                                titleText = stringResource(id = R.string.edit_note),
-                                initValue = backup.note,
-                                openDialogCustom = openDialog,
-                            ) {
-                                viewModel.rewriteBackup(backup, backup.copy(note = it))
-                            }
-                        }
-
-                        DIALOG_ENFORCE_LIMIT -> {
-                            ActionsDialogUI(
-                                titleText = thePackage.packageLabel,
-                                messageText = stringResource(
-                                    id = R.string.enforce_backups_limit_description,
-                                    pref_numBackupRevisions.value
-                                ),
-                                openDialogCustom = openDialog,
-                                primaryText = stringResource(id = R.string.dialogYes),
-                                primaryAction = {
-                                    BackupRestoreHelper.housekeepingPackageBackups(obj as Package)
-                                    Package.invalidateCacheForPackage(obj.packageName)
-                                }
-                            )
-                        }
-
-                        DIALOG_ADDTAG        -> {
-                            StringInputDialogUI(
-                                titleText = stringResource(id = R.string.add_tag),
-                                initValue = dialogProps.value.second as String,
-                                openDialogCustom = openDialog,
-                            ) {
-                                viewModel.setExtras(
-                                    appExtras.copy(
-                                        customTags = appExtras.customTags.plus(it)
-                                    )
+                    DIALOG_DELETEALL     -> {
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(id = R.string.delete_all_backups),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                viewModel.deleteAllBackups()
+                                snackbarHostState.show(
+                                    coroutineScope = coroutineScope,
+                                    message = "${pkg.packageLabel}: ${
+                                        context.getString(
+                                            R.string.delete_all_backups
+                                        )
+                                    }"
                                 )
                             }
-                        }
-
-                        else                 -> {}
+                        )
                     }
+
+                    DIALOG_CLEANCACHE    -> {
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(id = R.string.clear_cache),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                try {
+                                    Timber.i("${pkg.packageLabel}: Wiping cache")
+                                    ShellCommands.wipeCache(context, pkg)
+                                    viewModel.refreshNow.value = true
+                                } catch (e: ShellCommands.ShellActionFailedException) {
+                                    // Not a critical issue
+                                    val errorMessage: String =
+                                        when (val cause = e.cause) {
+                                            is ShellHandler.ShellCommandFailedException -> {
+                                                cause.shellResult.err.joinToString(
+                                                    " "
+                                                )
+                                            }
+
+                                            else                                        -> {
+                                                cause?.message ?: "unknown error"
+                                            }
+                                        }
+                                    Timber.w("Cache couldn't be deleted: $errorMessage")
+                                }
+                            }
+                        )
+                    }
+
+                    DIALOG_FORCEKILL     -> {
+                        val profileId = currentProfile
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(id = R.string.forceKillMessage),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                //TODO hg42 force-stop, force-close, ... ? I think these are different ones, and I don't know which.
+                                //TODO hg42 killBackgroundProcesses seems to be am kill
+                                //TODO in api33 A13 there is am stop-app which doesn't kill alarms and
+                                runAsRoot("am stop-app --user $profileId ${pkg.packageName} || am force-stop --user $profileId ${pkg.packageName}")
+                            }
+                        )
+                    }
+
+                    DIALOG_ENABLEDISABLE -> {
+                        val enable = dialogProps.value.second as Boolean
+
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(
+                                id = if (enable) R.string.enablePackage
+                                else R.string.disablePackage
+                            ),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                try {
+                                    viewModel.enableDisableApp(enable)
+                                    // TODO (re-)add user selection support
+                                } catch (e: ShellCommands.ShellActionFailedException) {
+                                    activity.showError(e.message)
+                                }
+                            }
+                        )
+                    }
+
+                    DIALOG_UNINSTALL     -> {
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(id = R.string.uninstallDialogMessage),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                viewModel.uninstallApp()
+                                snackbarHostState.show(
+                                    coroutineScope = coroutineScope,
+                                    message = "${pkg.packageLabel}: ${
+                                        context.getString(
+                                            R.string.uninstallProgress
+                                        )
+                                    }"
+                                )
+                            }
+                        )
+                    }
+
+                    DIALOG_NOTE          -> {
+                        StringInputDialogUI(
+                            titleText = stringResource(id = R.string.edit_note),
+                            initValue = dialogProps.value.second as String,
+                            openDialogCustom = openDialog,
+                        ) {
+                            viewModel.setExtras(appExtras.copy(note = it))
+                        }
+                    }
+
+                    DIALOG_NOTE_BACKUP   -> {
+                        val backup = dialogProps.value.second as Backup
+
+                        StringInputDialogUI(
+                            titleText = stringResource(id = R.string.edit_note),
+                            initValue = backup.note,
+                            openDialogCustom = openDialog,
+                        ) {
+                            viewModel.rewriteBackup(backup, backup.copy(note = it))
+                        }
+                    }
+
+                    DIALOG_ENFORCE_LIMIT -> {
+                        ActionsDialogUI(
+                            titleText = pkg.packageLabel,
+                            messageText = stringResource(
+                                id = R.string.enforce_backups_limit_description,
+                                pref_numBackupRevisions.value
+                            ),
+                            openDialogCustom = openDialog,
+                            primaryText = stringResource(id = R.string.dialogYes),
+                            primaryAction = {
+                                BackupRestoreHelper.housekeepingPackageBackups(obj as Package)
+                                Package.invalidateCacheForPackage(obj.packageName)
+                            }
+                        )
+                    }
+
+                    DIALOG_ADDTAG        -> {
+                        StringInputDialogUI(
+                            titleText = stringResource(id = R.string.add_tag),
+                            initValue = dialogProps.value.second as String,
+                            openDialogCustom = openDialog,
+                        ) {
+                            viewModel.setExtras(
+                                appExtras.copy(
+                                    customTags = appExtras.customTags.plus(it)
+                                )
+                            )
+                        }
+                    }
+
+                    else                 -> {}
                 }
             }
         }

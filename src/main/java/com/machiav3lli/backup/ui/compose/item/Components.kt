@@ -104,6 +104,7 @@ import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowSquareOut
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
@@ -726,37 +727,37 @@ fun RowScope.PackageLabels(
 fun BackupLabels(
     item: Backup,
 ) {
-    AnimatedVisibility(visible = item.hasMediaData) {
+    ShowIf(item.hasMediaData) {
         ButtonIcon(
             Phosphor.PlayCircle, R.string.radio_mediadata,
             tint = ColorMedia
         )
     }
-    AnimatedVisibility(visible = item.hasObbData) {
+    ShowIf(item.hasObbData) {
         ButtonIcon(
             Phosphor.GameController, R.string.radio_obbdata,
             tint = ColorOBB
         )
     }
-    AnimatedVisibility(visible = item.hasExternalData) {
+    ShowIf(item.hasExternalData) {
         ButtonIcon(
             Phosphor.FloppyDisk, R.string.radio_externaldata,
             tint = ColorExtDATA
         )
     }
-    AnimatedVisibility(visible = item.hasDevicesProtectedData) {
+    ShowIf(item.hasDevicesProtectedData) {
         ButtonIcon(
             Phosphor.ShieldCheckered, R.string.radio_deviceprotecteddata,
             tint = ColorDeData
         )
     }
-    AnimatedVisibility(visible = item.hasAppData) {
+    ShowIf(item.hasAppData) {
         ButtonIcon(
             Phosphor.HardDrives, R.string.radio_data,
             tint = ColorData
         )
     }
-    AnimatedVisibility(visible = item.hasApk) {
+    ShowIf(item.hasApk) {
         ButtonIcon(
             Phosphor.DiamondsFour, R.string.radio_apk,
             tint = ColorAPK
@@ -767,37 +768,37 @@ fun BackupLabels(
 
 @Composable
 fun ScheduleTypes(item: Schedule) {
-    AnimatedVisibility(visible = item.mode and MODE_DATA_MEDIA == MODE_DATA_MEDIA) {
+    ShowIf(item.mode and MODE_DATA_MEDIA == MODE_DATA_MEDIA) {
         ButtonIcon(
             Phosphor.PlayCircle, R.string.radio_mediadata,
             tint = ColorMedia
         )
     }
-    AnimatedVisibility(visible = item.mode and MODE_DATA_OBB == MODE_DATA_OBB) {
+    ShowIf(item.mode and MODE_DATA_OBB == MODE_DATA_OBB) {
         ButtonIcon(
             Phosphor.GameController, R.string.radio_obbdata,
             tint = ColorOBB
         )
     }
-    AnimatedVisibility(visible = item.mode and MODE_DATA_EXT == MODE_DATA_EXT) {
+    ShowIf(item.mode and MODE_DATA_EXT == MODE_DATA_EXT) {
         ButtonIcon(
             Phosphor.FloppyDisk, R.string.radio_externaldata,
             tint = ColorExtDATA
         )
     }
-    AnimatedVisibility(visible = item.mode and MODE_DATA_DE == MODE_DATA_DE) {
+    ShowIf(item.mode and MODE_DATA_DE == MODE_DATA_DE) {
         ButtonIcon(
             Phosphor.ShieldCheckered, R.string.radio_deviceprotecteddata,
             tint = ColorDeData
         )
     }
-    AnimatedVisibility(visible = item.mode and MODE_DATA == MODE_DATA) {
+    ShowIf(item.mode and MODE_DATA == MODE_DATA) {
         ButtonIcon(
             Phosphor.HardDrives, R.string.radio_data,
             tint = ColorData
         )
     }
-    AnimatedVisibility(visible = item.mode and MODE_APK == MODE_APK) {
+    ShowIf(item.mode and MODE_APK == MODE_APK) {
         ButtonIcon(
             Phosphor.DiamondsFour, R.string.radio_apk,
             tint = ColorAPK
@@ -810,25 +811,25 @@ fun ScheduleTypes(item: Schedule) {
 fun ScheduleFilters(
     item: Schedule,
 ) {
-    AnimatedVisibility(visible = item.filter and MAIN_FILTER_SYSTEM == MAIN_FILTER_SYSTEM) {
+    ShowIf(item.filter and MAIN_FILTER_SYSTEM == MAIN_FILTER_SYSTEM) {
         ButtonIcon(
             Phosphor.Spinner, R.string.radio_system,
             tint = ColorSystem
         )
     }
-    AnimatedVisibility(visible = item.filter and MAIN_FILTER_USER == MAIN_FILTER_USER) {
+    ShowIf(item.filter and MAIN_FILTER_USER == MAIN_FILTER_USER) {
         ButtonIcon(
             Phosphor.User, R.string.radio_user,
             tint = ColorUser
         )
     }
-    AnimatedVisibility(visible = item.filter and MAIN_FILTER_SPECIAL == MAIN_FILTER_SPECIAL) {
+    ShowIf(item.filter and MAIN_FILTER_SPECIAL == MAIN_FILTER_SPECIAL) {
         ButtonIcon(
             Phosphor.AsteriskSimple, R.string.radio_special,
             tint = ColorSpecial
         )
     }
-    AnimatedVisibility(visible = item.launchableFilter != SPECIAL_FILTER_ALL) {
+    ShowIf(item.launchableFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
             when (item.launchableFilter) {
                 LAUNCHABLE_FILTER_NOT -> Phosphor.ProhibitInset
@@ -842,7 +843,7 @@ fun ScheduleFilters(
             tint = ColorOBB,
         )
     }
-    AnimatedVisibility(visible = item.updatedFilter != SPECIAL_FILTER_ALL) {
+    ShowIf(item.updatedFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
             when (item.updatedFilter) {
                 UPDATED_FILTER_NEW -> Phosphor.Star
@@ -857,7 +858,7 @@ fun ScheduleFilters(
             tint = ColorUpdated,
         )
     }
-    AnimatedVisibility(visible = item.enabledFilter != SPECIAL_FILTER_ALL) {
+    ShowIf(item.enabledFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
             when (item.enabledFilter) {
                 ENABLED_FILTER_DISABLED -> Phosphor.ProhibitInset
@@ -871,7 +872,7 @@ fun ScheduleFilters(
             tint = ColorDeData,
         )
     }
-    AnimatedVisibility(visible = item.latestFilter != SPECIAL_FILTER_ALL) {
+    ShowIf(item.latestFilter != SPECIAL_FILTER_ALL) {
         ButtonIcon(
             when (item.latestFilter) {
                 LATEST_FILTER_NEW -> Phosphor.CircleWavyWarning

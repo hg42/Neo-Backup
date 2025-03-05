@@ -74,7 +74,6 @@ import com.machiav3lli.backup.ui.compose.item.devToolsSearch
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
-import com.machiav3lli.backup.ui.navigation.clearBackStack
 import com.machiav3lli.backup.ui.navigation.safeNavigate
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
@@ -257,7 +256,11 @@ class MainActivityX : BaseActivity() {
                             mScope.launch(Dispatchers.IO) {
                                 runOrLog {
                                     val backupsMap = OABX.getBackups()
-                                    traceInfo { "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${backupsMap.values.map { it.size }.sum()} root: ${OABX.backupRoot}" }
+                                    traceInfo {
+                                        "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${
+                                            backupsMap.values.map { it.size }.sum()
+                                        } root: ${OABX.backupRoot}"
+                                    }
                                     ensureBackups()
                                 }
                                 runOrLog { updateAppTables() }
@@ -265,7 +268,8 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
                             }
 
-                            devToolsSearch.value = TextFieldValue("")   //TODO hg42 hide implementation details
+                            devToolsSearch.value =
+                                TextFieldValue("")   //TODO hg42 hide implementation details
 
                             runOnUiThread { showEncryptionDialog() }
                         }
@@ -625,16 +629,18 @@ class MainActivityX : BaseActivity() {
 
     fun resumeMain() {
         when {
-            !persist_beenWelcomed.value
-                 -> if (!navController.currentDestination?.route?.equals(NavItem.Welcome.destination)!!) {
-                navController.clearBackStack()
-                navController.safeNavigate(NavItem.Welcome.destination)
+            !persist_beenWelcomed.value -> {
+                val route = navController.currentDestination?.route
+                if (!route?.equals(NavItem.Welcome.destination)!!) {
+                    navController.clearBackStack(route)
+                    navController.safeNavigate(NavItem.Welcome.destination)
+                }
             }
 
             allPermissionsGranted && this::navController.isInitialized
-                 -> launchMain()
+                                        -> launchMain()
 
-            else -> navController.safeNavigate(NavItem.Permissions.destination)
+            else                        -> navController.safeNavigate(NavItem.Permissions.destination)
         }
     }
 

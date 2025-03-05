@@ -1,7 +1,7 @@
 [versions]
 
-activity = "1.9.1"
-agp = "8.6.0"
+activity = "1.9.1"      # keep for sdk34
+agp = "8.8.2"
 biometric = "1.2.0-alpha05"
 coil = "2.7.0"
 commons-compress = "1.26.2"
@@ -11,7 +11,7 @@ compose-bom = "2024.06.00"
 compose-accompanist = "0.34.0"
 compose-markdown = "0.5.0"
 coroutines = "1.8.1"
-datastore = "1.1.1"
+datastore = "1.1.3"
 immutables = "0.3.7"
 kaml = "0.61.0"
 koin = "3.5.6"
@@ -19,19 +19,19 @@ koin-ksp = "1.3.1"
 kotlin = "2.0.0"
 ksp = "2.0.0-1.0.24"
 libsu = "6.0.0"
-lifecycle = "2.8.4"
+lifecycle = "2.8.7"
 material = "1.12.0"
-navigation = "2.7.7"
+navigation = "2.8.8"
 preference = "1.2.1"
 room = "2.6.1"
 security = "1.1.0-alpha06"
 semver = "4.2.1"
 serialization = "1.7.1"
-test = "1.6.1"
+test = "1.6.1"          # do not change to 1.6.2
 test-rules = "1.6.1"
 test-ext = "1.2.1"
 timber = "5.0.1"
-work = "2.9.1"
+work = "2.9.1"          # keep for sdk34
 zstd-jni = "1.5.6-4"
 
 ######################################## hg42

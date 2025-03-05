@@ -1,6 +1,5 @@
 package com.machiav3lli.backup.ui.compose.item
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.items.Package
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CircleWavyWarning
@@ -39,7 +39,7 @@ import com.machiav3lli.backup.utils.getFormattedDate
 
 @Composable
 fun BatchPackageItem(
-    item: Package,
+    pkg: Package,
     restore: Boolean,
     isApkChecked: Boolean,
     isDataChecked: Boolean,
@@ -47,22 +47,21 @@ fun BatchPackageItem(
     onApkClick: (Package, Boolean) -> Unit = { _: Package, _: Boolean -> },
     onDataClick: (Package, Boolean) -> Unit = { _: Package, _: Boolean -> },
 ) {
-    val packageItem by remember(item) { mutableStateOf(item) }
     var apkChecked by remember(isApkChecked) { mutableStateOf(isApkChecked) }
     var dataChecked by remember(isDataChecked) { mutableStateOf(isDataChecked) }
-    val showApk by remember(packageItem) {
+    val showApk by remember(pkg) {
         mutableStateOf(
             when {
-                packageItem.isSpecial || (restore && !packageItem.hasApk) -> false
-                else                                                      -> true
+                pkg.isSpecial || (restore && !pkg.hasApk) -> false
+                else                                      -> true
             }
         )
     }
-    val showData by remember(packageItem) {
+    val showData by remember(pkg) {
         mutableStateOf(
             when {
-                restore && !packageItem.hasData -> false
-                else                            -> true
+                restore && !pkg.hasData -> false
+                else                    -> true
             }
         )
     }
@@ -76,7 +75,7 @@ fun BatchPackageItem(
                 val checked = (apkChecked || !showApk) && (dataChecked || !showData)
                 if (showApk) apkChecked = !checked
                 if (showData) dataChecked = !checked
-                onClick(packageItem, apkChecked, dataChecked)
+                onClick(pkg, apkChecked, dataChecked)
             },
         colors = ListItemDefaults.colors(
             containerColor = Color.Transparent,
@@ -87,14 +86,14 @@ fun BatchPackageItem(
                     enabled = showApk,
                     onCheckedChange = {
                         apkChecked = it
-                        onApkClick(packageItem, it)
+                        onApkClick(pkg, it)
                     }
                 )
                 Checkbox(checked = dataChecked,
                     enabled = showData,
                     onCheckedChange = {
                         dataChecked = it
-                        onDataClick(packageItem, it)
+                        onDataClick(pkg, it)
                     }
                 )
             }
@@ -102,7 +101,7 @@ fun BatchPackageItem(
         headlineContent = {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = packageItem.packageLabel,
+                    text = pkg.packageLabel,
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
                         .weight(1f),
@@ -110,14 +109,14 @@ fun BatchPackageItem(
                     maxLines = 1,
                     style = MaterialTheme.typography.titleMedium
                 )
-                PackageLabels(item = packageItem)
+                PackageLabels(item = pkg)
             }
 
         },
         supportingContent = {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = packageItem.packageName,
+                    text = pkg.packageName,
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
                         .weight(1f),
@@ -125,11 +124,11 @@ fun BatchPackageItem(
                     maxLines = 1,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                AnimatedVisibility(visible = packageItem.hasBackups) {
+                ShowIf(pkg.hasBackups) {
                     Text(
-                        text = (packageItem.latestBackup?.backupDate?.getFormattedDate(
+                        text = (pkg.latestBackup?.backupDate?.getFormattedDate(
                             false
-                        ) ?: "") + " • ${packageItem.numberOfBackups}",
+                        ) ?: "") + " • ${pkg.numberOfBackups}",
                         modifier = Modifier.align(Alignment.CenterVertically),
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
@@ -143,23 +142,22 @@ fun BatchPackageItem(
 
 @Composable
 fun RestorePackageItem(
-    item: Package,
+    pkg: Package,
     apkBackupChecked: MutableState<Int?>,
     dataBackupChecked: MutableState<Int?>,
     onClick: (Package, Boolean, Boolean) -> Unit = { _: Package, _: Boolean, _: Boolean -> },
     onBackupApkClick: (String, Boolean, Int) -> Unit = { _: String, _: Boolean, _: Int -> },
     onBackupDataClick: (String, Boolean, Int) -> Unit = { _: String, _: Boolean, _: Int -> },
 ) {
-    val packageItem by remember(item) { mutableStateOf(item) }
     val apkBC by apkBackupChecked
     val dataBC by dataBackupChecked
     var apkChecked by remember(apkBackupChecked) { mutableStateOf(apkBC == 0) }
     var dataChecked by remember(dataBackupChecked) { mutableStateOf(dataBC == 0) }
-    val checkableApk by remember(packageItem) {
-        mutableStateOf(packageItem.latestBackup?.hasApk == true)
+    val checkableApk by remember(pkg) {
+        mutableStateOf(pkg.latestBackup?.hasApk == true)
     }
-    val checkableData by remember(packageItem) {
-        mutableStateOf(packageItem.latestBackup?.hasData == true)
+    val checkableData by remember(pkg) {
+        mutableStateOf(pkg.latestBackup?.hasData == true)
     }
 
     Column(
@@ -169,7 +167,7 @@ fun RestorePackageItem(
                 val checked = (apkChecked || !checkableApk) && (dataChecked || !checkableData)
                 if (checkableApk) apkChecked = !checked
                 if (checkableData) dataChecked = !checked
-                onClick(packageItem, apkChecked, dataChecked)
+                onClick(pkg, apkChecked, dataChecked)
             },
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -181,7 +179,7 @@ fun RestorePackageItem(
             headlineContent = {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = packageItem.packageLabel,
+                        text = pkg.packageLabel,
                         modifier = Modifier
                             .align(Alignment.CenterVertically)
                             .weight(1f),
@@ -189,7 +187,7 @@ fun RestorePackageItem(
                         maxLines = 1,
                         style = MaterialTheme.typography.titleMedium
                     )
-                    if (item.isUpdated) {
+                    if (pkg.isUpdated) {
                         ButtonIcon(
                             Phosphor.CircleWavyWarning, R.string.radio_updated,
                             tint = ColorUpdated
@@ -197,17 +195,17 @@ fun RestorePackageItem(
                     }
                     ButtonIcon(
                         when {
-                            item.isSpecial -> Phosphor.AsteriskSimple
-                            item.isSystem  -> Phosphor.Spinner
-                            else           -> Phosphor.User
+                            pkg.isSpecial -> Phosphor.AsteriskSimple
+                            pkg.isSystem  -> Phosphor.Spinner
+                            else          -> Phosphor.User
                         },
                         R.string.app_s_type_title,
                         tint = when {
-                            !item.isInstalled -> ColorDisabled
-                            item.isDisabled   -> ColorDisabled
-                            item.isSpecial    -> ColorSpecial
-                            item.isSystem     -> ColorSystem
-                            else              -> ColorUser
+                            !pkg.isInstalled -> ColorDisabled
+                            pkg.isDisabled   -> ColorDisabled
+                            pkg.isSpecial    -> ColorSpecial
+                            pkg.isSystem     -> ColorSystem
+                            else             -> ColorUser
                         }
                     )
                 }
@@ -223,23 +221,23 @@ fun RestorePackageItem(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = packageItem.packageName,
+                            text = pkg.packageName,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             style = MaterialTheme.typography.labelMedium,
                         )
-                        AnimatedVisibility(visible = packageItem.hasBackups) {
+                        ShowIf(pkg.hasBackups) {
                             Text(
-                                text = (packageItem.latestBackup?.backupDate?.getFormattedDate(
+                                text = (pkg.latestBackup?.backupDate?.getFormattedDate(
                                     false
-                                ) ?: "") + " • ${packageItem.numberOfBackups}",
+                                ) ?: "") + " • ${pkg.numberOfBackups}",
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                                 style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }
-                    item.backupsNewestFirst.forEachIndexed { index, item ->
+                    pkg.backupsNewestFirst.forEachIndexed { index, item ->
                         RestoreBackupItem(
                             item = item,
                             index = index,

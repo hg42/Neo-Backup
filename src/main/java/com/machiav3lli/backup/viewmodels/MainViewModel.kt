@@ -31,29 +31,33 @@ import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.Blocklist
+import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
 import com.machiav3lli.backup.handler.toPackageList
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.items.Package.Companion.invalidateCacheForPackage
 import com.machiav3lli.backup.preferences.pref_newAndUpdatedNotification
-import com.machiav3lli.backup.preferences.pref_skipBackupsDatabase
-import com.machiav3lli.backup.traceBackups
 import com.machiav3lli.backup.traceFlows
 import com.machiav3lli.backup.ui.compose.MutableComposableFlow
 import com.machiav3lli.backup.ui.compose.item.IconCache
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
-import com.machiav3lli.backup.utils.TraceUtils.formatSortedBackups
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.applyFilter
 import com.machiav3lli.backup.utils.sortFilterModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
@@ -73,180 +77,192 @@ class MainViewModel(
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS
 
-    // most flows are for complete states, so skipping (conflate, mapLatest) is usually allowed
-    // it's noted otherwise
+    // most flows transport complete states, so skipping intermediate states is allowed
+    // (via conflate, mapLatest)
+    // it is noted explicitly, if each state must be processed (e.g. updates for single packages)
+    //
     // conflate:
-    //   takes the latest item and processes it completely, then takes the next (latest again)
-    //   if input rate is f_in and processing can run at max rate f_proc,
-    //   then with f_in > f_proc the results will only come out with about f_proc
-    // mapLatest: (use mapLatest { it } as an equivalent form similar to conflate())
-    //   kills processing the item, when a new one comes in
-    //   so, as long as items come in faster than processing time, there won't be results, in short:
-    //   if f_in > f_proc, then there is no output at all
-    //   this is much like processing on idle only
+    //      takes the latest item and processes it completely, then takes the next (latest again)
+    //      if input rate is f_in and processing can run at max rate f_proc,
+    //      then with f_in > f_proc the results will only come out with about f_proc
+    // mapLatest:
+    //      use mapLatest { it } as an equivalent form similar to conflate()
+    //      kills processing the item, when a new one comes in
+    //      so, as long as items come in faster than processing time, there won't be results, in short:
+    //      if f_in > f_proc, then there is no output at all
+    //      this is much like processing on idle only
+    // buffer(UNLIMITED)
+    //      use in case the flow isn't collected, yet, e.g. if using Lazily
+
+    fun scope() = viewModelScope + Dispatchers.IO
+
+    data class FlowJob<TFlow, TJob>(
+        val flow: TFlow,
+        val job: TJob,
+    )
+
+    data class StateFlowJob<TState, TJob>(
+        val state: TState,
+        val job: TJob,
+    )
+
+    fun <T> Flow<T>.jobStateIn(
+        scope: CoroutineScope,
+        started: SharingStarted, // for compatibility
+        initialValue: T,
+    ): StateFlowJob<MutableStateFlow<T>, Job> {
+        val state = MutableStateFlow(initialValue)
+        val job = scope.launch {
+            this@jobStateIn.collect { value ->
+                state.value = value
+            }
+        }
+        return StateFlowJob(state, job)
+    }
+
+    data class UpdateFlow<TUpdated, TUpdate, TJob>(
+        val update: TUpdated,
+        val state: TUpdate,
+        val job: TJob,
+    )
+
+    fun <T> updateFlow(
+        initialValue: T,
+        how: (MutableSharedFlow<T>) -> Flow<T>,
+    ): UpdateFlow<MutableSharedFlow<T>, MutableStateFlow<T>, Job> {
+        val updated = MutableSharedFlow<T>(replay = 1)
+        val (flow, job) =
+            how(updated)
+                .jobStateIn(
+                    scope(),
+                    SharingStarted.Eagerly,
+                    initialValue,
+                )
+        return UpdateFlow(updated, flow, job)
+    }
 
     val schedulesDb =
-        //------------------------------------------------------------------------------------------ blocklist
+        //------------------------------------------------------------------------------------------
         db.getScheduleDao().getAllFlow()
-            .trace { "*** schedulesDb <<- ${it.size}" }
+            .trace { "*** schedulesDb ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
     val blocklistDb =
-        //------------------------------------------------------------------------------------------ blocklist
+        //------------------------------------------------------------------------------------------
         db.getBlocklistDao().getAllFlow()
-            .trace { "*** blocklistDb <<- ${it.size}" }
+            .trace { "*** blocklistDb ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
-    //TODO wech
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val backupsDb =
-        //------------------------------------------------------------------------------------------ backupsMap
-        if (pref_skipBackupsDatabase.value)
-            MutableSharedFlow()
-        else {
-            db.getBackupDao().getAllFlow()
-                .mapLatest { it.groupBy(Backup::packageName) }
-                .trace { "*** backupsDb <<- p=${it.size} b=${it.map { it.value.size }.sum()}" }
-                //.trace { "*** backupsDb <<- p=${it.size} b=${it.map { it.value.size }.sum()} #################### egg ${showSortedBackups(it["com.android.egg"])}" }  // for testing use com.android.egg
-                .stateIn(
-                    viewModelScope + Dispatchers.IO,
-                    SharingStarted.Eagerly,
-                    emptyMap()
-                )
-        }
-
-    val appInfosDb = db.getAppInfoDao().getAllFlow()
-        .trace { "*** appInfosDb <<- ${it.size}" }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Eagerly,
-            emptyList()
-        )
-
-    //TODO wech
-    val packageBackupsUpdated = MutableSharedFlow<Pair<String, List<Backup>>?>()
-    val packageBackupsUpdate =
-        if (pref_skipBackupsDatabase.value)
-            MutableSharedFlow()
-        else {
-            packageBackupsUpdated
-                // don't skip anything here (no conflate or map Latest etc.)
-                // we need to process each update as it's the update for a single package
-                .filterNotNull()
-                //.buffer(UNLIMITED)   // use in case the flow isn't collected, yet, e.g. if using Lazily
-                .trace { "*** packageBackupsUpdate <<- ${it.first} ${formatSortedBackups(it.second)}" }
-                .onEach {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        traceBackups {
-                            "*** updating database ---------------------------> ${it.first} ${
-                                formatSortedBackups(
-                                    it.second
-                                )
-                            }"
-                        }
-                        db.getBackupDao().updateList(
-                            it.first,
-                            it.second.sortedByDescending { it.backupDate },
-                        )
-                    }
-                }
-                .stateIn(
-                    viewModelScope + Dispatchers.IO,
-                    SharingStarted.Eagerly,
-                    null
-                )
-        }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val appExtrasDb =
-        //------------------------------------------------------------------------------------------ appExtrasMap
+        //------------------------------------------------------------------------------------------
         db.getAppExtrasDao().getAllFlow()
             .mapLatest { it.associateBy(AppExtras::packageName) }
-            .trace { "*** appExtrasDb <<- ${it.size}" }
+            .trace { "*** appExtrasDb ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyMap()
             )
 
-    //val appinfoList = MutableSharedFlow<List<AppInfo>>()
-    val backupsUpdated = MutableSharedFlow<Map<String, List<Backup>>>()
     @OptIn(ExperimentalCoroutinesApi::class)
-    val backupsUpdate = backupsUpdated
-        .mapLatest {
-            delay(100)
+    val appInfosChanged =
+        //------------------------------------------------------------------------------------------
+        updateFlow(emptyList<AppInfo>()) {
             it
+                .mapLatest {
+                    delay(50)
+                    it
+                }
+                .onEach {
+                    retriggerFlowsForUI()  //TODO hg42 workaround
+                }
+                .trace {
+                    "*** appInfosUpdate ->> ${it.size}"
+                }
         }
-        .trace {
-            "*** backupsUpdate: packages: ${it.keys.size} backups: ${
-                it.values.map { it.size }.sum()
-            }"
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val backupsChanged =
+        //------------------------------------------------------------------------------------------
+        updateFlow(emptyMap<String, List<Backup>>()) {
+            it
+                //.trace { "??? backupsChanged <-- ${formatBackups(it)}" }
+                .mapLatest {
+                    delay(50)
+                    it
+                }
+                .onEach {
+                    retriggerFlowsForUI()  //TODO hg42 workaround
+                }
+                .trace { "*** backupsChanged ->> ${formatBackups(it)}" }
         }
-        .stateIn(
-            viewModelScope + Dispatchers.IO,
-            SharingStarted.Eagerly,
-            emptyMap()
-        )
+
+    val allPackagesRetrigger =
+        MutableComposableFlow(false, scope(), "allPackagesRetrigger")
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val allPackages =
-        //========================================================================================== packageList
+        //------------------------------------------------------------------------------------------
         combine(
-            appInfosDb,
-            if (pref_skipBackupsDatabase.value)
-                backupsUpdate
-            else
-                backupsDb
-        ) { appinfos, backups ->
+            appInfosChanged.state,
+            backupsChanged.state,
+            allPackagesRetrigger.flow
+        ) { appInfos, backups, retrigger ->
 
             traceFlows {
-                "******************** allPackages: appinfos: ${appinfos.size} backups: ${
-                    backups.values.map { it.size }.sum()
-                }"
+                "***< allPackages <-- appInfos: ${appInfos.size} ${formatBackups(backups)}"
             }
 
-            val pkgs = appinfos.toPackageList(appContext, emptyList(), backups)
+            val pkgs = runOrLog(emptyList()) {
+                appInfos.toPackageList(appContext, emptyList(), backups)
+            }
 
             IconCache.dropAllButUsed(pkgs.drop(0))
 
-            traceFlows { "***** allPackages ->> ${pkgs.size}" }
+            traceFlows { "***<< allPackages <<- ${pkgs.size}" }
             pkgs
         }
             .mapLatest { it }
-            .trace { "*** allPackages <<- ${it.size}" }
+            .retry { cause ->
+                logException(cause)
+                true // restart flow
+            }
+            .trace { "****** allPackages ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
-                emptyList()
+                emptyList(),
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val allPackagesByNames =
-        //------------------------------------------------------------------------------------------ packageMap
+        //------------------------------------------------------------------------------------------
         allPackages
             .mapLatest { it.associateBy(Package::packageName) }
-            .trace { "*** allPackagesByNames <<- ${it.size}" }
+            .trace { "********* allPackagesByNames ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyMap()
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val packages =
-        //========================================================================================== notBlockedList
+        //==========================================================================================
         combine(allPackages, blocklistDb) { pkgs, blocked ->
 
             traceFlows {
-                "******************** blocking - list: ${pkgs.size} block: ${
+                "******< packages <-- allPackages: ${pkgs.size} blocklistDb: ${
                     blocked.joinToString(",")
                 }"
             }
@@ -254,36 +270,35 @@ class MainViewModel(
             val block = blocked.map { it.packageName }
             val list = pkgs.filterNot { block.contains(it.packageName) }
 
-            traceFlows { "***** packages ->> ${list.size}" }
+            traceFlows { "******<< packages <<- ${list.size}" }
             list
         }
-            .mapLatest { it }
-            .trace { "*** packages <<- ${it.size}" }
+            .trace { "********* packages ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
     val searchQuery =
-        //------------------------------------------------------------------------------------------ searchQuery
+        //------------------------------------------------------------------------------------------
         MutableComposableFlow(
             "",
-            viewModelScope + Dispatchers.IO,
+            scope(),
             "searchQuery"
         )
 
     val modelSortFilter =
-        //------------------------------------------------------------------------------------------ modelSortFilter
+        //------------------------------------------------------------------------------------------
         MutableComposableFlow(
             sortFilterModel,
-            viewModelScope + Dispatchers.IO,
+            scope(),
             "modelSortFilter"
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredPackages =
-        //========================================================================================== filteredList
+        //==========================================================================================
         combine(
             packages,
             modelSortFilter.flow,
@@ -291,11 +306,9 @@ class MainViewModel(
             appExtrasDb
         ) { pkgs, filter, search, extras ->
 
-            var filtered = emptyList<Package>()
+            traceFlows { "*********< filteredPackages <-- ${pkgs.size} filter: $filter" }
 
-            traceFlows { "******************** filtering - packages: ${pkgs.size} filter: $filter" }
-
-            filtered = pkgs
+            val filtered = pkgs
                 .filter { item: Package ->
                     search.isEmpty() || (
                             (extras[item.packageName]?.customTags ?: emptySet()).plus(
@@ -310,54 +323,68 @@ class MainViewModel(
                 }
                 .applyFilter(filter, OABX.context)
 
-            traceFlows { "***** filteredPackages ->> ${filtered.size}" }
+            traceFlows { "*********<< filteredPackages <<- ${filtered.size}" }
 
             filtered
         }
             // if the filter changes we can drop the older filters
             .mapLatest { it }
-            .trace { "*** filteredPackages <<- ${it.size}" }
+            .trace { "************ filteredPackages ->> ${it.size}" }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val updatedPackages =
-        //------------------------------------------------------------------------------------------ updatedPackages
+        //------------------------------------------------------------------------------------------
         packages
             .mapLatest {
                 it.filter { it.isUpdated || (pref_newAndUpdatedNotification.value && it.isNew) }
                     .toMutableList()
             }
             .trace {
-                "*** updatedPackages <<- updated: (${it.size})${
+                "************ updatedPackages ->> (${it.size})${
                     it.map {
                         "${it.packageName}(${it.versionCode}!=${it.latestBackup?.versionCode ?: ""})"
                     }
                 }"
             }
             .stateIn(
-                viewModelScope + Dispatchers.IO,
+                scope(),
                 SharingStarted.Eagerly,
                 emptyList()
             )
 
-    //---------------------------------------------------------------------------------------------- retriggerFlowsForUI
-
+    //----------------------------------------------------------------------------------------------
     fun retriggerFlowsForUI() {
-        traceFlows { "******************** retriggerFlowsForUI" }
-        runBlocking {
-            val saved = searchQuery.value
-            // in case same value isn't triggering
-            val retrigger = saved + "<RETRIGGERING>"
-            searchQuery.value = retrigger
-            // wait until we really get that value
-            while (searchQuery.value != retrigger)
-                yield()
-            // now switch back
-            searchQuery.value = saved
+
+        traceFlows { "***----------------- retriggerFlowsForUI" }
+        when (1) {
+
+            1 -> {
+                allPackagesRetrigger.value = !allPackagesRetrigger.value
+            }
+
+            0 -> {
+                runBlocking {
+                    val saved = searchQuery.value
+                    // in case same value isn't triggering
+                    val retrigger = saved + "," + saved + "," + saved
+                    searchQuery.value = retrigger
+                    // wait until we really get that value
+                    yield()
+                    while (searchQuery.value != retrigger)
+                        yield()
+                    delay(10)
+                    // now switch back
+                    searchQuery.value = saved
+                    yield()
+                    while (searchQuery.value != saved)
+                        yield()
+                }
+            }
         }
     }
 
@@ -383,7 +410,7 @@ class MainViewModel(
                     val new = Package(appContext, packageName)
                     if (!isSpecial) {
                         new.refreshFromPackageManager(OABX.context)
-                        db.getAppInfoDao().update(new.packageInfo as AppInfo)
+                        //db.getAppInfoDao().update(new.packageInfo as AppInfo)
                     }
                     //new.refreshBackupList()     //TODO hg42 ??? who calls this? take it from backupsMap?
                 }

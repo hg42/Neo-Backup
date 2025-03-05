@@ -1,10 +1,7 @@
 package com.machiav3lli.backup.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.preferences.pref_altNavBarItem
+import com.machiav3lli.backup.ui.compose.ShowIf
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
 
@@ -58,7 +56,7 @@ fun SlidePager(
     // @machiav3lli: 0 causes crashes when ListDetail composables are included,
     // therefore it is now back to full pre-composition
     // @hg42x: 0 again, there a no ListDetail composables?
-    HorizontalPager(modifier = modifier, state = pagerState, beyondBoundsPageCount = 0) { page ->
+    HorizontalPager(modifier = modifier, state = pagerState, beyondViewportPageCount = 0) { page ->
         pageItems[page].content()
     }
 }
@@ -141,18 +139,13 @@ fun RowScope.AltNavBarItem(
                     .size(iconSize),
                 tint = iconColor,
             )
-            //AnimatedVisibility(
-            //    visible = !selected,
-            //    enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            //) {
-                Text(
-                    text = stringResource(id = labelId),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = iconColor,
-                )
-            //}
+            Text(
+                text = stringResource(id = labelId),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = iconColor,
+            )
         }
     }
 }
@@ -195,10 +188,7 @@ fun RowScope.NavBarItem(
             modifier = Modifier.size(24.dp),
             tint = iconColor,
         )
-        AnimatedVisibility(
-            visible = selected,
-            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-        ) {
+        ShowIf(selected) {
             Text(
                 text = stringResource(id = labelId),
                 style = MaterialTheme.typography.bodyMedium,

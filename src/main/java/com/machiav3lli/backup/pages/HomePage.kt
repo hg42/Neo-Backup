@@ -99,8 +99,8 @@ fun HomePage() {
     val menuButtonAlwaysVisible = pref_menuButtonAlwaysVisible.value
     val openBatchDialog = remember { mutableStateOf(false) }
     val appSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val appSheetPN: MutableState<String?> = rememberSaveable { mutableStateOf(null) }
-    val appSheetPackage: MutableState<Package?> = remember(appSheetPN.value) {
+    val appSheetPackageName: MutableState<String?> = rememberSaveable { mutableStateOf(null) }
+    val appSheetPackage: MutableState<Package?> = remember(appSheetPackageName.value) {
         mutableStateOf(
             //TODO use a non-filtered list, because appSheet might be kept open
             // (e.g. in a second window) even if the filtered list doesn't contain it
@@ -110,15 +110,18 @@ fun HomePage() {
             // an interesting question is:
             // when does the packageName disappear from those lists = when does autoclose happen?
             (filteredList + updatedPackages)
-                .find { it.packageName == appSheetPN.value }
+                .find { it.packageName == appSheetPackageName.value }
         )
     }
     val appSheetVM = remember(appSheetPackage.value) {
-        if (appSheetPackage.value != null) AppSheetViewModel(
-            appSheetPackage.value,
-            OABX.db,
-            ShellCommands(),
-        ) else null
+        if (appSheetPackage.value != null)
+            AppSheetViewModel(
+                appSheetPackage.value,
+                OABX.db,
+                ShellCommands(),
+            )
+        else
+            null
     }
 
     SideEffect {
@@ -178,7 +181,7 @@ fun HomePage() {
                                     UpdatedPackageRecycler(
                                         productsList = updatedPackages,
                                         onClick = { item ->
-                                            appSheetPN.value = item.packageName
+                                            appSheetPackageName.value = item.packageName
                                         }
                                     )
                                 }
@@ -242,7 +245,7 @@ fun HomePage() {
             },
             onClick = { item ->
                 if (filteredList.none { selection[it.packageName] == true }) {
-                    appSheetPN.value = item.packageName
+                    appSheetPackageName.value = item.packageName
                 } else {
                     selection[item.packageName] = selection[item.packageName] != true
                 }
@@ -261,15 +264,15 @@ fun HomePage() {
                     productsList = filteredList,
                     selection = selection,
                     openSheet = { item ->
-                        appSheetPN.value = item.packageName
+                        appSheetPackageName.value = item.packageName
                     }
                 )
             }
         }
-        if (appSheetPN.value != null) {
+        if (appSheetPackageName.value != null) {
             val dismiss = {
                 scope.launch { appSheetState.hide() }
-                appSheetPN.value = null
+                appSheetPackageName.value = null
             }
 
             appSheetVM?.let { vm ->
@@ -279,7 +282,7 @@ fun HomePage() {
                 ) {
                     AppSheet(
                         viewModel = vm,
-                        packageName = appSheetPN.value ?: "",
+                        packageName = appSheetPackageName.value ?: "",
                         onDismiss = dismiss,
                     )
                 }

@@ -83,7 +83,6 @@ object FileUtils {
                 if (OABX.getBackups().values.map { it.size }.sum() == 0) {
                     beginBusy("ensureBackups")
                     OABX.context.findBackups()
-                    OABX.startup = false
                     endBusy("ensureBackups")
                 }
                 return@repeat

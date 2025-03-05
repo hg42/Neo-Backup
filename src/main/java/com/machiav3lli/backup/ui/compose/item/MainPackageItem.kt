@@ -1,6 +1,5 @@
 package com.machiav3lli.backup.ui.compose.item
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -66,6 +65,7 @@ import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.preferences.pref_fixNavBarOverlap
 import com.machiav3lli.backup.traceContextMenu
 import com.machiav3lli.backup.traceTiming
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArchiveTray
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
@@ -834,8 +834,6 @@ fun MainPackageItem(
     onLongClick: (Package) -> Unit = {},
     onAction: (Package) -> Unit = {},
 ) {
-    //beginBusy("item")
-    val pkg by remember(pkg) { mutableStateOf(pkg) }
     beginNanoTimer("item")
 
     //traceCompose { "<${pkg.packageName}> MainPackageItemX ${pkg.packageInfo.icon} ${imageData.hashCode()}" }
@@ -898,7 +896,7 @@ fun MainPackageItem(
                 endNanoTimer("item.package")
 
                 beginNanoTimer("item.backups")
-                AnimatedVisibility(visible = hasBackups) {
+                ShowIf(hasBackups) {
                     Text(
                         text = (latestBackup?.backupDate?.getFormattedDate(
                             false
@@ -915,7 +913,6 @@ fun MainPackageItem(
     )
 
     endNanoTimer("item")
-    //endBusy("item")
 
     if (traceTiming.pref.value)
         nanoTiming["item.package"]?.let {

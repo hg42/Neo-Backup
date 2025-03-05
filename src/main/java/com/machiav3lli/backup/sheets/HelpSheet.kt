@@ -21,7 +21,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,9 +51,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.legendList
 import com.machiav3lli.backup.linksList
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CaretDown
@@ -63,7 +64,6 @@ import com.machiav3lli.backup.ui.compose.item.LegendItem
 import com.machiav3lli.backup.ui.compose.item.LinkItem
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TitleText
-import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.utils.gridItems
 import java.io.IOException
 import java.io.InputStream
@@ -196,11 +196,13 @@ fun HelpSheet(onDismiss: () -> Unit) {
                             )
                         }
                     )
-                    AnimatedVisibility(
-                        visible = showNotes,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = context.getUsageNotes(), modifier = Modifier.padding(8.dp))
+                    ShowIf(showNotes) {
+                        Text(
+                            text = context.getUsageNotes(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        )
                     }
                 }
             }

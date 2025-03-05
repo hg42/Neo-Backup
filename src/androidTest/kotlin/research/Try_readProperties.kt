@@ -10,6 +10,7 @@ import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.getCursorString
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -91,7 +92,7 @@ class Try_readProperties {
         //val serialized = OABX.serializer.encodeToString(backups)
         //StorageFile(File("/sdcard/test.map")).outputStream()?.write(serialized.toByteArray())
         //Timber.i("backups: $serialized")
-        Timber.i("packages: ${backups.size} backups: ${backups.map { it.value.size }.sum()}")
+        Timber.i("${formatBackups(backups)}")
         Timber.w("time scanning (create backups): $time ms")
     }
 
@@ -148,8 +149,8 @@ class Try_readProperties {
         //val serialized = OABX.serializer.encodeToString(backups)
         //StorageFile(File("/sdcard/test.map")).outputStream()?.write(serialized.toByteArray())
         //Timber.i("backups: $serialized")
-        Timber.i("backups: ${backupList.map { it.size }.sum()}")
-        Timber.i("packages: ${backups.size} backups: ${backups.map { it.value.size }.sum()}")
+        Timber.i("backupList: ${formatBackups(backupList)}")
+        Timber.i("backups: ${formatBackups(backups)}")
         Timber.w("time scanning (create backups): $time ms")
     }
 
@@ -174,7 +175,7 @@ class Try_readProperties {
         val serialized = OABX.propsSerializer.encodeToString(backups)
         //StorageFile(File("/sdcard/test.map")).outputStream()?.write(serialized.toByteArray())
         //Timber.i("backups: $serialized")
-        Timber.i("packages: ${backups.size} backups: ${backups.map { it.value.size }.sum()}")
+        Timber.i("backups: ${formatBackups(backups)}")
         Timber.w("time scanning (create backups): $time ms")
     }
 
@@ -210,7 +211,7 @@ class Try_readProperties {
             Timber.i("text size: ${text.length}")
             backups = OABX.propsSerializer.decodeFromString(text)
         }
-        Timber.i("packages: ${backups.size} backups: ${backups.map { it.value.size }.sum()}")
+        Timber.i("backups: ${formatBackups(backups)}")
         Timber.w("time backups from single map file: $time ms")
     }
 }

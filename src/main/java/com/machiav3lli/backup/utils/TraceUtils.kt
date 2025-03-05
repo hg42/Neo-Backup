@@ -222,6 +222,13 @@ object TraceUtils {
         return "(${elements.size})${elements.map {"${it}"}}"
     }
 
+    fun formatBackups(backups: Map<String, List<Backup>>?): String {
+        return backups?.let {
+            "p(${backups.keys.size})b(${backups.values.map { it.size }.sum()})"
+        }
+            ?: "<null>"
+    }
+
     fun formatBackups(backups: List<Backup>?): String {
         return "(${backups?.size ?: 0})${
             backups?.map {

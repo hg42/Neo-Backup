@@ -18,7 +18,6 @@
 package com.machiav3lli.backup.pages
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,6 +51,7 @@ import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.GlobalBlockListDialogUI
 import com.machiav3lli.backup.sheets.SortFilterSheet
 import com.machiav3lli.backup.traceCompose
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.FunnelSimple
@@ -166,10 +166,10 @@ fun MainPage(
                                             OABX.main?.viewModel?.searchQuery?.value = ""
                                         }
                                     )
-                                    AnimatedVisibility(!searchExpanded.value) {
+                                    ShowIf(!searchExpanded.value) {
                                         RefreshButton { OABX.main?.refreshPackagesAndBackups() }
                                     }
-                                    AnimatedVisibility(!searchExpanded.value) {
+                                    ShowIf(!searchExpanded.value) {
                                         RoundButton(
                                             description = stringResource(id = R.string.prefs_title),
                                             icon = Phosphor.GearSix
@@ -178,7 +178,7 @@ fun MainPage(
                                 }
                             }
                         }
-                        AnimatedVisibility(currentPage.destination != NavItem.Scheduler.destination) {
+                        ShowIf(currentPage.destination != NavItem.Scheduler.destination) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)

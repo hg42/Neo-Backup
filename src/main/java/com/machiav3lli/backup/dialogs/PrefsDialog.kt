@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.blockShadow
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Eye
@@ -393,7 +394,7 @@ fun StringPrefDialogUI(
                     },
                 )
             }
-            AnimatedVisibility(visible = notMatching) {
+            ShowIf(notMatching) {
                 Text(
                     //TODO could also be used with other than passwords (confirm != isPrivate)
                     text = stringResource(id = R.string.prefs_password_match_false),

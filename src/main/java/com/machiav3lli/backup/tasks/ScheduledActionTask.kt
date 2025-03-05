@@ -29,6 +29,7 @@ import com.machiav3lli.backup.traceSchedule
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.filterPackages
 import timber.log.Timber
 
@@ -63,9 +64,13 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
             // findBackups *is* necessary, because it's *not* done in OABX.onCreate any more
             ensureBackups()
 
-            traceSchedule { "packages: ${OABX.getBackups().keys.size} backups: ${OABX.getBackups().values.map { it.size }.sum()}" }
+            traceSchedule { "backups: ${formatBackups(OABX.getBackups())}" }
 
-            context.getInstalledPackageList()
+            val packages = context.getInstalledPackageList()
+
+            OABX.startup = false
+
+            packages
 
         } catch (e: FileUtils.BackupLocationInAccessibleException) {
             Timber.e("Scheduled backup failed due to ${e.javaClass.simpleName}: $e")
