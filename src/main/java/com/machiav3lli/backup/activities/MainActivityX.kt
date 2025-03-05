@@ -177,32 +177,6 @@ class MainActivityX : BaseActivity() {
         //TODO here or in MainPage? MainPage seems to be weird at least for each recomposition
         OABX.appsSuspendedChecked = false
 
-        //if (pref_catchUncaughtException.value) {               //TODO wech ???
-        //    Thread.setDefaultUncaughtExceptionHandler { _, e ->
-        //        try {
-        //            Timber.i("\n\n" + "=".repeat(60))
-        //            LogsHandler.unexpectedException(e)
-        //            LogsHandler.logErrors("uncaught: ${e.message}")
-        //            if (pref_uncaughtExceptionsJumpToPreferences.value) {
-        //                context.restartApp(RESCUE_NAV)
-        //            }
-        //            object : Thread() {
-        //                override fun run() {
-        //                    Looper.prepare()
-        //                    Looper.loop()
-        //                }
-        //            }.start()
-        //        } catch (_: Throwable) {
-        //            // ignore
-        //        } finally {
-        //            exitProcess(2)
-        //        }
-        //    }
-        //}
-
-        //TODO wech Shell.getShell() // should be handled in ShellHandler
-
-        //TODO wech end ???
 
         setContent {
             AppTheme {

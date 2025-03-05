@@ -721,14 +721,16 @@ class OABX : Application() {
         }
 
         @Suppress("DEPRECATION")
-        private fun Context.getApplicationIssuer() : String? {
+        private fun Context.getApplicationIssuer(): String? {
             runCatching {
                 val signatures = if (OABX.minSDK(28)) {
-                    val packageInfo = OABX.context.getApplicationInfos(PackageManager.GET_SIGNING_CERTIFICATES)
+                    val packageInfo =
+                        OABX.context.getApplicationInfos(PackageManager.GET_SIGNING_CERTIFICATES)
                     val signingInfo = packageInfo?.signingInfo
                     signingInfo?.getSigningCertificateHistory() ?: arrayOf()
                 } else {
-                    val packageInfo = OABX.context.getApplicationInfos(PackageManager.GET_SIGNATURES)
+                    val packageInfo =
+                        OABX.context.getApplicationInfos(PackageManager.GET_SIGNATURES)
                     packageInfo?.signatures ?: arrayOf()
                 }
                 if (signatures.isEmpty())
@@ -744,7 +746,7 @@ class OABX : Application() {
                     field to value
                 }.toMap()
                 var issuer = names["CN"]
-                names["O"]?.let { if (issuer != it) issuer = "$issuer / $it"}
+                names["O"]?.let { if (issuer != it) issuer = "$issuer / $it" }
                 return issuer ?: DN
             }
             return null
@@ -853,7 +855,7 @@ class OABX : Application() {
         //------------------------------------------------------------------------------------------ section
 
         fun beginLogSection(section: String) {
-            var count : Int
+            var count: Int
             synchronized(logSections) {
                 count = logSections.getValue(section)
                 logSections[section] = count + 1
@@ -865,7 +867,7 @@ class OABX : Application() {
 
         fun endLogSection(section: String) {    //TODO hg42 timer!
             val time = endNanoTimer("section.$section")
-            var count : Int
+            var count: Int
             synchronized(logSections) {
                 count = logSections.getValue(section)
                 logSections[section] = count - 1
@@ -987,9 +989,25 @@ class OABX : Application() {
 
         fun putBackups(packageName: String, backups: List<Backup>) {
             synchronized(theBackupsMap) {
-                traceBackups { "putBackups: $packageName \\ : ${classAndId(theBackupsMap.get(packageName))} ${formatBackups(theBackupsMap.get(packageName))}" }
+                traceBackups {
+                    "putBackups: $packageName \\ : ${
+                        classAndId(
+                            theBackupsMap.get(
+                                packageName
+                            )
+                        )
+                    } ${formatBackups(theBackupsMap.get(packageName))}"
+                }
                 theBackupsMap.put(packageName, backups)
-                traceBackups { "putBackups: $packageName / = ${classAndId(theBackupsMap.get(packageName))} ${formatBackups(theBackupsMap.get(packageName))}" }
+                traceBackups {
+                    "putBackups: $packageName / = ${
+                        classAndId(
+                            theBackupsMap.get(
+                                packageName
+                            )
+                        )
+                    } ${formatBackups(theBackupsMap.get(packageName))}"
+                }
                 updateUI()
             }
         }
