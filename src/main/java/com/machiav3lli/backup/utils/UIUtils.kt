@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.DynamicColors
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.PREFS_LANGUAGES_SYSTEM
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.THEME_BLACK
@@ -282,6 +283,8 @@ fun Context.restartApp(data: String? = null) {
         }"
     )
     val context = this.applicationContext
+
+    hitBusy(60000)
 
     context.packageManager
         ?.getLaunchIntentForPackage(context.packageName)

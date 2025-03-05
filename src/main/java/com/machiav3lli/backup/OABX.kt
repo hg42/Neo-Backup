@@ -347,6 +347,7 @@ class OABX : Application() {
         )
 
         //TODO hg42 beginBusy(startupMsg)
+        startup = true
         busyCountDownAtomic.set(0)
         busyLevelAtomic.set(0)
         hitBusy(60000)
@@ -888,25 +889,28 @@ class OABX : Application() {
         init {
             CoroutineScope(Dispatchers.IO).launch {
                 while (true) {
-                    delay(busyTick.toLong())
-                    busyCountDownAtomic.getAndUpdate {
-                        if (it > 0) {
-                            val next = it - 1
-                            busyCountDown.value = next
-                            busyLevel.value = busyLevelAtomic.get()
-                            if (next <= 0) {
-                                if (startup)
-                                    busy.value = true
-                                else
+                    delay(busyTick.toLong())            //TODO hg42 don't poll -> flow?
+                    if (startup) {
+                        busyCountDown.value = 1
+                        busyLevel.value = 1
+                        busy.value = true
+                    } else
+                        busyCountDownAtomic.getAndUpdate {
+                            if (it > 0) {
+                                val next = it - 1
+                                busyCountDown.value = next
+                                busyLevel.value = busyLevelAtomic.get()
+                                if (next <= 0) {
                                     busy.value = false
-                            } else if (busy.value == false)
-                                busy.value = true
-                            next
-                        } else
-                            it
-                    }
+                                } else if (busy.value == false)
+                                    busy.value = true
+                                next
+                            } else
+                                it
+                        }
                 }
             }
+            hitBusy(60000)
         }
 
         fun hitBusy(time: Int = pref_busyHitTime.value) {
