@@ -130,17 +130,19 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
             } catch (e: RestoreFailedException) {
                 // Unwrap issues with shell commands so users know what command ran and what was the issue
                 val message =
-                    when (val cause = e.cause) {
-                        is ShellCommandFailedException -> {
-                            "Shell command failed: ${cause.command}\n${
-                                extractErrorMessage(cause.shellResult)
-                            }"
-                        }
+                    "${app.packageName} - " +
+                            when (val cause = e.cause) {
+                                is ShellCommandFailedException -> {
+                                    "Shell command failed: ${cause.command}\n${
+                                        extractErrorMessage(cause.shellResult)
+                                    }"
+                                }
 
-                        else                           -> {
-                            "${e::class.simpleName}: ${e.message}"
-                        }
-                    }
+                                else                           -> {
+                                    "${e::class.simpleName}: ${e.message}"
+                                }
+                            }
+                OABX.addInfoLogText("*** Restore failed: $message")
                 return ActionResult(app, null, message, false)
             } catch (e: CryptoSetupException) {
                 return handleException(e)

@@ -26,6 +26,7 @@ import com.machiav3lli.backup.MODE_DATA_EXT
 import com.machiav3lli.backup.MODE_DATA_MEDIA
 import com.machiav3lli.backup.MODE_DATA_OBB
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.addInfoLogText
 import com.machiav3lli.backup.batchModes
 import com.machiav3lli.backup.batchOperations
 import com.machiav3lli.backup.dbs.entity.Backup
@@ -85,8 +86,9 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
 
         fun handleException(e: Throwable): ActionResult {
             val message =
-                "${e::class.simpleName}: ${e.message}${e.cause?.message?.let { " - $it" } ?: ""}"
+                "${app.packageName} - ${e::class.simpleName}: ${e.message}${e.cause?.message?.let { " - $it" } ?: ""}"
             Timber.e("Backup failed: $message")
+            addInfoLogText("*** Backup failed: $message")
             return ActionResult(app, null, message, false)
         }
 
