@@ -48,7 +48,7 @@ class AppSheetViewModel(
     app: Package?,
     private val database: ODatabase,
     private var shellCommands: ShellCommands,
-) : AndroidViewModel(OABX.NB) {
+) : AndroidViewModel(OABX.app) {
 
     var thePackage = flow<Package?> { app }.stateIn(
         viewModelScope,
@@ -99,20 +99,20 @@ class AppSheetViewModel(
                         dismissNow.value = true
                     }
                     showNotification(
-                        OABX.NB,
+                        OABX.app,
                         MainActivityX::class.java,
                         notificationId++,
                         mPackage.packageLabel,
-                        OABX.NB.getString(com.machiav3lli.backup.R.string.uninstallSuccess),
+                        OABX.app.getString(com.machiav3lli.backup.R.string.uninstallSuccess),
                         true
                     )
                 } catch (e: ShellCommands.ShellActionFailedException) {
                     showNotification(
-                        OABX.NB,
+                        OABX.app,
                         MainActivityX::class.java,
                         notificationId++,
                         mPackage.packageLabel,
-                        OABX.NB.getString(com.machiav3lli.backup.R.string.uninstallFailure),
+                        OABX.app.getString(com.machiav3lli.backup.R.string.uninstallFailure),
                         true
                     )
                     e.message?.let { message -> LogsHandler.logErrors(message) }

@@ -3,7 +3,6 @@ package com.machiav3lli.backup.handler
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.text.Html
@@ -23,26 +22,27 @@ import com.machiav3lli.backup.preferences.pref_maxRetriesPerPackage
 import com.machiav3lli.backup.services.CommandReceiver
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class WorkHandler(appContext: Context) {
+class WorkHandler {
 
-    var manager: WorkManager
+    var manager: WorkManager? = null
     var actionReceiver: CommandReceiver
-    var context: Context = appContext
     val notificationManager: NotificationManagerCompat
     val notificationChannel: NotificationChannel
 
     init {
-        manager = WorkManager.getInstance(context)
+        trace { "workHandler: init" }
+
         actionReceiver = CommandReceiver()
 
-        context.registerReceiver(actionReceiver, IntentFilter())
-
-        notificationManager = NotificationManagerCompat.from(context)
+        notificationManager = NotificationManagerCompat.from(OABX.context)
 
         notificationChannel = NotificationChannel(
             classAddress("NotificationHandler"),
@@ -50,24 +50,39 @@ class WorkHandler(appContext: Context) {
             NotificationManager.IMPORTANCE_HIGH
         )
         notificationManager.createNotificationChannel(notificationChannel)
+    }
 
-        manager.pruneWork()
+    fun start() {
+        if (manager != null)
+            return
+
+        trace { "workHandler: start" }
+        manager = WorkManager.getInstance(OABX.context)
+
+        OABX.context.registerReceiver(actionReceiver, IntentFilter())
+
+        manager?.pruneWork()
+
+        val self = this
 
         // observe AppActionWork
-        manager.getWorkInfosByTagLiveData(
-            AppActionWork::class.qualifiedName!!
-        ).observeForever {
-            onProgress(this, it)
+        MainScope().launch {
+            manager?.getWorkInfosByTagLiveData(
+                AppActionWork::class.qualifiedName!!
+            )?.observeForever {
+                onProgress(self, it)
+            }
         }
     }
 
-    fun release(): WorkHandler? {
-        context.unregisterReceiver(actionReceiver)
+    fun stop(): WorkHandler? {
+        trace { "workHandler: stop" }
+        OABX.context.unregisterReceiver(actionReceiver)
         return null
     }
 
     fun prune() {
-        manager.pruneWork()
+        manager?.pruneWork()
     }
 
     fun beginBatches() {
@@ -81,8 +96,7 @@ class WorkHandler(appContext: Context) {
     //val endDelay = 10000L
 
     fun endBatches() {
-        Timber.d("%%%%% ALL PRUNE")
-        OABX.work.prune()
+        prune()
 
         // delete all batches started a long time ago (e.g. a day)
         val longAgo = 24 * 60 * 60 * 1000
@@ -143,12 +157,19 @@ class WorkHandler(appContext: Context) {
 
     fun cancel(tag: String? = null) {
         // only cancel ActionWork, so that corresponding FinishWork will still be executed
-        if (tag.isNullOrEmpty()) {
-            AppActionWork::class.qualifiedName?.let {
-                manager.cancelAllWorkByTag(it)
+        if (manager == null)
+            start()
+        trace { "workHandler: cancel" }
+        manager?.let { manager ->
+            if (tag.isNullOrEmpty()) {
+                AppActionWork::class.qualifiedName?.let {
+                    Timber.d("%%%%% cancel all jobs")
+                    manager.cancelAllWorkByTag(it)
+                }
+            } else {
+                Timber.d("%%%%% cancel all jobs of name $tag")
+                manager.cancelAllWorkByTag("name:$tag")
             }
-        } else {
-            manager.cancelAllWorkByTag("name:$tag")
         }
     }
 
@@ -262,7 +283,7 @@ class WorkHandler(appContext: Context) {
 
             val manager = handler.manager
             val work = workInfos
-                ?: manager.getWorkInfosByTag(AppActionWork::class.qualifiedName!!).get()
+                ?: manager?.getWorkInfosByTag(AppActionWork::class.qualifiedName!!)?.get()
                 ?: return
 
             val now = SystemUtils.now
@@ -521,14 +542,14 @@ class WorkHandler(appContext: Context) {
 
                         val notification = notificationBuilder.build()
                         Timber.d("%%%%%%%%%%%%%%%%%%%%> $batchName ${batch.notificationId} '$shortText' $notification")
-                        OABX.work.notificationManager.notify(
+                        OABX.workHandler?.notificationManager?.notify(
                             batch.notificationId,
                             notification
                         )
 
                         if (remaining <= 0) {
                             if (batch.nFinished == 0)
-                                OABX.work.endBatch(batchName)
+                                OABX.workHandler?.endBatch(batchName)
                             batch.nFinished += 1
                         }
                     }
@@ -541,9 +562,9 @@ class WorkHandler(appContext: Context) {
             } else {
                 packagesState.clear()
                 OABX.setProgress()
-                if (OABX.work.justFinishedAll()) {
+                if (OABX.workHandler?.justFinishedAll() ?: false) {
                     Timber.d("%%%%% ALL $batchesStarted batches, thread ${Thread.currentThread().id}")
-                    OABX.work.endBatches()
+                    OABX.workHandler?.endBatches()
                 }
             }
         }

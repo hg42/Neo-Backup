@@ -54,7 +54,6 @@ import com.machiav3lli.backup.handler.WorkHandler
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
-import com.machiav3lli.backup.preferences.pref_cancelJobsOnStart
 import com.machiav3lli.backup.preferences.pref_prettyJson
 import com.machiav3lli.backup.preferences.pref_useYamlPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlProperties
@@ -64,6 +63,7 @@ import com.machiav3lli.backup.services.ScheduleService
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.utils.FileUtils
+import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils
@@ -322,14 +322,12 @@ fun enableDefaultUncaughtExceptionHandler(enable: Boolean) {
 
 class OABX : Application() {
 
-    var work: WorkHandler? = null
-
-    // TODO Add BroadcastReceiver for (UN)INSTALL_PACKAGE intents
+    var workHandler_: WorkHandler? = null
 
     override fun onCreate() {
 
         // do this early, context will be used immediately
-        refNB = WeakReference(this)
+        refApp = WeakReference(this)
 
         Timber.w("======================================== app create ${classAndId(this)} PID=${Process.myPid()}")
 
@@ -368,16 +366,13 @@ class OABX : Application() {
         )
         Timber.d("registerReceiver: PackageUnInstalledReceiver = $result")
 
-        work = WorkHandler(context)
-        if (pref_cancelJobsOnStart.value) {
-            work?.cancel()
-        } else {
-            work?.prune()
-        }
+        workHandler_ = WorkHandler()
 
         MainScope().launch {
             addInfoLogText("--> click title to keep infobox open")
             addInfoLogText("--> long press title for dev tools")
+
+            ensureBackups()
         }
     }
 
@@ -390,12 +385,16 @@ class OABX : Application() {
         // in case the app is terminated too early
         scheduleAlarmsOnce()
 
-        work = work?.release()
-        refNB = WeakReference(null)
+        workHandler_ = workHandler_?.stop()
+        refApp = WeakReference(null)
         super.onTerminate()
     }
 
     companion object {
+
+        val workHandler: WorkHandler? get() = OABX.app.workHandler_
+
+        var booting = false
 
         @ExperimentalSerializationApi
         val serMod = SerializersModule {
@@ -586,14 +585,14 @@ class OABX : Application() {
         }
 
         // app should always be created when it runs, so we can be sure it's not null
-        var refNB: WeakReference<OABX> = WeakReference(null)
-        val NB: OABX get() = refNB.get()!!
+        var refApp: WeakReference<OABX> = WeakReference(null)
+        val app: OABX get() = refApp.get()!!
 
         // lint: "Do not place Android context classes in static fields; this is a memory leak"
         // but: only if a context is assigned, and this is only used by Preview (and maybe by Tests)
         @SuppressLint("StaticFieldLeak")
         var fakeContext: Context? = null
-        val context: Context get() = fakeContext ?: NB.applicationContext
+        val context: Context get() = fakeContext ?: app.applicationContext
 
         var assetsRef: WeakReference<AssetHandler> = WeakReference(null)
         val assets: AssetHandler
@@ -702,8 +701,6 @@ class OABX : Application() {
                 null
             }
         }
-
-        val work: WorkHandler get() = NB.work!!
 
         fun getString(resId: Int) = context.getString(resId)
 

@@ -464,7 +464,7 @@ open class BackupAppAction(context: Context, work: AppActionWork?, shell: ShellH
         compress: Boolean,
         iv: ByteArray?,
     ): Boolean {
-        Timber.i("${OABX.NB.packageName} <- $sourcePath")
+        Timber.i("${OABX.app.packageName} <- $sourcePath")
         traceAccess { runAsRoot("echo '$sourcePath: '  '$sourcePath'/*").out.joinToString("\n") }
         if (pref_backupTarCmd.value) {
             return genericBackupDataTarCmd(

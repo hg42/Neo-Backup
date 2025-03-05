@@ -43,7 +43,7 @@ import kotlinx.coroutines.withContext
 class ScheduleViewModel(
     val id: Long,
     private val scheduleDB: ScheduleDao,
-) : AndroidViewModel(OABX.NB) {
+) : AndroidViewModel(OABX.app) {
 
     val schedule: StateFlow<Schedule?> = scheduleDB.getScheduleFlow(id)
         //TODO hg42 .trace { "*** schedule <<- ${it}" }     // what can here be null? (something is null that is not declared as nullable)

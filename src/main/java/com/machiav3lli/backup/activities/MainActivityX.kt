@@ -240,6 +240,8 @@ class MainActivityX : BaseActivity() {
                                 runOrLog { updateAppTables() }
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
+
+                                OABX.workHandler?.start()
                             }
 
                             devToolsSearch.value =
@@ -469,7 +471,7 @@ class MainActivityX : BaseActivity() {
         var resultsSuccess = true
         var counter = 0
         val worksList: MutableList<OneTimeWorkRequest> = mutableListOf()
-        OABX.work.beginBatch(batchName)
+        OABX.workHandler?.beginBatch(batchName)
         selectedItems.forEach { (packageName, mode) ->
 
             val oneTimeWorkRequest =
@@ -552,7 +554,7 @@ class MainActivityX : BaseActivity() {
         var resultsSuccess = true
         var counter = 0
         val worksList: MutableList<OneTimeWorkRequest> = mutableListOf()
-        OABX.work.beginBatch(batchName)
+        OABX.workHandler?.beginBatch(batchName)
         selectedItems.forEach { (packageName, bi, mode) ->
             val oneTimeWorkRequest = AppActionWork.Request(
                 packageName = packageName,

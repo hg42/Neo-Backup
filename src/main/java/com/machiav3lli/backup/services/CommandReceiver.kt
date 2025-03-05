@@ -29,7 +29,7 @@ class CommandReceiver : //TODO hg42 how to maintain security?
                 val batchName = intent.getStringExtra("name")
                 Timber.d("################################################### command intent cancel -------------> name=$batchName")
                 OABX.addInfoLogText("$command $batchName")
-                OABX.work.cancel(batchName)
+                OABX.workHandler?.cancel(batchName)
             }
             ACTION_SCHEDULE                          -> {
                 intent.getStringExtra("name")?.let { name ->

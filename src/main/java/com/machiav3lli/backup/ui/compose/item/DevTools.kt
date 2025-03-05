@@ -386,7 +386,7 @@ fun DevInfoLogTab() {
 fun DevLogsTab() {
 
     Logs(
-        viewModel = OABX.main?.logsViewModel ?: LogViewModel(OABX.NB)
+        viewModel = OABX.main?.logsViewModel ?: LogViewModel(OABX.app)
     ) // in case MainActivity is not existing yet
 }
 

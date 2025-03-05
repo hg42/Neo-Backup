@@ -115,7 +115,7 @@ open class ScheduleService : Service() {
             when (val action = intent.action) {
                 ACTION_CANCEL   -> {
                     traceSchedule { "[$scheduleId] name='$name' action=$action" }
-                    OABX.work.cancel(name)
+                    OABX.workHandler?.cancel(name)
                     OABX.wakelock(false)
                     traceSchedule { "%%%%% service stop" }
                     stopSelf()
@@ -199,7 +199,7 @@ open class ScheduleService : Service() {
                         notificationManager.cancel(notificationId)
 
                         val batchName = WorkHandler.getBatchName(name, now)
-                        OABX.work.beginBatch(batchName)
+                        OABX.workHandler?.beginBatch(batchName)
 
                         selectedItems.forEach { packageName ->
 
@@ -214,9 +214,9 @@ open class ScheduleService : Service() {
                                 )
                             worksList.add(oneTimeWorkRequest)
 
-                            val oneTimeWorkLiveData = OABX.work.manager
-                                .getWorkInfoByIdLiveData(oneTimeWorkRequest.id)
-                            oneTimeWorkLiveData.observeForever(
+                            val oneTimeWorkLiveData = OABX.workHandler?.manager
+                                ?.getWorkInfoByIdLiveData(oneTimeWorkRequest.id)
+                            oneTimeWorkLiveData?.observeForever(
                                 object : Observer<WorkInfo?> {    //TODO WECH hg42
                                     override fun onChanged(value: WorkInfo?) {
                                         when (value?.state) {
@@ -264,9 +264,9 @@ open class ScheduleService : Service() {
                         if (worksList.isNotEmpty()) {
                             queued = worksList.size
                             if (beginSchedule(scheduleId, name, "queueing work")) {
-                                OABX.work.manager
-                                    .beginWith(worksList)
-                                    .enqueue()
+                                OABX.workHandler?.manager
+                                    ?.beginWith(worksList)
+                                    ?.enqueue()
                             } else {
                                 endSchedule(scheduleId, name, "duplicate detected")
                             }

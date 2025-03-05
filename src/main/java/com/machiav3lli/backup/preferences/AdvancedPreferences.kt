@@ -279,9 +279,9 @@ val pref_maxJobs = IntPref(
     defaultValue = 0
 )
 
-val pref_cancelJobsOnStart = BooleanPref(
-    key = "dev-adv.cancelJobsOnStart",
-    summary = "cancel all remaining jobs on app start [needs reboot]",
+val pref_cancelJobsAtBoot = BooleanPref(
+    key = "dev-adv.cancelJobsAtBoot",
+    summary = "cancel all remaining jobs on device boot",
     defaultValue = true
 )
 

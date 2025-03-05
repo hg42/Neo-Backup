@@ -22,6 +22,8 @@ import android.content.Context
 import android.content.Intent
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.dao.ScheduleDao
+import com.machiav3lli.backup.preferences.pref_cancelJobsAtBoot
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import java.lang.ref.WeakReference
 
@@ -29,8 +31,16 @@ class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+
+            trace { "==================== booting" }
+
+            if (pref_cancelJobsAtBoot.value) {
+                OABX.workHandler?.cancel()
+            }
+
             val scheduleDao = OABX.db.getScheduleDao()
             Thread(DatabaseRunnable(context, scheduleDao)).start()
+
         } else return
     }
 
@@ -38,6 +48,7 @@ class BootReceiver : BroadcastReceiver() {
         private val scheduleDaoReference: WeakReference<ScheduleDao> = WeakReference(scheduleDao)
 
         override fun run() {
+
             scheduleAlarmsOnce()
         }
     }
