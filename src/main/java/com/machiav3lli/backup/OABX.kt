@@ -39,6 +39,8 @@ import androidx.lifecycle.viewModelScope
 import com.charleskorn.kaml.Yaml
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
+import com.machiav3lli.backup.OABX.Companion.activity
+import com.machiav3lli.backup.OABX.Companion.context
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.activities.MainActivityX
@@ -121,7 +123,10 @@ val pref_catchUncaughtException = BooleanPref(
     key = "dev-log.catchUncaughtException",
     summaryId = R.string.prefs_catchuncaughtexception_summary,
     defaultValue = false
-)
+) {
+    val pref = it as BooleanPref
+    enableDefaultUncaughtExceptionHandler(pref.value)
+}
 
 val pref_uncaughtExceptionsJumpToPreferences = BooleanPref(
     key = "dev-log.uncaughtExceptionsJumpToPreferences",
@@ -278,6 +283,42 @@ val traceSerialize = TraceUtils.TracePref(
 
 val RESCUE_NAV get() = "rescue"
 
+var previousDefaultUncaughtExceptionHandler: Thread.UncaughtExceptionHandler? = null
+
+fun enableDefaultUncaughtExceptionHandler(enable: Boolean) {
+    if (enable) {
+        if (previousDefaultUncaughtExceptionHandler == null)
+            previousDefaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { _, e ->
+            try {
+                try {
+                    Timber.e("\n\n" + "#".repeat(60) + " uncaughtException")
+                    LogsHandler.unexpectedException(e)
+                    //LogsHandler.logErrors("uncaught: ${e.message}")
+                } catch (_: Throwable) {
+                    // ignore
+                }
+                if (pref_uncaughtExceptionsJumpToPreferences.value) {
+                    context.restartApp(RESCUE_NAV)
+                }
+                // now restart the app
+                object : Thread() {
+                    override fun run() {
+                        Looper.prepare()
+                        Looper.loop()
+                    }
+                }.start()
+            } catch (_: Throwable) {
+                // ignore
+            } finally {
+                activity?.finishAffinity()
+                exitProcess(3)
+            }
+        }
+    } else {
+        Thread.setDefaultUncaughtExceptionHandler(previousDefaultUncaughtExceptionHandler)
+    }
+}
 
 class OABX : Application() {
 
@@ -295,31 +336,7 @@ class OABX : Application() {
         super.onCreate()
 
         if (pref_catchUncaughtException.value) {
-            Thread.setDefaultUncaughtExceptionHandler { _, e ->
-                try {
-                    try {
-                        //Timber.i("\n\n" + "=".repeat(60))
-                        LogsHandler.unexpectedException(e)
-                        //LogsHandler.logErrors("uncaught: ${e.message}")
-                    } catch (_: Throwable) {
-                        // ignore
-                    }
-                    if (pref_uncaughtExceptionsJumpToPreferences.value) {
-                        context.restartApp(RESCUE_NAV)
-                    }
-                    object : Thread() {
-                        override fun run() {
-                            Looper.prepare()
-                            Looper.loop()
-                        }
-                    }.start()
-                } catch (_: Throwable) {
-                    // ignore
-                } finally {
-                    activity?.finishAffinity()
-                    exitProcess(3)
-                }
-            }
+            enableDefaultUncaughtExceptionHandler(true)
         }
 
         DynamicColors.applyToActivitiesIfAvailable(
