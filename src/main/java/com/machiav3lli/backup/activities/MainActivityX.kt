@@ -359,6 +359,8 @@ class MainActivityX : BaseActivity() {
                             return false
                         when (data.toString()) {
                             RESCUE_NAV -> {
+                                OABX.startup = false
+                                OABX.ready = true
                                 setContent {
                                     Rescue()
                                 }
