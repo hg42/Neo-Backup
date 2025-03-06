@@ -79,6 +79,7 @@ import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
 import com.machiav3lli.backup.utils.altModeToMode
@@ -231,7 +232,7 @@ class MainActivityX : BaseActivity() {
                                 runOrLog {
                                     val backupsMap = OABX.getBackups()
                                     traceInfo {
-                                        "before activity findBackups: packages: ${backupsMap.keys.size} backups: ${
+                                        "before activity: findBackups: packages: ${backupsMap.keys.size} backups: ${
                                             backupsMap.values.map { it.size }.sum()
                                         } root: ${OABX.backupRoot}"
                                     }
@@ -242,6 +243,9 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
 
                                 OABX.workHandler?.start()
+
+                                OABX.startup = false
+                                trace { "******************** startup end" }
                             }
 
                             devToolsSearch.value =

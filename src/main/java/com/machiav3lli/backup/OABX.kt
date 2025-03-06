@@ -522,6 +522,7 @@ class OABX : Application() {
             .withDefault { 0 }     //TODO hg42 use AtomicInteger? but map is synchronized anyways
 
         var startup = true
+        var ready = false
 
         init {
 
@@ -887,7 +888,7 @@ class OABX : Application() {
             CoroutineScope(Dispatchers.IO).launch {
                 while (true) {
                     delay(busyTick.toLong())            //TODO hg42 don't poll -> flow?
-                    if (startup) {
+                    if (!ready) {
                         busyCountDown.value = 1
                         busyLevel.value = 1
                         busy.value = true

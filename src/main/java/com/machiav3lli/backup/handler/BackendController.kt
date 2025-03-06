@@ -64,7 +64,6 @@ import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
-import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.specialBackupsEnabled
@@ -939,9 +938,6 @@ fun Context.updateAppTables() {
         logException(e, backTrace = true)
     } finally {
         val time = OABX.endBusy("updateAppTables")
-        OABX.startup = false
-        hitBusy(2000)
-        trace { "******************** startup end" }
         addInfoLogText("updateAppTables: ${"%.3f".format(time / 1E9)} sec")
     }
 }

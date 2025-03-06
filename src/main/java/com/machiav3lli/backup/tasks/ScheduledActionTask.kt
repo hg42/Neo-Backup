@@ -30,6 +30,7 @@ import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.filterPackages
 import timber.log.Timber
 
@@ -69,6 +70,7 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
             val packages = context.getInstalledPackageList()
 
             OABX.startup = false
+            trace { "******************** startup end" }
 
             packages
 

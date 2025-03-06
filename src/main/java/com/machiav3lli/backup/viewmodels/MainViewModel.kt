@@ -61,9 +61,7 @@ import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import timber.log.Timber
 
 class MainViewModel(
@@ -178,11 +176,13 @@ class MainViewModel(
         //------------------------------------------------------------------------------------------
         updateFlow(emptyList<AppInfo>()) {
             it
+                .trace { "??? appInfosChanged <-- ${it.size}" }
                 .mapLatest {
-                    delay(50)
+                    delay(250)
                     it
                 }
                 .onEach {
+                    traceFlows { "appInfosChanged: ***----------------- retriggerFlowsForUI" }
                     retriggerFlowsForUI()  //TODO hg42 workaround
                 }
                 .trace {
@@ -195,12 +195,13 @@ class MainViewModel(
         //------------------------------------------------------------------------------------------
         updateFlow(emptyMap<String, List<Backup>>()) {
             it
-                //.trace { "??? backupsChanged <-- ${formatBackups(it)}" }
+                .trace { "??? backupsChanged <-- ${formatBackups(it)}" }
                 .mapLatest {
-                    delay(50)
+                    delay(250)
                     it
                 }
                 .onEach {
+                    traceFlows { "backupsChanged: ***----------------- retriggerFlowsForUI" }
                     retriggerFlowsForUI()  //TODO hg42 workaround
                 }
                 .trace { "*** backupsChanged ->> ${formatBackups(it)}" }
@@ -232,7 +233,24 @@ class MainViewModel(
             traceFlows { "***<< allPackages <<- ${pkgs.size}" }
             pkgs
         }
-            .mapLatest { it }
+            .mapLatest { pkgs ->
+                var timeout = 30000L
+                val timeStep = 250L
+                while(
+                    OABX.startup
+                    || pkgs.all { it.isSpecial }            //TODO hg42 workaround until specials are handled equally
+                    || pkgs.all { it.backupList.size == 0 } //TODO hg42 workaround until backups ready flag exists
+                ) {
+                    trace { "allPackages: waiting" }
+                    delay(timeStep)
+                    timeout -= timeStep
+                    if (!OABX.startup && timeout < 0)
+                        break
+                }
+                delay(500)
+                OABX.ready = true
+                pkgs
+            }
             .retry { cause ->
                 logException(cause)
                 true // restart flow
@@ -273,6 +291,7 @@ class MainViewModel(
             traceFlows { "******<< packages <<- ${list.size}" }
             list
         }
+            .mapLatest { it }
             .trace { "********* packages ->> ${it.size}" }
             .stateIn(
                 scope(),
@@ -359,33 +378,7 @@ class MainViewModel(
 
     //----------------------------------------------------------------------------------------------
     fun retriggerFlowsForUI() {
-
-        traceFlows { "***----------------- retriggerFlowsForUI" }
-        when (1) {
-
-            1 -> {
-                allPackagesRetrigger.value = !allPackagesRetrigger.value
-            }
-
-            0 -> {
-                runBlocking {
-                    val saved = searchQuery.value
-                    // in case same value isn't triggering
-                    val retrigger = saved + "," + saved + "," + saved
-                    searchQuery.value = retrigger
-                    // wait until we really get that value
-                    yield()
-                    while (searchQuery.value != retrigger)
-                        yield()
-                    delay(10)
-                    // now switch back
-                    searchQuery.value = saved
-                    yield()
-                    while (searchQuery.value != saved)
-                        yield()
-                }
-            }
-        }
+        allPackagesRetrigger.value = !allPackagesRetrigger.value
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS end
