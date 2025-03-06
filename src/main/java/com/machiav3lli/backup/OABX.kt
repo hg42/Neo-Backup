@@ -46,7 +46,6 @@ import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.activities.MainActivityX
 import com.machiav3lli.backup.dbs.ODatabase
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
@@ -73,7 +72,6 @@ import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.methodName
 import com.machiav3lli.backup.utils.backupDirConfigured
-import com.machiav3lli.backup.utils.getInstalledPackageInfosWithPermissions
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
@@ -950,7 +948,7 @@ class OABX : Application() {
         fun updateUI() {
             main?.viewModel?.apply {
                 viewModelScope.launch {
-                    backupsChanged.update.emit(theBackupsMap)
+                    backupsChanged.update.emit(getBackups())
                 }
             }
         }
@@ -1025,15 +1023,6 @@ class OABX : Application() {
                     updateUI()
                 }
             }
-        }
-
-        fun emptyBackupsForAllPackages() {
-            val installedPackages = context.packageManager.getInstalledPackageInfosWithPermissions()
-            val specialInfos =
-                SpecialInfo.getSpecialInfos(context)  //TODO hg42 these probably scan for backups
-            val installedNames =
-                installedPackages.map { it.packageName } + specialInfos.map { it.packageName }
-            emptyBackupsForPackages(installedNames)
         }
     }
 }
