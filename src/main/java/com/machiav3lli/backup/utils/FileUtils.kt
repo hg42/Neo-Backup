@@ -80,7 +80,7 @@ object FileUtils {
         // be sure we have the backups, loop is not really necessary, but doesn't hurt, either
         repeat(10) { count ->
             try {
-                if (OABX.getBackups().values.map { it.size }.sum() == 0) {
+                if (!OABX.validBackups) {
                     beginBusy("ensureBackups")
                     OABX.context.findBackups()
                     endBusy("ensureBackups")

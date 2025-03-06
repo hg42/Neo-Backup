@@ -955,6 +955,8 @@ class OABX : Application() {
             }
         }
 
+        var validBackups = false
+
         fun getBackups(): Map<String, List<Backup>> {
             synchronized(theBackupsMap) {
                 return theBackupsMap
@@ -972,6 +974,7 @@ class OABX : Application() {
         fun clearBackups() {
             synchronized(theBackupsMap) {
                 theBackupsMap.clear()
+                validBackups = false
                 updateUI()
             }
         }
@@ -985,6 +988,7 @@ class OABX : Application() {
                 (theBackupsMap.keys - backupsMap.keys).forEach {
                     theBackupsMap.remove(it)
                 }
+                validBackups = true
                 updateUI()
             }
         }

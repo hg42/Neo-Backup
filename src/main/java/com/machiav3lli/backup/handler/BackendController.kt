@@ -791,19 +791,16 @@ fun List<AppInfo>.toPackageList(
             }
             .toMutableList()
 
-        // Special Backups must added before the uninstalled packages, because otherwise it would
-        // discover the backup directory and run in a special case where no the directory is empty.
-        // This would mean, that no package info is available – neither from backup.properties
-        // nor from PackageManager.
-        // TODO show special packages directly without restarting NB
-        //val specialList = mutableListOf<String>()
-        if (includeSpecial) {
-            SpecialInfo.getSpecialInfos(context).forEach {
-                if (!blockList.contains(it.packageName)) {
-                    //it.updateBackupList(backupsMap[it.packageName].orEmpty())
-                    packageList.add(Package(it))
+        if (packageList.isNotEmpty()) {
+            // do not add specials if packages were not yet read from the packageManager
+            if (includeSpecial && packageList.isNotEmpty()) {
+                SpecialInfo.getSpecialInfos(context).forEach {
+                    if (!blockList.contains(it.packageName)) {
+                        //it.updateBackupList(backupsMap[it.packageName].orEmpty())
+                        packageList.add(Package(it))
+                    }
+                    //specialList.add(it.packageName)
                 }
-                //specialList.add(it.packageName)
             }
         }
 

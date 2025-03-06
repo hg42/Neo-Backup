@@ -238,8 +238,9 @@ class MainViewModel(
                 val timeStep = 250L
                 while(
                     OABX.startup
-                    || pkgs.all { it.isSpecial }            //TODO hg42 workaround until specials are handled equally
-                    || pkgs.all { it.backupList.size == 0 } //TODO hg42 workaround until backups ready flag exists
+                    || !OABX.validBackups
+                    || pkgs.isEmpty()
+                    //|| pkgs.all { it.isSpecial }   // specials no more added to empty list
                 ) {
                     trace { "allPackages: waiting" }
                     delay(timeStep)
