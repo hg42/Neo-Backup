@@ -64,6 +64,7 @@ import com.machiav3lli.backup.preferences.pref_versionOpacity
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.spToDp
 import com.machiav3lli.backup.ui.compose.vertical
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -71,7 +72,7 @@ import kotlinx.coroutines.launch
 import java.lang.Float.max
 
 @Composable
-fun ProgressIndicator() {
+fun ProgressIndicator(height: Dp) {
     val busy by remember(OABX.busy.value) { OABX.busy }
     val progress by remember(
         OABX.progress.value.first,
@@ -81,18 +82,20 @@ fun ProgressIndicator() {
     if (progress.first) {
         LinearProgressIndicator(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp),
+                .height(height)
+                .fillMaxWidth(),
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            strokeCap = StrokeCap.Round,
             color = MaterialTheme.colorScheme.primary,
             progress = { max(0.02f, progress.second) }
         )
     } else if (busy) {
         LinearProgressIndicator(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp),
+                .height(height)
+                .fillMaxWidth(),
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            strokeCap = StrokeCap.Round,
             color = MaterialTheme.colorScheme.primary,
         )
     }
@@ -100,19 +103,26 @@ fun ProgressIndicator() {
 
 @Composable
 fun GlobalIndicators() {
-    Box {
-        ProgressIndicator()
+    Box(
+        modifier = Modifier
+            .wrapContentHeight(),
+    ) {
+        val fontSize = 8.sp
+        val height = spToDp(fontSize)+1.dp
+
+        ProgressIndicator(height)
 
         if (pref_versionOpacity.value > 0)
             Text(
                 text = "${OABX.versionName} ${OABX.applicationIssuer}",
-                fontSize = 8.sp,
+                fontSize = fontSize,
+                lineHeight = fontSize,
+                textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = pref_versionOpacity.value / 100f),
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(0.dp)
-                    .height(20.dp)
-                    .wrapContentSize(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(height)
             )
     }
 }
