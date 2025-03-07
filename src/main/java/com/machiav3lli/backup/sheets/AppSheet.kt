@@ -495,6 +495,7 @@ fun AppSheet(
             item(span = { GridItemSpan(columns) }) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     TitleText(textId = R.string.stats_backups)
+                    Text(text = ": ${backups.size}")
                     if (pref_numBackupRevisions.value > 0) Text(
                         text = "(${
                             stringResource(
