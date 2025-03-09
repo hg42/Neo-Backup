@@ -233,7 +233,7 @@ fun MultiSelectableChipGroup(
 
 fun Modifier.angledGradientBackground(colors: List<Color>, degrees: Float, factor: Float = 1f) =
     this.then(
-        drawBehind {
+        this.drawBehind {
 
             val (w, h) = size
             val dim = max(w, h) * factor
