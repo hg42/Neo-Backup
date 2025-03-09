@@ -57,6 +57,7 @@ import com.machiav3lli.backup.preferences.pref_prettyJson
 import com.machiav3lli.backup.preferences.pref_useYamlPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlProperties
 import com.machiav3lli.backup.preferences.pref_useYamlSchedules
+import com.machiav3lli.backup.preferences.supportLog
 import com.machiav3lli.backup.services.PackageUnInstalledReceiver
 import com.machiav3lli.backup.services.ScheduleService
 import com.machiav3lli.backup.ui.item.BooleanPref
@@ -346,7 +347,7 @@ class OABX : Application() {
         //TODO hg42 beginBusy(startupMsg)
         startup = true
         busyCountDownAtomic.set(0)
-        busyLevelAtomic.set(0)
+        busyLevel.value = 0
         hitBusy(60000)
 
         Plugin.ensureScanned()  // before ShellHandler, because plugins are used there
@@ -876,9 +877,10 @@ class OABX : Application() {
 
         //------------------------------------------------------------------------------------------ busy
 
-        var busyCountDownAtomic = AtomicInteger(0)
-        var busyLevelAtomic = AtomicInteger(0)
+        val busyMaxLevel = 11
+        var busyErrorTriggered = false
         val busyTick = 500
+        var busyCountDownAtomic = AtomicInteger(0)
         var busy = mutableStateOf(false)
         var busyLevel = mutableStateOf(0)
         var busyCountDown = mutableStateOf(0)
@@ -888,15 +890,13 @@ class OABX : Application() {
                 while (true) {
                     delay(busyTick.toLong())            //TODO hg42 don't poll -> flow?
                     if (!ready) {
-                        busyCountDown.value = 1
-                        busyLevel.value = 1
+                        busyCountDown.value = 111
                         busy.value = true
                     } else
                         busyCountDownAtomic.getAndUpdate {
                             if (it > 0) {
                                 val next = it - 1
                                 busyCountDown.value = next
-                                busyLevel.value = busyLevelAtomic.get()
                                 if (next <= 0) {
                                     busy.value = false
                                 } else if (busy.value == false)
@@ -917,23 +917,52 @@ class OABX : Application() {
         }
 
         fun beginBusy(name: String? = null) {
+            var level = synchronized(busyLevel) {
+                busyLevel.value += 1
+                busyLevel.value
+            }
+            if (level > busyMaxLevel) {
+                traceBusy { "*** ?????????? busyLevel > ${busyMaxLevel}" }
+                if (!busyErrorTriggered) {
+                    supportLog("busyLevel > ${busyMaxLevel}")
+                }
+                busyErrorTriggered = true
+                level = synchronized(busyLevel) {
+                    busyLevel.value = busyMaxLevel
+                    busyMaxLevel
+                }
+            }
             traceBusy {
                 val label = name ?: methodName(1)
-                """*** \ busy $label"""
+                "*** $level ${"|---".repeat(level)}\\ busy $label"
             }
-            busyLevelAtomic.incrementAndGet()
             hitBusy(60000)
             beginNanoTimer("busy.$name")
         }
 
         fun endBusy(name: String? = null): Long {
             val time = endNanoTimer("busy.$name")
-            if (busyLevelAtomic.decrementAndGet() <= 0) {
+            var level = synchronized(busyLevel) {
+                busyLevel.value -= 1
+                busyLevel.value
+            }
+            if (level <= 0) {
                 busyCountDownAtomic.set(1)
+                if (level < 0) {
+                    traceBusy { "*** ?????????? busyLevel < 0" }
+                    if (!busyErrorTriggered) {
+                        supportLog("busyLevel < 0")
+                    }
+                    busyErrorTriggered = true
+                    level = synchronized(busyLevel) {
+                        busyLevel.value = 0
+                        0
+                    }
+                }
             }
             traceBusy {
                 val label = name ?: methodName(1)
-                "*** / busy $label ${"%.3f".format(time / 1E9)} sec"
+                "*** $level ${"|---".repeat(level+1)}/ busy $label ${"%.3f".format(time / 1E9)} sec"
             }
             return time
         }

@@ -2,22 +2,34 @@ package com.machiav3lli.backup.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -33,14 +45,75 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlin.math.min
 
-fun Modifier.vertical() = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    layout(placeable.height, placeable.width) {
-        placeable.place(
-            x = -(placeable.width / 2 - placeable.height / 2),
-            y = -(placeable.height / 2 - placeable.width / 2)
+fun Modifier.verticalCCWCenter() =
+    layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.height, placeable.width) {
+            placeable.place(
+                x = -placeable.width / 2 + placeable.height / 2,
+                y = -placeable.height / 2 + placeable.width / 2
+            )
+        }
+    }   .rotate(-90f)
+        .wrapContentSize(unbounded = true)
+
+fun Modifier.verticalCCW() =
+    layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.height, placeable.width) {
+            // Calculate the new position for rotation around the bottom-left corner
+            placeable.place(
+                x = -placeable.width / 2 + placeable.height / 2,
+                y = -placeable.height / 2 + min(placeable.width, constraints.maxHeight) / 2
+            )
+        }
+    }   .rotate(-90f)
+        .wrapContentSize(unbounded = true)
+
+@Preview
+@Composable
+fun VerticalPreview() {
+    Row(
+        modifier = Modifier
+            .height(90.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            modifier = Modifier
+                .border(width = 1.dp, color = Color.Red)
+                .fillMaxHeight(),
+            text = "spc"
         )
+        Text(
+            modifier = Modifier
+                .border(width = 1.dp, color = Color.Green)
+                .verticalCCWCenter(),
+            text = "1 vertical title"
+        )
+        Text(
+            modifier = Modifier
+                .border(width = 1.dp, color = Color.Green)
+                .verticalCCWCenter(),
+            text = "2 vertical title longer"
+        )
+        Text(
+            modifier = Modifier
+                .border(width = 1.dp, color = Color.Blue)
+                .verticalCCW(),
+            text = "3 vertical title"
+        )
+        Text(
+            modifier = Modifier
+                .border(width = 1.dp, color = Color.Blue)
+                .verticalCCW(),
+            text = "4 vertical title longer"
+        )
+        Column {
+            Text(text = "10 horizontal text")
+            Text(text = "20 horizontal text")
+        }
     }
 }
 
@@ -383,3 +456,20 @@ fun Color.mix(with: Color, factor: Float = 0.5f) = Color(
 @Composable
 fun Color.flatten(factor: Float = 0.5f, surface: Color = MaterialTheme.colorScheme.surface) =
     mix(surface, factor)
+
+@Composable
+fun spToDp(sp: TextUnit): Dp {
+    val density = LocalDensity.current
+    return with(density) {
+        sp.toDp()
+    }
+}
+
+@Composable
+fun dpToSp(dp: Dp): TextUnit {
+    val density = LocalDensity.current
+    return with(density) {
+        dp.toSp()
+    }
+}
+

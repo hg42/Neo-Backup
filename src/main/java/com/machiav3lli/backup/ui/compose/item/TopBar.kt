@@ -2,19 +2,20 @@ package com.machiav3lli.backup.ui.compose.item
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -35,24 +36,25 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -65,10 +67,8 @@ import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.spToDp
-import com.machiav3lli.backup.ui.compose.vertical
-import kotlinx.coroutines.MainScope
+import com.machiav3lli.backup.ui.compose.verticalCCW
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.lang.Float.max
 
 @Composable
@@ -134,69 +134,72 @@ fun TitleOrInfoLog(
     tempShowInfo: MutableState<Boolean>,
     modifier: Modifier = Modifier,
 ) {
-    val infoLogText = OABX.getInfoLogText(n = 5, fill = "")
-    val scroll = rememberScrollState(0)
-    val scope = rememberCoroutineScope()
+    val numLines = 6
+    val fontSize = 9.0.sp
+    val height = spToDp(fontSize)*numLines
+    val infoLogText = OABX.getInfoLogText(n = 10, fill = "")
 
     LaunchedEffect(infoLogText) {
         tempShowInfo.value = true
-        scope.launch {
-            scroll.scrollTo(scroll.maxValue)
-            delay(5000)
-            tempShowInfo.value = false
-        }
+        delay(5000)
+        tempShowInfo.value = false
     }
 
     Box(
         modifier = modifier
-            .wrapContentHeight()
-            .fillMaxWidth()
+            .padding(0.dp)
     ) {
         if (showInfo) {
             Row(
-                verticalAlignment = if (showInfo) Alignment.Bottom else Alignment.CenterVertically,
                 modifier = Modifier
-                    .wrapContentHeight()
+                    .padding(0.dp)
+                    .clipToBounds()
+                    .height(height)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = buildAnnotatedString {
-                        append(title)
-                    },
-                    style = MaterialTheme.typography.headlineMedium,
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Start,
                     fontSize = 11.0.sp,
                     fontWeight = FontWeight(800),
+                    lineHeight = 11.0.sp,
                     modifier = Modifier
-                        .absolutePadding(right = 4.dp, bottom = 4.dp)
-                        .vertical()
-                        .rotate(-90f)
+                        .padding(bottom = 1.dp)
+                        .wrapContentSize(Alignment.BottomStart, unbounded = true)
+                        .verticalCCW()
+                        .height(spToDp(15.sp))
+                        .padding(0.dp)
                 )
 
                 Text(
                     text = infoLogText,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.bodySmall,
+                    //textAlign = TextAlign.Start,
                     fontSize = 9.0.sp,
                     lineHeight = 9.0.sp,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = MaterialTheme.shapes.extraSmall
-                        )
-                        .padding(horizontal = 4.dp)
+                        .weight(1f)
+                        .height(height)
+                        .clipToBounds()
+                        .fillMaxHeight()
+                        .padding(horizontal = 2.dp)
+                        .wrapContentHeight(Alignment.Bottom, unbounded = true)
                 )
             }
         } else {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .wrapContentHeight()
+                    .height(height)
                     .fillMaxWidth()
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier
+                        .padding(0.dp)
                         .wrapContentHeight()
                         .fillMaxWidth()
                 )
@@ -218,7 +221,9 @@ fun TopBar(
     val showInfo =
         !showDevTools.value && (OABX.showInfoLog || tempShowInfo.value) && pref_showInfoLogBar.value
 
-    Column {
+    Column(
+        modifier = modifier.padding(0.dp)
+    ) {
 
         TopAppBar(
             modifier = modifier.wrapContentHeight(),
@@ -378,25 +383,6 @@ fun ProgressPreview() {
             OABX.hitBusy(2000)
     }
 
-    OABX.clearInfoLogText()
-    repeat(10) { OABX.addInfoLogText("line $it") }
-    OABX.setProgress(count, maxCount)
-
-    LaunchedEffect(true) {
-        MainScope().launch {
-            while (count < maxCount) {
-                OABX.beginBusy()
-                OABX.addInfoLogText("count is $count")
-                delay(1000)
-                count = (count + 1) % (maxCount + 2)
-                OABX.endBusy()
-                if (count > maxCount)
-                    OABX.setProgress()
-                OABX.addInfoLogText("count is $count")
-                delay(1000)
-            }
-        }
-    }
 
     TopBar(
         title = if (count >= 0)
@@ -410,6 +396,7 @@ fun ProgressPreview() {
         Button(
             onClick = {
                 count = (count + 3) % (maxCount + 3) - 2
+                OABX.addInfoLogText("count is $count")
             }
         ) {
             Text("$count")
@@ -419,17 +406,82 @@ fun ProgressPreview() {
 
 @Preview
 @Composable
-fun VerticalPreview() {
-    Row(
-        modifier = Modifier.wrapContentSize()
+fun TitleOrInfoLogPreview() {
+
+    OABX.clearInfoLogText()
+    //LaunchedEffect(Unit) {
+        repeat(20) {
+            OABX.addInfoLogText("line $it with many words so it's probably wrapping")
+            //delay(1000)
+        }
+    //}
+
+    Box(
+        modifier = Modifier
+            .height(80.dp)
+            .width(200.dp)
+            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+    ) {
+        TitleOrInfoLog(
+            "Title may be longer than space",
+            showInfo = true,
+            tempShowInfo = remember { mutableStateOf(false) }
+        )
+    }
+}
+
+@Preview
+@Composable
+fun BottomAlignedTextExample() {
+    Box(
+        modifier = Modifier
+            .height(80.dp) // Fixed height for the Box
+            .width(200.dp) // Fixed width for the Box
+            .background(color = MaterialTheme.colorScheme.surfaceContainer) // Background color
+            .clipToBounds() // Clip content outside the Box
     ) {
         Text(
+            text = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8.",
             modifier = Modifier
-                .vertical()
-                .rotate(-90f),
-            fontWeight = FontWeight.Bold,
-            text = "vertical text"
+                .align(Alignment.BottomStart) // Align text to the bottom-left corner
+                .wrapContentHeight(Alignment.Bottom), // Ensure text wraps and aligns to the bottom
+            style = TextStyle(fontSize = 14.sp)
         )
-        Text(text = "horizontal")
+    }
+}
+
+@Preview
+@Composable
+fun NestedBoxExample() {
+    // Parent Box with fixed size and red border
+    Box(
+        modifier = Modifier
+            //.clipToBounds() // Clip content outside the parent Box
+            .padding(5.dp)
+            .border(2.dp, Color.Red) // Red border (background for visualization)
+            .padding(5.dp)
+            .border(1.dp, Color.Red) // Red border (background for visualization)
+            .padding(5.dp)
+            .height(80.dp) // Fixed height
+            .width(200.dp) // Fixed width
+            .clipToBounds() // Clip content outside the child Box
+    ) {
+        // Child Box with green border and larger size
+        Box(
+            modifier = Modifier
+                .wrapContentSize(Alignment.BottomStart, unbounded = true)
+                //.align(Alignment.BottomStart) // Align to bottom-left
+                .clipToBounds() // Clip content outside the child Box
+                .border(2.dp, Color.Green) // Green border (background for visualization)
+                .padding(5.dp)
+                .border(1.dp, Color.Green) // Green border (background for visualization)
+                .padding(1.dp)
+                //.height(200.dp) // Larger height than parent
+                //.width(50.dp)
+        ) {
+            Text(
+                text = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8."
+            )
+        }
     }
 }
