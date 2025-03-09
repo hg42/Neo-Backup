@@ -4,24 +4,17 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -35,17 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import com.machiav3lli.backup.MODE_ALL
 import com.machiav3lli.backup.MODE_UNSET
@@ -62,62 +49,32 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.preferences.pref_fixNavBarOverlap
 import com.machiav3lli.backup.traceContextMenu
 import com.machiav3lli.backup.traceTiming
+import com.machiav3lli.backup.ui.compose.Confirmation
 import com.machiav3lli.backup.ui.compose.ShowIf
+import com.machiav3lli.backup.ui.compose.TextInputMenuItem
+import com.machiav3lli.backup.ui.compose.closeSubMenu
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArchiveTray
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Check
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Play
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
+import com.machiav3lli.backup.ui.compose.menuPool
+import com.machiav3lli.backup.ui.compose.menuScope
+import com.machiav3lli.backup.ui.compose.openSubMenu
 import com.machiav3lli.backup.ui.item.IntPref
-import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.SystemUtils.runParallel
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.logNanoTiming
 import com.machiav3lli.backup.utils.TraceUtils.nanoTiming
 import com.machiav3lli.backup.utils.getFormattedDate
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 const val logEachN = 1000L
-
-val yesNo = listOf(
-    "yes" to "no",
-    "really!" to "oh no!",
-    "yeah" to "forget it"
-)
-
-@Composable
-fun Confirmation(
-    expanded: MutableState<Boolean>,
-    text: String = "Are you sure?",
-    onAction: () -> Unit = {},
-) {
-    val (yes, no) = yesNo.random()
-    DropdownMenuItem(
-        leadingIcon = { Icon(Phosphor.Check, null, tint = Color.Green) },
-        text = { Text(yes) },
-        onClick = {
-            expanded.value = false
-            onAction()
-        }
-    )
-    DropdownMenuItem(
-        leadingIcon = { Icon(Phosphor.X, null, tint = Color.Red) },
-        text = { Text(no) },
-        onClick = {
-            expanded.value = false
-        }
-    )
-}
 
 @Composable
 fun DataPartsSelector(
@@ -166,64 +123,6 @@ fun SelectDataParts(
             persist_batchMode.value = mode.intValue
             onAction(mode.intValue)
         }
-    )
-}
-
-@Composable
-fun TextInputMenuItem(
-    text: String = "",
-    placeholder: String = "",
-    trailingIcon: ImageVector? = null,
-    onAction: (String) -> Unit = {},
-) {
-    val input = remember { mutableStateOf(text) }
-    val focusManager = LocalFocusManager.current
-    val textFieldFocusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(textFieldFocusRequester) {
-        delay(100)
-        textFieldFocusRequester.requestFocus()
-    }
-
-    fun submit() {
-        focusManager.clearFocus()
-        onAction(input.value)
-    }
-
-    DropdownMenuItem(
-        text = {
-            OutlinedTextField(
-                modifier = Modifier
-                    .testTag("input")
-                    .focusRequester(textFieldFocusRequester),
-                value = input.value,
-                placeholder = { Text(text = placeholder, color = Color.Gray) },
-                singleLine = true,
-                trailingIcon = {
-                    trailingIcon?.let { icon ->
-                        IconButton(onClick = { submit() }) {
-                            Icon(icon, null)
-                        }
-                    }
-                },
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        submit()
-                    }
-                ),
-                keyboardOptions = KeyboardOptions(
-                    autoCorrect = false
-                ),
-                onValueChange = {
-                    if (it.contains("\n")) {
-                        input.value = it.replace("\n", "")
-                        submit()
-                    } else
-                        input.value = it
-                }
-            )
-        },
-        onClick = {}
     )
 }
 
@@ -409,45 +308,8 @@ fun SelectionRemoveMenu(
     Selections(action = "del") { onAction() }
 }
 
-fun openSubMenu(
-    subMenu: MutableState<(@Composable () -> Unit)?>,
-    content: @Composable () -> Unit,
-) {
-    subMenu.value = {
-        DropdownMenu(
-            expanded = true,
-            offset = DpOffset(100.dp, (-1000).dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            onDismissRequest = { subMenu.value = null }
-        ) {
-            if (pref_fixNavBarOverlap.value > 0) {
-                Column(
-                    modifier = Modifier
-                        .padding(bottom = pref_fixNavBarOverlap.value.dp)
-                ) {
-                    content()
-                }
-            } else {
-                content()
-            }
-        }
-    }
-}
-
-fun closeSubMenu(
-    subMenu: MutableState<(@Composable () -> Unit)?>,
-) {
-    subMenu.value = null
-}
-
 fun List<Package>.withBackups() = filter { it.hasBackups }
 fun List<Package>.installed() = filter { it.isInstalled }
-
-// menu actions should continue even if the ui is left
-val menuScope = MainScope()
-val menuPool = Executors.newFixedThreadPool(numCores).asCoroutineDispatcher()
-// Dispatchers.Default  unclear and can do anything in the future
-// Dispatchers.IO       creates many threads (~65)
 
 fun launchPackagesAction(
     action: String,
