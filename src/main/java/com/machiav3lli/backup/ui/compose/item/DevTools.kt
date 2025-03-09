@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -77,6 +78,7 @@ import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.endBusy
+import com.machiav3lli.backup.OABX.Companion.getString
 import com.machiav3lli.backup.OABX.Companion.hitBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
 import com.machiav3lli.backup.PREFS_BACKUP_FILE
@@ -104,6 +106,7 @@ import com.machiav3lli.backup.preferences.DevPrefGroups
 import com.machiav3lli.backup.preferences.Logs
 import com.machiav3lli.backup.preferences.Terminal
 import com.machiav3lli.backup.preferences.TerminalText
+import com.machiav3lli.backup.preferences.UserPrefGroups
 import com.machiav3lli.backup.preferences.logRel
 import com.machiav3lli.backup.preferences.supportInfoLogShare
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
@@ -244,6 +247,7 @@ fun TextInput(
             disabledTextColor = MaterialTheme.colorScheme.primary,
             disabledTrailingIconColor = TextFieldDefaults.colors().unfocusedTrailingIconColor
         ),
+        shape = MaterialTheme.shapes.extraLarge,
         trailingIcon = trailingIcon ?: {
             val spacing = 13.dp
             Row(
@@ -366,7 +370,7 @@ val devToolsTabs = listOf<Pair<String, @Composable () -> Any>>(
     "infolog" to { DevInfoLogTab() },
     "tools" to { DevToolsTab() },
     "term" to { DevTerminalTab() },
-    "devsett" to { DevSettingsTab() },
+    "devsett" to { SettingsTab(dev = true) },
     "plugins" to { DevPluginsTab() },
 ) + if (isDebug) listOf<Pair<String, @Composable () -> Any>>(
     //"refreshScreen" to { OABX.context.recreateActivities(); devToolsTab.value = "" },
@@ -407,81 +411,111 @@ fun DevLogTab() {
 }
 
 @Composable
-fun DevSettingsTab() {
+fun SettingsTab(dev: Boolean = false) {
 
     var search by devToolsSearch
-    val scroll = rememberScrollState(0)
 
-    Column {
-        TextInput(
-            text = search,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            placeholder = "search preference keys(comma for help)",
-            trailingIcon = {
-                if (search.text.isEmpty())
-                    Icon(
-                        imageVector = Phosphor.MagnifyingGlass,
-                        contentDescription = "search",
-                        //tint = tint,
-                        modifier = Modifier.size(ICON_SIZE_SMALL)
-                    )
-                else
-                    Icon(
-                        imageVector = Phosphor.X,
-                        contentDescription = "clear",
-                        //tint = tint,
-                        modifier = Modifier
-                            .size(ICON_SIZE_SMALL)
-                            .clickable {
-                                search =            // keep on it's own line for easier breakpoints
-                                    TextFieldValue("")
+    InnerBackground(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column {
+            TextInput(
+                text = search,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                placeholder = "search preference keys(comma for help)",
+                trailingIcon = {
+                    if (search.text.isEmpty())
+                        Icon(
+                            imageVector = Phosphor.MagnifyingGlass,
+                            contentDescription = "search",
+                            //tint = tint,
+                            modifier = Modifier.size(ICON_SIZE_SMALL)
+                        )
+                    else
+                        Icon(
+                            imageVector = Phosphor.X,
+                            contentDescription = "clear",
+                            //tint = tint,
+                            modifier = Modifier
+                                .size(ICON_SIZE_SMALL)
+                                .clickable {
+                                    search = // keep on it's own line for easier breakpoints
+                                        TextFieldValue("")
+                                }
+                        )
+                },
+                submitEachChange = true,
+                onSubmit = {
+                    search =
+                        it                        // keep in it's own line for easier breakpoints
+                }
+            )
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                state = rememberLazyListState()
+            ) {
+                item {
+                    if (search.text.isEmpty()) {
+                        if (dev) {
+                            DevPrefGroups()
+                            UserPrefGroups()
+                        } else {
+                            UserPrefGroups()
+                            Spacer(modifier = Modifier.padding(32.dp))
+                            Text(
+                                text = "developing:",
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Spacer(modifier = Modifier.padding(16.dp))
+                            DevPrefGroups()
+                        }
+                    } else {
+                        if (search.text.length < 2) {
+                            val style = MaterialTheme.typography.bodyMedium
+                            Column(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.Center)
+                                    .padding(32.dp)
+                            ) {
+                                Text("search starts at 2 characters", style = style)
+                                Text(
+                                    "use plus to delimit terms that must all match (AND)",
+                                    style = style
+                                )
+                                Text("use comma to delimit alternates (OR)", style = style)
+                                Text("two commas show all entries", style = style)
                             }
-                    )
-            },
-            submitEachChange = true,
-            onSubmit = {
-                search = it                        // keep in it's own line for easier breakpoints
-            }
-        )
-
-        Column(
-            modifier = Modifier
-                .verticalScroll(scroll)
-                .weight(1f)
-        ) {
-            if (search.text.isEmpty())
-                DevPrefGroups()
-            else {
-                if (search.text.length < 2) {
-                    val style = MaterialTheme.typography.bodyMedium
-                    Column(
-                        modifier = Modifier
-                            .wrapContentSize(Alignment.Center)
-                            .padding(32.dp)
-                    ) {
-                        Text("search starts at 2 characters", style = style)
-                        Text("use plus to delimit terms that must all match (AND)", style = style)
-                        Text("use comma to delimit alternates (OR)", style = style)
-                        Text("two commas show all entries", style = style)
+                        } else {
+                            val alternates = search.text.split(',').map {
+                                it.split("+")
+                            }.filter { it.isNotEmpty() }
+                            PrefsGroup(
+                                prefs =
+                                Pref.prefGroups.values.flatten().sortedBy { it.key }
+                                    .filter { pref ->
+                                        pref.group !in listOf("persist", "kill") &&
+                                                alternates.any {
+                                                    it.all {
+                                                        pref.key.contains(it, ignoreCase = true)
+                                                                ||
+                                                                if (pref.titleId != -1)
+                                                                    getString(pref.titleId).contains(
+                                                                        it, ignoreCase = true
+                                                                    )
+                                                                else
+                                                                    false
+                                                    }
+                                                }
+                                    }.toPersistentList()
+                            )
+                        }
                     }
-                } else {
-                    val alternates = search.text.split(',').map {
-                        it.split("+")
-                    }.filter { it.isNotEmpty() }
-                    PrefsGroup(
-                        prefs =
-                        Pref.prefGroups.values.flatten().sortedBy { it.key }
-                            .filter { pref ->
-                                pref.group !in listOf("persist", "kill") &&
-                                        alternates.any {
-                                            it.all {
-                                                pref.key.contains(it, ignoreCase = true)
-                                            }
-                                        }
-                            }.toPersistentList()
-                    )
                 }
             }
         }

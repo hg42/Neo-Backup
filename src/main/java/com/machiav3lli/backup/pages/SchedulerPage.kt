@@ -19,8 +19,9 @@ package com.machiav3lli.backup.pages
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffold
@@ -52,8 +53,10 @@ import com.machiav3lli.backup.sheets.ScheduleSheet
 import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
+import com.machiav3lli.backup.ui.compose.icons.phosphor.ArchiveTray
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CalendarPlus
 import com.machiav3lli.backup.ui.compose.recycler.ScheduleRecycler
+import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import com.machiav3lli.backup.viewmodels.ScheduleViewModel
 import com.machiav3lli.backup.viewmodels.SchedulerViewModel
@@ -69,7 +72,7 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
     val scheduleSheetId = remember { mutableLongStateOf(-1L) }
 
     LaunchedEffect(scheduleSheetId.longValue) {
-        if(scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+        if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
             if (scheduleSheetId.longValue < 0)
                 scaffoldState.bottomSheetState.partialExpand()
         } else {
@@ -123,21 +126,37 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
         Scaffold(
             containerColor = Color.Transparent,
             floatingActionButton = {
-                ExtendedFloatingActionButton(
-                    text = { Text(stringResource(id = R.string.sched_add)) },
-                    icon = {
-                        Icon(
-                            modifier = Modifier.size(ICON_SIZE_SMALL),
-                            imageVector = Phosphor.CalendarPlus,
-                            contentDescription = stringResource(id = R.string.sched_add)
-                        )
-                    },
-                    onClick = { viewModel.addSchedule(specialBackupsEnabled) }
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    ExtendedFloatingActionButton(
+                        text = { Text("ex/import") },
+                        icon = {
+                            Icon(
+                                modifier = Modifier.size(ICON_SIZE_SMALL),
+                                imageVector = Phosphor.ArchiveTray,
+                                contentDescription = stringResource(id = R.string.prefs_schedulesexportimport_summary)
+                            )
+                        },
+                        onClick = {
+                            OABX.main?.moveTo(NavItem.Exports.destination)
+                        }
+                    )
+                    ExtendedFloatingActionButton(
+                        text = { Text("add") },
+                        icon = {
+                            Icon(
+                                modifier = Modifier.size(ICON_SIZE_SMALL),
+                                imageVector = Phosphor.CalendarPlus,
+                                contentDescription = stringResource(id = R.string.sched_add)
+                            )
+                        },
+                        onClick = { viewModel.addSchedule(specialBackupsEnabled) }
+                    )
+                }
             }
         ) {
             ScheduleRecycler(
-                modifier = Modifier.fillMaxSize(),
                 productsList = schedules,
                 onClick = { item ->
                     scheduleSheetId.longValue = item.id

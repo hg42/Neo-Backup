@@ -19,6 +19,7 @@ package com.machiav3lli.backup.pages
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.BottomSheetScaffold
@@ -38,11 +39,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.machiav3lli.backup.R
+import com.machiav3lli.backup.preferences.pref_preferencesOnOnePage
 import com.machiav3lli.backup.sheets.HelpSheet
 import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Info
+import com.machiav3lli.backup.ui.compose.item.SettingsTab
 import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
@@ -118,16 +121,28 @@ fun PrefsPage(
                     }
                 },
                 bottomBar = {
-                    PagerNavBar(pageItems = pages, pagerState = pagerState)
+                    if (!pref_preferencesOnOnePage.value) {
+                        PagerNavBar(pageItems = pages, pagerState = pagerState)
+                    }
                 }
             ) { paddingValues ->
-                SlidePager(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .blockBorder(),
-                    pagerState = pagerState,
-                    pageItems = pages,
-                )
+                if (pref_preferencesOnOnePage.value) {
+                    Box(
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .blockBorder(),
+                    ) {
+                        SettingsTab(dev = false)
+                    }
+                } else {
+                    SlidePager(
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .blockBorder(),
+                        pagerState = pagerState,
+                        pageItems = pages,
+                    )
+                }
             }
         }
     }

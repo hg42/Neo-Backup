@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,18 +32,16 @@ import com.machiav3lli.backup.handler.ShellHandler.Companion.isLikeRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.suCommand
 import com.machiav3lli.backup.handler.ShellHandler.Companion.validateSuCommand
 import com.machiav3lli.backup.items.StorageFile
-import com.machiav3lli.backup.preferences.ui.PrefsExpandableGroupHeader
 import com.machiav3lli.backup.preferences.ui.PrefsGroup
 import com.machiav3lli.backup.preferences.ui.PrefsGroupCollapsed
+import com.machiav3lli.backup.preferences.ui.PrefsGroupHeading
 import com.machiav3lli.backup.traceDebug
-import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AndroidLogo
 import com.machiav3lli.backup.ui.compose.icons.phosphor.AsteriskSimple
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ClockCounterClockwise
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Hash
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ShieldStar
-import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.item.BasePreference
 import com.machiav3lli.backup.ui.compose.item.TextInput
 import com.machiav3lli.backup.ui.compose.mix
@@ -64,7 +63,7 @@ import kotlinx.collections.immutable.toPersistentList
 
 @Composable
 fun DevPrefGroups() {
-    val devUserOptions = Pref.prefGroups["dev-adv"]?.toPersistentList() ?: persistentListOf()
+    val devAdvOptions = Pref.prefGroups["dev-adv"]?.toPersistentList() ?: persistentListOf()
     val devFileOptions = Pref.prefGroups["dev-file"]?.toPersistentList() ?: persistentListOf()
     val devLogOptions = Pref.prefGroups["dev-log"]?.toPersistentList() ?: persistentListOf()
     val devTraceOptions = Pref.prefGroups["dev-trace"]?.toPersistentList() ?: persistentListOf()
@@ -76,7 +75,7 @@ fun DevPrefGroups() {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        PrefsGroupCollapsed(prefs = devUserOptions, heading = "advanced users (those who know)")
+        PrefsGroupCollapsed(prefs = devAdvOptions, heading = "advanced users (those who know)")
         PrefsGroupCollapsed(
             prefs = devAltOptions,
             heading = "alternatives (to compare two variants)"
@@ -87,6 +86,50 @@ fun DevPrefGroups() {
         PrefsGroupCollapsed(prefs = devHackOptions, heading = "workarounds (hacks)")
         PrefsGroupCollapsed(prefs = devFakeOptions, heading = "faking (for testing)")
         PrefsGroupCollapsed(prefs = devNewOptions, heading = "new experimental (for devs)")
+    }
+}
+
+@Composable
+fun UserPrefGroups() {
+    val userOptions = Pref.prefGroups["user"]?.toPersistentList() ?: persistentListOf()
+    val srvOptions = Pref.prefGroups["srv"]?.toPersistentList() ?: persistentListOf()
+    val srvBkpOptions = Pref.prefGroups["srv-bkp"]?.toPersistentList() ?: persistentListOf()
+    val srvRstOptions = Pref.prefGroups["srv-rst"]?.toPersistentList() ?: persistentListOf()
+    val advOptions = Pref.prefGroups["adv"]?.toPersistentList() ?: persistentListOf()
+    //val toolOptions = Pref.prefGroups["tool"]?.toPersistentList() ?: persistentListOf()
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        PrefsGroupCollapsed(prefs = userOptions, heading = "user")
+        PrefsGroupCollapsed(prefs = srvOptions, heading = "service")
+        PrefsGroupCollapsed(prefs = srvBkpOptions, heading = "backup")
+        PrefsGroupCollapsed(prefs = srvRstOptions, heading = "restore")
+        PrefsGroupCollapsed(prefs = advOptions, heading = "advanced")
+        //PrefsGroupCollapsed(prefs = toolOptions, heading = "tools")
+    }
+}
+
+@Composable
+fun PrefGroups(devFirst: Boolean, user: Boolean = true) {
+    Column {
+        if (devFirst) {
+            DevPrefGroups()
+            if (user)
+                UserPrefGroups()
+        } else {
+            if (user) {
+                UserPrefGroups()
+                Spacer(modifier = Modifier.padding(32.dp))
+                Text(
+                    text = "developing:",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.padding(16.dp))
+            }
+            DevPrefGroups()
+        }
     }
 }
 
@@ -111,18 +154,12 @@ fun AdvancedPrefsPage() {
                 }
             }
             item {
-                PrefsExpandableGroupHeader(
-                    titleId = R.string.prefs_dev_settings,
-                    summaryId = R.string.prefs_dev_settings_summary,
-                    icon = Phosphor.Warning
-                ) {
-                    expand(!expanded)
-                }
+                PrefsGroupHeading(
+                    heading = "Developer Settings",
+                )
             }
             item {
-                ShowIf(expanded) {
-                    DevPrefGroups()
-                }
+                DevPrefGroups()
             }
         }
     }
@@ -210,7 +247,8 @@ class SuCommandPref(
     onChanged = onChanged
 )
 
-val suCommand_summary get() = """
+val suCommand_summary
+    get() = """
         the command used to elevate the shell to a 'root' shell (in our sense),
         the whole command must be a shell, reading commands from stdin and executing them,
         there are also builtin fallback commands
@@ -250,8 +288,8 @@ val pref_suCommand = SuCommandPref(
         pref.value = test
     }
     pref.summary = suCommand_summary
-    traceDebug  { "summary: ${pref.summary}" }
-    traceDebug  { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
+    traceDebug { "summary: ${pref.summary}" }
+    traceDebug { "pref: ${pref.dirty} ${pref.key} -> ${pref.icon?.name} ${pref.iconTint} (launch)" }
     pref.dirty.value = true
 }
 
@@ -409,6 +447,12 @@ val pref_cacheFileLists = BooleanPref(
 
 
 //---------------------------------------- developer settings - implementation alternatives
+
+val pref_preferencesOnOnePage = BooleanPref(
+    key = "dev-alt.preferencesOnOnePage",
+    summary = "use a single page for preferences",
+    defaultValue = false
+)
 
 val pref_useNoteIcon = BooleanPref(
     key = "dev-alt.useNoteIcon",
