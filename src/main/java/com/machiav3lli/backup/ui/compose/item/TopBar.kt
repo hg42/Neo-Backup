@@ -111,8 +111,6 @@ fun GlobalIndicators() {
         val fontSize = 8.sp
         val height = spToDp(fontSize)+1.dp
 
-        ProgressIndicator(height)
-
         if (pref_versionOpacity.value > 0)
             Text(
                 text = "${OABX.versionName} ${OABX.applicationIssuer}",
@@ -125,6 +123,8 @@ fun GlobalIndicators() {
                     .fillMaxWidth()
                     .height(height)
             )
+
+        ProgressIndicator(height)
     }
 }
 
