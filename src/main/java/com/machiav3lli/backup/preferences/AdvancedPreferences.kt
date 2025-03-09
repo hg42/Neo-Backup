@@ -73,7 +73,7 @@ fun DevPrefGroups() {
     val devFakeOptions = Pref.prefGroups["dev-fake"]?.toPersistentList() ?: persistentListOf()
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         PrefsGroupCollapsed(prefs = devAdvOptions, heading = "advanced users (those who know)")
         PrefsGroupCollapsed(
@@ -99,7 +99,7 @@ fun UserPrefGroups() {
     //val toolOptions = Pref.prefGroups["tool"]?.toPersistentList() ?: persistentListOf()
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         PrefsGroupCollapsed(prefs = userOptions, heading = "user")
         PrefsGroupCollapsed(prefs = srvOptions, heading = "service")
@@ -146,7 +146,7 @@ fun AdvancedPrefsPage() {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             item {
                 PrefsGroup(prefs = prefs) { pref ->

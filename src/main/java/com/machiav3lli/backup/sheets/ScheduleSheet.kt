@@ -52,11 +52,7 @@ import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.machiav3lli.backup.MAIN_FILTER_DEFAULT
-import com.machiav3lli.backup.MAIN_FILTER_DEFAULT_WITHOUT_SPECIAL
-import com.machiav3lli.backup.MODE_APK
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.SPECIAL_FILTER_ALL
 import com.machiav3lli.backup.dbs.entity.Schedule
 import com.machiav3lli.backup.dialogs.BaseDialog
 import com.machiav3lli.backup.dialogs.BlockListDialogUI
@@ -289,8 +285,8 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_app),
-                        preExpanded = schedule.filter != if (specialBackupsEnabled) MAIN_FILTER_DEFAULT
-                        else MAIN_FILTER_DEFAULT_WITHOUT_SPECIAL,
+                        //preExpanded = schedule.filter != if (specialBackupsEnabled) MAIN_FILTER_DEFAULT
+                        //else MAIN_FILTER_DEFAULT_WITHOUT_SPECIAL,
                     ) {
                         MultiSelectableChipGroup(
                             list = if (specialBackupsEnabled)
@@ -309,7 +305,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_backup),
-                        preExpanded = schedule.mode != MODE_APK,
+                        //preExpanded = schedule.mode != MODE_APK,
                     ) {
                         MultiSelectableChipGroup(
                             list = scheduleBackupModeChipItems,
@@ -326,7 +322,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_launchable),
-                        preExpanded = schedule.launchableFilter != SPECIAL_FILTER_ALL,
+                        //preExpanded = schedule.launchableFilter != SPECIAL_FILTER_ALL,
                     ) {
                         SelectableChipGroup(
                             list = launchableFilterChipItems,
@@ -342,7 +338,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_updated),
-                        preExpanded = schedule.updatedFilter != SPECIAL_FILTER_ALL,
+                        //preExpanded = schedule.updatedFilter != SPECIAL_FILTER_ALL,
                     ) {
                         SelectableChipGroup(
                             list = updatedFilterChipItems,
@@ -358,7 +354,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_latest),
-                        preExpanded = schedule.latestFilter != SPECIAL_FILTER_ALL,
+                        //preExpanded = schedule.latestFilter != SPECIAL_FILTER_ALL,
                     ) {
                         SelectableChipGroup(
                             list = latestFilterChipItems,
@@ -374,7 +370,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_enabled),
-                        preExpanded = schedule.enabledFilter != SPECIAL_FILTER_ALL,
+                        //preExpanded = schedule.enabledFilter != SPECIAL_FILTER_ALL,
                     ) {
                         SelectableChipGroup(
                             list = enabledFilterChipItems,
@@ -390,7 +386,7 @@ fun ScheduleSheet(
                 item {
                     ExpandableBlock(
                         heading = stringResource(id = R.string.filters_tags),
-                        preExpanded = schedule.tagsList.isNotEmpty(),
+                        //preExpanded = schedule.tagsList.isNotEmpty(),
                     ) {
                         MultiSelectableChipGroup(
                             list = allTags.toSet(),

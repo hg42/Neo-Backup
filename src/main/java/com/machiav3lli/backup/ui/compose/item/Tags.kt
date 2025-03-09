@@ -68,6 +68,7 @@ fun TagsBlock(
         FlowRow(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             tags?.forEach { tag -> TagItem(tag = tag, onClick = onRemove) }
             TagItem(

@@ -715,8 +715,8 @@ fun Terminal(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(padding),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             SimpleButton(
                 "SUPPORT",

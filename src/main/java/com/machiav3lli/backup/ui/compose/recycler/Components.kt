@@ -162,7 +162,6 @@ fun <T> HorizontalItemList(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SelectableChipGroup(
-    //TODO hg42 move to item/Components.kt ?
     modifier: Modifier = Modifier,
     list: List<ChipItem>,
     selectedFlag: Int,
@@ -171,6 +170,7 @@ fun SelectableChipGroup(
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         list.forEach { item ->
             SelectionChip(
@@ -186,7 +186,6 @@ fun SelectableChipGroup(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MultiSelectableChipGroup(
-    //TODO hg42 move to item/Components.kt ?
     modifier: Modifier = Modifier,
     list: List<ChipItem>,
     selectedFlags: Int,
@@ -195,6 +194,7 @@ fun MultiSelectableChipGroup(
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         list.forEach { item ->
             SelectionChip(
@@ -218,6 +218,7 @@ fun MultiSelectableChipGroup(
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         list.forEach { item ->
             SelectionChip(
