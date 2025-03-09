@@ -50,7 +50,6 @@ import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
-import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
@@ -79,7 +78,6 @@ import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -326,6 +324,8 @@ class OABX : Application() {
 
     override fun onCreate() {
 
+        beginNanoTimer("startup")
+
         // do this early, context will be used immediately
         refApp = WeakReference(this)
 
@@ -367,14 +367,6 @@ class OABX : Application() {
         Timber.d("registerReceiver: PackageUnInstalledReceiver = $result")
 
         workHandler_ = WorkHandler()
-
-        MainScope().launch {
-            addInfoLogText("--> click title to keep infobox open")
-            addInfoLogText("--> long press title for dev tools")
-
-            //ensureBackups()
-            updateAppTables()
-        }
     }
 
     override fun onTerminate() {

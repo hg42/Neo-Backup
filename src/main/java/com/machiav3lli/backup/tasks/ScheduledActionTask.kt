@@ -29,6 +29,7 @@ import com.machiav3lli.backup.traceSchedule
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
+import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.filterPackages
@@ -62,7 +63,6 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
 
         val unfilteredPackages: List<Package> = try {
 
-            // findBackups *is* necessary, because it's *not* done in OABX.onCreate any more
             ensureBackups()
 
             traceSchedule { "backups: ${formatBackups(OABX.getBackups())}" }
@@ -70,6 +70,7 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
             val packages = context.getInstalledPackageList()
 
             OABX.startup = false
+            endNanoTimer("startup", log = true)
             trace { "******************** startup end" }
 
             packages

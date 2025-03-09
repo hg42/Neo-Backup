@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -177,8 +178,9 @@ fun TitleOrInfoLog(
                     text = infoLogText,
                     style = MaterialTheme.typography.bodySmall,
                     //textAlign = TextAlign.Start,
-                    fontSize = 9.0.sp,
-                    lineHeight = 9.0.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = fontSize,
+                    lineHeight = fontSize,
                     modifier = Modifier
                         .weight(1f)
                         .height(height)

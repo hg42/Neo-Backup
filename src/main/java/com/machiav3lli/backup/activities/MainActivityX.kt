@@ -79,6 +79,7 @@ import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
+import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
@@ -229,6 +230,9 @@ class MainActivityX : BaseActivity() {
                             freshStart = false
                             traceBold { "******************** freshStart && Main ********************" }
                             mScope.launch(Dispatchers.IO) {
+                                addInfoLogText("--> click title to keep infobox open")
+                                addInfoLogText("--> long press title for dev tools")
+
                                 runOrLog {
                                     val backupsMap = OABX.getBackups()
                                     traceInfo {
@@ -242,10 +246,11 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
 
-                                OABX.workHandler?.start()
-
+                                endNanoTimer("startup", log = true, info = true)
                                 OABX.startup = false
                                 trace { "******************** startup end" }
+
+                                OABX.workHandler?.start()
                             }
 
                             devToolsSearch.value =
