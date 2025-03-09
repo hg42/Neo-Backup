@@ -50,6 +50,7 @@ import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
+import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
@@ -63,7 +64,6 @@ import com.machiav3lli.backup.services.ScheduleService
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
 import com.machiav3lli.backup.utils.FileUtils
-import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils
@@ -372,7 +372,8 @@ class OABX : Application() {
             addInfoLogText("--> click title to keep infobox open")
             addInfoLogText("--> long press title for dev tools")
 
-            ensureBackups()
+            //ensureBackups()
+            updateAppTables()
         }
     }
 

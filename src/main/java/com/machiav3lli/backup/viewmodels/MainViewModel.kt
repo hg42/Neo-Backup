@@ -236,13 +236,22 @@ class MainViewModel(
             .mapLatest { pkgs ->
                 var timeout = 30000L
                 val timeStep = 250L
-                while(
+                while (
                     OABX.startup
                     || !OABX.validBackups
                     || pkgs.isEmpty()
-                    //|| pkgs.all { it.isSpecial }   // specials no more added to empty list
+                //|| pkgs.all { it.isSpecial }   // specials no more added to empty list
                 ) {
-                    trace { "allPackages: waiting" }
+                    trace {
+                        "allPackages: waiting: startup=${
+                            OABX.startup
+                        } backups=${
+                            OABX.validBackups
+                        } pkgs=${
+                            pkgs.size
+                        }"
+                    }
+
                     delay(timeStep)
                     timeout -= timeStep
                     if (!OABX.startup && timeout < 0)
