@@ -1,5 +1,6 @@
 package com.machiav3lli.backup.utils
 
+import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.pref_trace
 import com.machiav3lli.backup.traceFlows
@@ -108,22 +109,25 @@ object TraceUtils {
 
     val warmup = 3L
 
-    fun endNanoTimer(name: String, log: Boolean = false): Long {
+    fun endNanoTimer(name: String, log: Boolean = false, info: Boolean = false): Long {
         synchronized(nanoTimers) {
-            var t = System.nanoTime()
+            val end = System.nanoTime()
             nanoTimers.get(name)?.let {
-                t -= it
-                if (log)
-                    traceTiming { "%-40s %12.6f ms".format(name, t/1E6) }
-                nanoTime.put(name, t)
-                val (average, n) = nanoTiming.getOrPut(name) { 0f to -warmup }
-                if (n < 0L)
-                    nanoTiming.put(name, t.toFloat() to (n + 1)) // on warmup use single time
-                else
-                    nanoTiming.put(name, ((average * n + t) / (n + 1)) to (n + 1)) // resets for n=0
-                return t
+                 end - it
+            } ?: 0L
+        }.let { time ->
+            if (log || info) {
+                val message = "%-15s %12.3f ms".format(name, time / 1E6)
+                if (log) traceTiming { message }
+                if (info) OABX.addInfoLogText(message)
             }
-            return 0L
+            nanoTime.put(name, time)
+            val (average, n) = nanoTiming.getOrPut(name) { 0f to -warmup }
+            if (n < 0L)
+                nanoTiming.put(name, time.toFloat() to (n + 1)) // on warmup use single time
+            else
+                nanoTiming.put(name, ((average * n + time) / (n + 1)) to (n + 1)) // resets for n=0
+            return time
         }
     }
 
@@ -219,7 +223,7 @@ object TraceUtils {
     // helpers
 
     fun <T> formatElements(elements: Collection<T>): String {
-        return "(${elements.size})${elements.map {"${it}"}}"
+        return "(${elements.size})${elements.map { "${it}" }}"
     }
 
     fun formatBackups(backups: Map<String, List<Backup>>?): String {

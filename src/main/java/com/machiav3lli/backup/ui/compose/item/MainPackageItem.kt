@@ -323,8 +323,7 @@ fun launchPackagesAction(
         } catch (e: Throwable) {
             unexpectedException(e)
         } finally {
-            val time = endBusy(name)
-            addInfoLogText("$name: ${"%.3f".format(time / 1E9)} sec")
+            val time = endBusy(name, info = true)
         }
     }
 }

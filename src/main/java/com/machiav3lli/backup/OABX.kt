@@ -941,8 +941,12 @@ class OABX : Application() {
             beginNanoTimer("busy.$name")
         }
 
-        fun endBusy(name: String? = null): Long {
+        fun endBusy(name: String? = null, info: Boolean = false): Long {
             val time = endNanoTimer("busy.$name")
+            if (info) {
+                val message = "%-15s %12.3f ms".format(name, time / 1E6)
+                addInfoLogText(message)
+            }
             var level = synchronized(busyLevel) {
                 busyLevel.value -= 1
                 busyLevel.value

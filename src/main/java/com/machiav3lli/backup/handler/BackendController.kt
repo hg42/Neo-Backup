@@ -655,9 +655,7 @@ fun Context.findBackups(
     } finally {
         if (packageName.isEmpty()) {
 
-            val time = OABX.endBusy("findBackups")
-
-            OABX.addInfoLogText("findBackups: ${"%.3f".format(time / 1E9)} sec")
+            val time = OABX.endBusy("findBackups", info = true)
 
             if (traceTiming.pref.value) {
                 logNanoTiming("scanBackups.", "scanBackups")
@@ -934,8 +932,7 @@ fun Context.updateAppTables() {
     } catch (e: Throwable) {
         logException(e, backTrace = true)
     } finally {
-        val time = OABX.endBusy("updateAppTables")
-        addInfoLogText("updateAppTables: ${"%.3f".format(time / 1E9)} sec")
+        val time = OABX.endBusy("updateAppTables", info = true)
     }
 }
 
