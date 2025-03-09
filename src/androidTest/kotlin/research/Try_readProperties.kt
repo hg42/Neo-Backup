@@ -11,7 +11,6 @@ import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.getCursorString
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
-import com.machiav3lli.backup.utils.getBackupRoot
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.junit.Test
