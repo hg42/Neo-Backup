@@ -155,7 +155,7 @@ fun SimpleButton(
             .wrapContentHeight()
             .then(modifier),
         containerColor = color,
-        onClick = action
+        onClick = { MainScope().launch(Dispatchers.IO) { action() } }
     ) {
         Text(
             modifier = Modifier
@@ -176,8 +176,8 @@ fun SmallButton(
     RoundButton(
         icon = icon,
         modifier = modifier,
-        onClick = action,
-        tint = tint ?: MaterialTheme.colorScheme.primary
+        tint = tint ?: MaterialTheme.colorScheme.primary,
+        onClick =  { MainScope().launch(Dispatchers.IO) { action() } }
     )
 }
 

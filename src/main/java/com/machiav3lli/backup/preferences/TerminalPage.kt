@@ -721,11 +721,11 @@ fun Terminal(
             SimpleButton(
                 "SUPPORT",
                 important = true
-            ) { launch { supportInfoLogShare() } }
+            ) { supportInfoLogShare() }
             SimpleButton(
                 "share",
                 important = true
-            ) { launch { textLogShare(output) } }
+            ) { textLogShare(output) }
             SimpleButton("clear", important = true) { output.clear() }
             SimpleButton("log/int") { produce { logInt() } }
             SimpleButton("log/app") { produce { logApp() } }
