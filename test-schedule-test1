@@ -1,0 +1,5 @@
+#!/bin/zsh
+
+./gradlew :assembleDebug
+
+adb shell am broadcast -a schedule -e "test1" -n com.machiav3lli.backup.hg42.debug/com.machiav3lli.backup.services.CommandReceiver
