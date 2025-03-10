@@ -228,8 +228,6 @@ class MainViewModel(
                 appInfos.toPackageList(appContext, emptyList(), backups)
             }
 
-            IconCache.dropAllButUsed(pkgs.drop(0))
-
             traceFlows { "***<< allPackages <<- ${pkgs.size}" }
             pkgs
         }
@@ -259,6 +257,9 @@ class MainViewModel(
                 }
                 delay(500)
                 OABX.ready = true
+
+                IconCache.dropAllButUsed(pkgs.drop(0))
+
                 pkgs
             }
             .retry { cause ->

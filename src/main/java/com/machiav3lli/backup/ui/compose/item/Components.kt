@@ -194,9 +194,10 @@ object IconCache {
     }
 
     fun removeIcon(key: Any) {
-        traceDebug { "icon remove $key" }
         synchronized(painterCache) {
             painterCache.remove(key)
+        }?.run {
+            traceDebug { "removeIcon $key" }
         }
     }
 
