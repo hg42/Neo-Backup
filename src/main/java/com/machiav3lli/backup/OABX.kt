@@ -830,17 +830,17 @@ class OABX : Application() {
         // e.g. from the receiver to the service
         fun wakelock(aquire: Boolean) {
             if (aquire) {
-                traceDebug { "%%%%% $wakeLockTag wakelock aquire (before: $wakeLockNested)" }
+                traceDebug { "wakelock aquire: $wakeLockTag (before: $wakeLockNested)" }
                 if (wakeLockNested.accumulateAndGet(+1, Int::plus) == 1) {
                     val pm = context.getSystemService(POWER_SERVICE) as PowerManager
                     theWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, wakeLockTag)
                     theWakeLock?.acquire(60 * 60 * 1000L)
-                    traceDebug { "%%%%% $wakeLockTag wakelock ACQUIRED" }
+                    traceDebug { "wakelock ACQUIRED: $wakeLockTag" }
                 }
             } else {
-                traceDebug { "%%%%% $wakeLockTag wakelock release (before: $wakeLockNested)" }
+                traceDebug { "wakelock release: $wakeLockTag (before: $wakeLockNested)" }
                 if (wakeLockNested.accumulateAndGet(-1, Int::plus) == 0) {
-                    traceDebug { "%%%%% $wakeLockTag wakelock RELEASING" }
+                    traceDebug { "wakelock RELEASING: $wakeLockTag " }
                     theWakeLock?.release()
                 }
             }

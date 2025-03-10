@@ -105,9 +105,9 @@ class WorkHandler {
                 if (batch.nFinished > 1 || batch.isCanceled) {
                     val now = SystemUtils.now
                     if (now - batch.startTime > longAgo) {
-                        Timber.d("""%%%%% $it removing...\""")
+                        Timber.d("""%%%%% batches removing \ $it""")
                         batchesKnown.remove(it)
-                        Timber.d("""%%%%% $it removed..../""")
+                        Timber.d("""%%%%% batches removed  / $it""")
                     }
                 }
             }
@@ -121,9 +121,9 @@ class WorkHandler {
         Timber.d("%%%%% ALL DONE")
 
         OABX.service?.let {
-            traceBold { """%%%%% ------------------------------------------ service stopping...\""" }
+            traceBold { """%%%%% service stopping ------------------------------------------ \""" }
             it.stopSelf()
-            traceBold { """%%%%% ------------------------------------------ service stopped.../""" }
+            traceBold { """%%%%% service stopped  ------------------------------------------ /""" }
         }
 
         OABX.wakelock(false)
@@ -136,13 +136,13 @@ class WorkHandler {
         batchesStarted++
         if (batchesStarted == 1)     // first batch in a series
             beginBatches()
-        Timber.d("%%%%% $batchName begin, $batchesStarted batches, thread ${Thread.currentThread().id}")
+        Timber.d("%%%%% batch begin: $batchName, $batchesStarted batches, thread ${Thread.currentThread().id}")
         batchesKnown.put(batchName, BatchState())
     }
 
     fun endBatch(batchName: String) {
         batchesStarted--
-        Timber.d("%%%%% $batchName end, ${batchesStarted} batches, thread ${Thread.currentThread().id}")
+        Timber.d("%%%%% batch end: $batchName, ${batchesStarted} batches, thread ${Thread.currentThread().id}")
         Thread.sleep(endDelay)
         OABX.wakelock(false)
     }
@@ -426,7 +426,7 @@ class WorkHandler {
                             //shortText += " ${OABX.context.getString(R.string.finished)}"
                             title += " - ${if (failed == 0) "ok" else "$failed failed"}"
 
-                            Timber.i("%%%%% $batchName isFinished=true")
+                            Timber.i("%%%%% batch finished: $batchName")
 
                             if (batch.endTime == 0L)
                                 batch.endTime = now
@@ -448,7 +448,7 @@ class WorkHandler {
 
                         //bigText = "$shortText\n$bigText"
 
-                        Timber.d("%%%%% $batchName -----------------> $title $shortText")
+                        Timber.d("%%%%% batch status: $batchName -----------------> $title $shortText")
 
                         val resultIntent = Intent(appContext, MainActivityX::class.java)
                         resultIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -558,13 +558,13 @@ class WorkHandler {
             }
 
             if (allRemaining > 0) {
-                Timber.d("%%%%% ALL finished=$allProcessed <-- remain=$allRemaining <-- total=$allCount")
+                Timber.d("%%%%% ALL status: finished=$allProcessed <-- remain=$allRemaining <-- total=$allCount")
                 OABX.setProgress(allProcessed, allCount)
             } else {
                 packagesState.clear()
                 OABX.setProgress()
                 if (OABX.workHandler?.justFinishedAll() ?: false) {
-                    Timber.d("%%%%% ALL $batchesStarted batches, thread ${Thread.currentThread().id}")
+                    Timber.d("%%%%% ALL batches: $batchesStarted thread ${Thread.currentThread().id}")
                     OABX.workHandler?.endBatches()
                 }
             }

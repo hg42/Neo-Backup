@@ -63,7 +63,7 @@ open class ScheduleService : Service() {
 
     override fun onCreate() {
         OABX.wakelock(true)
-        traceSchedule { "%%%%% ############################################################ ScheduleService create" }
+        traceSchedule { "%%%%% schedule ############################################################ ScheduleService create" }
         super.onCreate()
         OABX.service = this
         this.notificationId = SystemUtils.now.toInt()
@@ -88,7 +88,7 @@ open class ScheduleService : Service() {
     }
 
     override fun onDestroy() {
-        traceSchedule { "%%%%% ############################################################ ScheduleService destroy" }
+        traceSchedule { "%%%%% schedule ############################################################ ScheduleService destroy" }
         OABX.service = null
         OABX.wakelock(false)
     }
