@@ -50,6 +50,7 @@ import com.machiav3lli.backup.ALT_MODE_BOTH
 import com.machiav3lli.backup.ALT_MODE_DATA
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
+import com.machiav3lli.backup.OABX.Companion.endStartup
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.RESCUE_NAV
 import com.machiav3lli.backup.dialogs.ActionsDialogUI
@@ -79,8 +80,6 @@ import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
-import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
-import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted
 import com.machiav3lli.backup.utils.altModeToMode
@@ -246,9 +245,7 @@ class MainActivityX : BaseActivity() {
                                 //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
                                 //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
 
-                                endNanoTimer("startup", log = true, info = true)
-                                OABX.startup = false
-                                trace { "******************** startup end" }
+                                endStartup()
 
                                 OABX.workHandler?.start()
                             }
@@ -364,7 +361,7 @@ class MainActivityX : BaseActivity() {
                             return false
                         when (data.toString()) {
                             RESCUE_NAV -> {
-                                OABX.startup = false
+                                endStartup()
                                 OABX.ready = true
                                 setContent {
                                     Rescue()

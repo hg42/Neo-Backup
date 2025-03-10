@@ -71,6 +71,7 @@ import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.TraceUtils.methodName
+import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
@@ -344,11 +345,7 @@ class OABX : Application() {
                 .build()
         )
 
-        //TODO hg42 beginBusy(startupMsg)
-        startup = true
-        busyCountDownAtomic.set(0)
-        busyLevel.value = 0
-        hitBusy(60000)
+        beginStartup()
 
         Plugin.ensureScanned()  // before ShellHandler, because plugins are used there
         initShellHandler()
@@ -516,6 +513,22 @@ class OABX : Application() {
 
         var startup = true
         var ready = false
+
+        fun beginStartup() {
+            startup = true
+            busyCountDownAtomic.set(0)
+            busyLevel.value = 0
+            hitBusy(60000)
+        }
+
+        fun endStartup() {
+            if (startup) {
+                endNanoTimer("startup", log = true, info = true)
+                startup = false
+                trace { "******************** startup end" }
+            } else
+                trace { "******************** startup was already finished" }
+        }
 
         init {
 

@@ -20,6 +20,7 @@ package com.machiav3lli.backup.tasks
 import android.content.Context
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.endStartup
 import com.machiav3lli.backup.PACKAGES_LIST_GLOBAL_ID
 import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.handler.LogsHandler
@@ -29,9 +30,7 @@ import com.machiav3lli.backup.traceSchedule
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
-import com.machiav3lli.backup.utils.TraceUtils.endNanoTimer
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
-import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.filterPackages
 import timber.log.Timber
 
@@ -69,9 +68,7 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
 
             val packages = context.getInstalledPackageList()
 
-            OABX.startup = false
-            endNanoTimer("startup", log = true)
-            trace { "******************** startup end" }
+            endStartup()
 
             packages
 
