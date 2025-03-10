@@ -297,13 +297,15 @@ class AppActionWork(val context: Context, workerParams: WorkerParameters) :
             backupBoolean: Boolean,
             backupIndex: Int = 0,
             notificationId: Int,
+            name: String,
             batchName: String,
             immediate: Boolean,
         ): OneTimeWorkRequest {
             val builder = OneTimeWorkRequest.Builder(AppActionWork::class.java)
 
             builder
-                .addTag("name:$batchName")
+                .addTag("name:$name")
+                .addTag("batchName:$batchName")
                 .addTag("package:$packageName")
                 .setInputData(
                     workDataOf(

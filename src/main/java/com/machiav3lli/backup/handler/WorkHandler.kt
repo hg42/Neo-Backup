@@ -169,6 +169,7 @@ class WorkHandler {
             } else {
                 Timber.d("%%%%% cancel all jobs of name $tag")
                 manager.cancelAllWorkByTag("name:$tag")
+                manager.cancelAllWorkByTag("batchName:$tag")
             }
         }
     }
@@ -307,7 +308,7 @@ class WorkHandler {
                 //Timber.d("%%%%% $batchName $packageName $operation $backupBoolean ${info.state} fail=$failures max=$maxRetries")
 
                 if (batchName.isNullOrEmpty()) {
-                    batchName = getTagVar(info.tags, "name")
+                    batchName = getTagVar(info.tags, "batchName")
                 }
                 if (batchName.isNullOrEmpty()) {
                     batchName = getBatchName("NoName@Work", 0)

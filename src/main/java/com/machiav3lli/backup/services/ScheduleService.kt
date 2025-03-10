@@ -209,6 +209,7 @@ open class ScheduleService : Service() {
                                     mode = mode,
                                     backupBoolean = true,
                                     notificationId = notificationId,
+                                    name = name,
                                     batchName = batchName,
                                     immediate = false
                                 )

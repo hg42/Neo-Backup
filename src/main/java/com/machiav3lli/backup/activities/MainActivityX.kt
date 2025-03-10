@@ -491,6 +491,7 @@ class MainActivityX : BaseActivity() {
                     mode = mode,
                     backupBoolean = backupBoolean,
                     notificationId = notificationId,
+                    name = batchType,
                     batchName = batchName,
                     immediate = true
                 )
@@ -573,6 +574,7 @@ class MainActivityX : BaseActivity() {
                 backupBoolean = false,
                 backupIndex = bi,
                 notificationId = notificationId,
+                name = batchType,
                 batchName = batchName,
                 immediate = true,
             )
