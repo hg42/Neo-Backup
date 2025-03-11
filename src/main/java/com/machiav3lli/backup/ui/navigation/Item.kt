@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.isDebug
-import com.machiav3lli.backup.OABX.Companion.isHg42
 import com.machiav3lli.backup.OABX.Companion.isNeo
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.pages.BatchPage
@@ -51,8 +50,9 @@ sealed class NavItem(
             R.string.home,
             when {
                 isNeo   -> Phosphor.Infinity
-                isDebug -> Phosphor.Bug
-                isHg42  -> Phosphor.Detective
+                isDebug -> Phosphor.Detective
+                //isDebug -> Phosphor.Bug
+                //isHg42  -> Phosphor.Detective
                 else    -> Phosphor.House
             },
             "home",
