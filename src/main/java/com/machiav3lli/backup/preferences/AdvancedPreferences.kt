@@ -612,7 +612,7 @@ val pref_fakeBackupSeconds = IntPref(
 val pref_fakeScheduleMin = IntPref(
     key = "dev-fake.fakeScheduleMin",
     summary = "[minutes] run enabled schedules every x min, using configured hours as seconds [for testing only]",
-    entries = ((0..9 step 1) + (10..60 step 5)).toList(),
+    entries = ((0..9 step 1) + (10..55 step 5) + (60..6*60 step 60)).toList(),
     defaultValue = 0
 ) {
     scheduleAlarms(scheduleNext = true)
