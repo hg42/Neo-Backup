@@ -538,12 +538,13 @@ class OABX : Application() {
         fun command(cmd: String?, params: Map<String, String> = emptyMap()) {
             Timber.i("*** command $cmd $params")
             when (cmd) {
-                ACTION_CANCEL     -> {
+                ACTION_CANCEL          -> {
                     val batchName = params["name"] ?: ""
                     Timber.d("################################################### command cancel -------------> name=$batchName")
                     OABX.addInfoLogText("$cmd $batchName")
                     OABX.workHandler?.cancel(batchName)
                 }
+
                 ACTION_SCHEDULE        -> {
                     params["name"]?.let { name ->
                         OABX.addInfoLogText("$cmd $name")
@@ -560,6 +561,7 @@ class OABX : Application() {
                         }.start()
                     }
                 }
+
                 ACTION_SCHEDULE_CONFIG -> {
                     params["name"]?.let { name ->
                         val now = SystemUtils.now
@@ -583,11 +585,13 @@ class OABX : Application() {
                         }.start()
                     }
                 }
-                ACTION_CRASH      -> {
+
+                ACTION_CRASH           -> {
                     throw Exception("this is a crash via command intent")
                 }
-                null              -> {}
-                else              -> {
+
+                null                   -> {}
+                else                   -> {
                     OABX.addInfoLogText("command ignored $cmd $params")
                 }
             }
@@ -596,10 +600,10 @@ class OABX : Application() {
         fun command(intent: Intent) {
             val cmd = intent.action
             val data = intent.data
-            val extras = intent.extras?.let {
-                    extras ->  (extras.keySet()).map {
-                Pair(it, extras.getString(it, ""))
-            }.toMap()
+            val extras = intent.extras?.let { extras ->
+                (extras.keySet()).map {
+                    Pair(it, extras.getString(it, ""))
+                }.toMap()
             } ?: mapOf()
             command(cmd, extras)
         }
@@ -796,7 +800,8 @@ class OABX : Application() {
 
         fun Context.getApplicationInfos(what: Int = 0): PackageInfo? {
             val packageManager: PackageManager = getPackageManager()
-            return packageManager.getPackageInfo(packageName, what)
+            val appInfo = packageManager.getPackageInfo(packageName, what)
+            return appInfo
         }
 
         @Suppress("DEPRECATION")
@@ -825,19 +830,36 @@ class OABX : Application() {
                     field to value
                 }.toMap()
                 var issuer = names["CN"]
-                names["O"]?.let { if (issuer != it) issuer = "$issuer / $it" }
+                //names["O"]?.let { if (issuer != it) issuer = "$issuer / $it" }
                 return issuer ?: DN
             }
             return null
         }
 
-        val packageName get() = com.machiav3lli.backup.BuildConfig.APPLICATION_ID
-        val versionCode get() = com.machiav3lli.backup.BuildConfig.VERSION_CODE
-        val versionName get() = com.machiav3lli.backup.BuildConfig.VERSION_NAME
-        val updateId get() = "${OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()}-${versionName}"
-        val backupVersionCode get() = com.machiav3lli.backup.BuildConfig.MAJOR * 1000 + com.machiav3lli.backup.BuildConfig.MINOR
+        val packageName
+            get() = OABX.context.getApplicationInfos()?.packageName
+                ?: com.machiav3lli.backup.BuildConfig.APPLICATION_ID
+        val versionCode
+            get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                OABX.context.getApplicationInfos()?.longVersionCode
+            } else {
+                OABX.context.getApplicationInfos()?.versionCode
+            } ?: com.machiav3lli.backup.BuildConfig.VERSION_CODE
+        val versionName
+            get() = OABX.context.getApplicationInfos()?.versionName
+                ?: com.machiav3lli.backup.BuildConfig.VERSION_NAME
+        val updateId
+            get() = "${
+                OABX.context.getApplicationInfos()?.lastUpdateTime?.toString()
+            }-${
+                versionName
+            }"
+        val backupVersionCode
+            get() =
+                com.machiav3lli.backup.BuildConfig.MAJOR * 1000 +
+                        com.machiav3lli.backup.BuildConfig.MINOR
 
-        val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "UNKNOWN ISSUER"
+        val applicationIssuer get() = OABX.context.getApplicationIssuer() ?: "?"
 
         //------------------------------------------------------------------------------------------ backupRoot
 
@@ -1046,7 +1068,7 @@ class OABX : Application() {
             }
             traceBusy {
                 val label = name ?: methodName(1)
-                "*** ${"|---".repeat(level+1)}/ busy $label ${"%12.3f ms".format(time / 1E6)}"
+                "*** ${"|---".repeat(level + 1)}/ busy $label ${"%12.3f ms".format(time / 1E6)}"
             }
             return time
         }
