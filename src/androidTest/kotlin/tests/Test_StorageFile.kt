@@ -9,7 +9,6 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.items.UndeterminedStorageFile
 import com.machiav3lli.backup.items.uriFromFile
-import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.TraceUtils
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
@@ -35,7 +34,8 @@ class Test_StorageFile {
                 "${OABX.context.packageName}.provider",
                 baseDirAsFile
             )
-        1    -> FileUtils.getBackupDirUri(context)
+        //0    -> FileUtils.getBackupDirUri(context)
+        1    -> OABX.backupRoot!!.uri!!
         else -> uriFromFile(baseDirAsFile)
     }
     val baseDir = when (1) {
