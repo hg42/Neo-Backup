@@ -34,7 +34,9 @@ import com.machiav3lli.backup.ACTION_CANCEL
 import com.machiav3lli.backup.ACTION_SCHEDULE
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.beginLogSection
+import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.OABX.Companion.runningSchedules
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.activities.MainActivityX
@@ -279,7 +281,7 @@ open class ScheduleService : Service() {
                     super.onPostExecute(result)
                 }
             }
-            traceSchedule { "[$scheduleId] starting task for schedule}" }
+            traceSchedule { "[$scheduleId] starting task for schedule" }
             scheduledActionTask.execute()
         }
 
@@ -291,11 +293,13 @@ open class ScheduleService : Service() {
         traceSchedule { "[$scheduleId] beginSchedule: $name -> ${runningSchedules[scheduleId]} ${details}" }
         beginLogSection("schedule $name")
         if (pref_autoLogBeforeSchedule.value) {
+            beginBusy("autoLogBeforeSchedule")
             textLog(
                 listOf(
                     "--- autoLogBeforeSchedule id=$scheduleId name='$name' ${details}"
                 ) + supportInfo()
             )
+            endBusy("autoLogBeforeSchedule")
         }
         return true
     }
@@ -303,11 +307,13 @@ open class ScheduleService : Service() {
     fun endSchedule(scheduleId: Long, name: String, details: String = "") {
         traceSchedule { "[$scheduleId] endSchedule: $name -> ${runningSchedules[scheduleId]} ${details}" }
         if (pref_autoLogAfterSchedule.value) {
+            beginBusy("autoLogAfterSchedule")
             textLog(
                 listOf(
                     "--- autoLogAfterSchedule id=$scheduleId name='$name' ${details}"
                 ) + supportInfo()
             )
+            endBusy("autoLogAfterSchedule")
         }
         OABX.endLogSection("schedule $name")
         // do this globally based on work manager jobs

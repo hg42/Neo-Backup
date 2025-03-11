@@ -1012,7 +1012,7 @@ class OABX : Application() {
             }
             traceBusy {
                 val label = name ?: methodName(1)
-                "*** $level ${"|---".repeat(level)}\\ busy $label"
+                "*** ${"|---".repeat(level)}\\ busy $label"
             }
             hitBusy(60000)
             beginNanoTimer("busy.$name")
@@ -1044,7 +1044,7 @@ class OABX : Application() {
             }
             traceBusy {
                 val label = name ?: methodName(1)
-                "*** $level ${"|---".repeat(level+1)}/ busy $label ${"%.3f".format(time / 1E9)} sec"
+                "*** ${"|---".repeat(level+1)}/ busy $label ${"%12.3f ms".format(time / 1E6)}"
             }
             return time
         }

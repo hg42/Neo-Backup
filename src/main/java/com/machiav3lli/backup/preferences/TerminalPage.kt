@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.BACKUP_DATE_TIME_FORMATTER
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
+import com.machiav3lli.backup.OABX.Companion.beginBusy
+import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.share
@@ -387,7 +389,9 @@ fun supportInfo(title: String = ""): List<String> {
 }
 
 fun supportLog(title: String = "") {
+    beginBusy("supportLog")
     textLog(supportInfo(title))
+    endBusy("supportLog")
 }
 
 fun supportInfoLogShare() {

@@ -69,7 +69,13 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.MINUTE, fakeMin)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} min -> ${formatTimeTrace(c.timeInMillis)}" }
+        traceSchedule {
+            "[${schedule.id}] added $increments * ${schedule.interval} min -> ${
+                formatTimeTrace(
+                    c.timeInMillis
+                )
+            }"
+        }
     } else {
         c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = schedule.timeMinute
@@ -79,7 +85,13 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
         while (c.timeInMillis < minTime && increments++ < limitIncrements) {
             c.add(Calendar.DAY_OF_MONTH, schedule.interval)
         }
-        traceSchedule { "[${schedule.id}] added $increments * ${schedule.interval} days -> ${formatTimeTrace(c.timeInMillis)}" }
+        traceSchedule {
+            "[${schedule.id}] added $increments * ${schedule.interval} days -> ${
+                formatTimeTrace(
+                    c.timeInMillis
+                )
+            }"
+        }
     }
 
     traceSchedule {
@@ -168,14 +180,26 @@ fun setAlarmInSystem(scheduleId: Long, timeForAlarm: Long) {
                 timeForAlarm,
                 pendingIntent
             )
-            traceSchedule { "[${scheduleId}] alarmManager.setExactAndAllowWhileIdle ${formatTimeTrace(timeForAlarm)}" }
+            traceSchedule {
+                "[${scheduleId}] alarmManager.setExactAndAllowWhileIdle ${
+                    formatTimeTrace(
+                        timeForAlarm
+                    )
+                }"
+            }
         } else {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 timeForAlarm,
                 pendingIntent
             )
-            traceSchedule { "[${scheduleId}] alarmManager.setAndAllowWhileIdle ${formatTimeTrace(timeForAlarm)}" }
+            traceSchedule {
+                "[${scheduleId}] alarmManager.setAndAllowWhileIdle ${
+                    formatTimeTrace(
+                        timeForAlarm
+                    )
+                }"
+            }
         }
     }
 
@@ -206,8 +230,9 @@ fun scheduleAlarm(scheduleId: Long, scheduleNext: Boolean) {
                 }
 
                 setAlarmInSystem(schedule.id, schedule.timeToRun)
+
             } else
-                traceSchedule { "[$scheduleId] schedule is disabled. Nothing to schedule!" }
+                traceSchedule { "[$scheduleId] no alarm, schedule is disabled" }
         }.start()
     } else {
         Timber.e("[$scheduleId] no valid scheduleId")
@@ -237,7 +262,7 @@ fun scheduleAlarms(scheduleNext: Boolean) {
                         traceSchedule { "[${schedule.id}] *** scheduleAlarms: ignore $schedule, schedule is running now" }
                     }
 
-                    schedule.enabled          -> {
+                    schedule.enabled    -> {
                         traceSchedule { "[${schedule.id}] *** scheduleAlarms: enable $schedule" }
                         scheduleAlarm(schedule.id, scheduleNext)
                     }
