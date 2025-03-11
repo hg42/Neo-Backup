@@ -132,10 +132,6 @@ const val NAV_MAIN = 0
 const val NAV_PREFS = 1
 
 const val PREFS_LANGUAGES_SYSTEM = "system"
-const val EXTRA_PACKAGE_NAME = "packageName"
-const val EXTRA_BACKUP_BOOLEAN = "backupBoolean"
-const val EXTRA_SCHEDULE_ID = "scheduleId"
-const val EXTRA_STATS = "stats"
 
 const val THEME_LIGHT = 0
 const val THEME_DARK = 1

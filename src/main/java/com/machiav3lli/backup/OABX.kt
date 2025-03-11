@@ -385,6 +385,8 @@ class OABX : Application() {
 
     companion object {
 
+        //init { Debug.waitForDebugger() }
+
         val workHandler: WorkHandler? get() = OABX.app.workHandler_
 
         var booting = false
