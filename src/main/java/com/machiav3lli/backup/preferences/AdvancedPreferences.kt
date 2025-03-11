@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -63,7 +62,6 @@ import kotlinx.collections.immutable.toPersistentList
 
 @Composable
 fun DevPrefGroups() {
-    val devAdvOptions = Pref.prefGroups["dev-adv"]?.toPersistentList() ?: persistentListOf()
     val devFileOptions = Pref.prefGroups["dev-file"]?.toPersistentList() ?: persistentListOf()
     val devLogOptions = Pref.prefGroups["dev-log"]?.toPersistentList() ?: persistentListOf()
     val devTraceOptions = Pref.prefGroups["dev-trace"]?.toPersistentList() ?: persistentListOf()
@@ -75,11 +73,7 @@ fun DevPrefGroups() {
     Column(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        PrefsGroupCollapsed(prefs = devAdvOptions, heading = "advanced users (those who know)")
-        PrefsGroupCollapsed(
-            prefs = devAltOptions,
-            heading = "alternatives (to compare two variants)"
-        )
+        PrefsGroupCollapsed(prefs = devAltOptions, heading = "alternative implementations/tests")
         PrefsGroupCollapsed(prefs = devLogOptions, heading = "logging")
         PrefsGroupCollapsed(prefs = devTraceOptions, heading = "tracing")
         PrefsGroupCollapsed(prefs = devFileOptions, heading = "file handling")
@@ -107,29 +101,6 @@ fun UserPrefGroups() {
         PrefsGroupCollapsed(prefs = srvRstOptions, heading = "restore")
         PrefsGroupCollapsed(prefs = advOptions, heading = "advanced")
         //PrefsGroupCollapsed(prefs = toolOptions, heading = "tools")
-    }
-}
-
-@Composable
-fun PrefGroups(devFirst: Boolean, user: Boolean = true) {
-    Column {
-        if (devFirst) {
-            DevPrefGroups()
-            if (user)
-                UserPrefGroups()
-        } else {
-            if (user) {
-                UserPrefGroups()
-                Spacer(modifier = Modifier.padding(32.dp))
-                Text(
-                    text = "developing:",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.padding(16.dp))
-            }
-            DevPrefGroups()
-        }
     }
 }
 
@@ -257,7 +228,7 @@ val suCommand_summary
 val suCommand_default = "su -c 'nsenter --mount=/proc/1/ns/mnt sh'"
 
 val pref_suCommand = SuCommandPref(
-    key = "dev-adv.suCommand",
+    key = "adv.suCommand",
     //TODO hg42 pref description is not shown currently for StringPrefs, because a hack uses it to show the value
     summary = suCommand_summary,
     icon = Phosphor.Hash,
@@ -294,7 +265,7 @@ val pref_suCommand = SuCommandPref(
 }
 
 val pref_libsuUseRootShell = BooleanPref(
-    key = "dev-adv.libsuUseRootShell",
+    key = "adv.libsuUseRootShell",
     summary = """
         start libsu shell as 'su' instead of 'sh' before suCommand elevates it
         (as a paranoid fallback, in case 'sh' might not allow elevating for an unknown reason)
@@ -304,72 +275,72 @@ val pref_libsuUseRootShell = BooleanPref(
 )
 
 val pref_libsuTimeout = IntPref(
-    key = "dev-adv.libsuTimeout",
+    key = "adv.libsuTimeout",
     summary = "[seconds] timeout for libsu commands (does not affect the tar commands)",
     entries = ((10..90 step 10) + (100..300 step 50)).toList(),
     defaultValue = 60
 )
 
 val pref_maxJobs = IntPref(
-    key = "dev-adv.maxJobs",
+    key = "adv.maxJobs",
     summary = "maximum number of jobs run concurrently (0 = default = numCores)[needs restart]",
     entries = (0..1 * numCores).toList(),
     defaultValue = 0
 )
 
 val pref_cancelJobsAtBoot = BooleanPref(
-    key = "dev-adv.cancelJobsAtBoot",
+    key = "adv.cancelJobsAtBoot",
     summary = "cancel all remaining jobs on device boot",
     defaultValue = true
 )
 
 val pref_menuButtonAlwaysVisible = BooleanPref(
-    key = "dev-adv.menuButtonAlwaysVisible",
+    key = "adv.menuButtonAlwaysVisible",
     summary = "also show context menu button when selection is empty",
     defaultValue = true
 )
 
 val pref_busyIconTurnTime = IntPref(
-    key = "dev-adv.busyIconTurnTime",
+    key = "adv.busyIconTurnTime",
     summary = "time for one rotation of busy icon (ms)",
     entries = (1000..10000 step 500).toList(),
     defaultValue = 4000
 )
 
 val pref_busyIconScale = IntPref(
-    key = "dev-adv.busyIconScale",
+    key = "adv.busyIconScale",
     summary = "busy icon scaling (%)",
     entries = (100..200 step 10).toList(),
     defaultValue = 150
 )
 
 val pref_busyFadeTime = IntPref(
-    key = "dev-adv.busyFadeTime",
+    key = "adv.busyFadeTime",
     summary = "time to fade busy color (ms)",
     entries = (0..5000 step 250).toList(),
     defaultValue = 2000
 )
 
 val pref_showInfoLogBar = BooleanPref(
-    key = "dev-adv.showInfoLogBar",
+    key = "adv.showInfoLogBar",
     summaryId = R.string.prefs_showinfologbar_summary,
     defaultValue = false
 )
 
 val pref_useAlarmClock = BooleanPref(
-    key = "dev-adv.useAlarmClock",
+    key = "adv.useAlarmClock",
     summaryId = R.string.prefs_usealarmclock_summary,
     defaultValue = false
 )
 
 val pref_useExactAlarm = BooleanPref(
-    key = "dev-adv.useExactAlarm",
+    key = "adv.useExactAlarm",
     summaryId = R.string.prefs_useexactalarm_summary,
     defaultValue = false
 )
 
 val pref_backupPauseApps = BooleanPref(
-    key = "dev-adv.backupPauseApps",
+    key = "adv.backupPauseApps",
     summary = """
         pause apps during backups to avoid inconsistencies caused
         by ongoing file changes or other conflicts (doesn't seem to have big benefits)
@@ -378,45 +349,45 @@ val pref_backupPauseApps = BooleanPref(
 )
 
 val pref_backupSuspendApps = BooleanPref(
-    key = "dev-adv.backupSuspendApps",
+    key = "adv.backupSuspendApps",
     summary = "additionally use pm suspend command to pause apps (unfortunately not very useful, some disadvantages)",
     defaultValue = false,
     enableIf = { pref_backupPauseApps.value }
 )
 
 val pref_restoreKillApps = BooleanPref(
-    key = "dev-adv.restoreKillApps",
+    key = "adv.restoreKillApps",
     summary = "kill apps before restores",
     defaultValue = true
 )
 
 val pref_strictHardLinks = BooleanPref(
-    key = "dev-adv.strictHardLinks",
+    key = "adv.strictHardLinks",
     summaryId = R.string.prefs_stricthardlinks_summary,
     defaultValue = false
 )
 
 val pref_shareAsFile = BooleanPref(
-    key = "dev-adv.shareAsFile",
+    key = "adv.shareAsFile",
     summary = "share logs as file, otherwise as text",
     defaultValue = true
 )
 
 val pref_maxRetriesPerPackage = IntPref(
-    key = "dev-adv.maxRetriesPerPackage",
+    key = "adv.maxRetriesPerPackage",
     summaryId = R.string.prefs_maxretriesperpackage_summary,
     entries = (0..10).toList(),
     defaultValue = 1
 )
 
 val pref_backupTarCmd = BooleanPref(
-    key = "dev-adv.backupTarCmd",
+    key = "adv.backupTarCmd",
     summaryId = R.string.prefs_backuptarcmd_summary,
     defaultValue = true
 )
 
 val pref_restoreTarCmd = BooleanPref(
-    key = "dev-adv.restoreTarCmd",
+    key = "adv.restoreTarCmd",
     summaryId = R.string.prefs_restoretarcmd_summary,
     defaultValue = true
 )

@@ -463,6 +463,7 @@ fun SettingsTab(dev: Boolean = false) {
                     if (search.text.isEmpty()) {
                         if (dev) {
                             DevPrefGroups()
+                            Spacer(modifier = Modifier.padding(32.dp))
                             UserPrefGroups()
                         } else {
                             UserPrefGroups()

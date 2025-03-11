@@ -144,12 +144,12 @@ val buildLabel by extra {
     currentBranch
         .replace(Regex("\\bfeature-"), "🍩")
         .replace(Regex("\\bfix-"), "💊")
-        .replace(Regex("\\btry-"), "🚑")
+        .replace(Regex("\\btry-"), "🤞")
         .replace(Regex("\\bPR-"), "📤")
-        .replace(Regex("^WIP$"), "🚧")
-        .replace(Regex("\\bwip-"), "🚧")
-        .replace(Regex("\\btemp\\b"), "🦘")
-        .replace(Regex("\\bexperimental\\b"), "⚡")
+        .replace(Regex("^WIP$"), "🔧")
+        .replace(Regex("\\bwip-"), "🔧")
+        .replace(Regex("\\btemp\\b"), "⏳")
+        .replace(Regex("\\bexperimental\\b"), "🎲")
 }
 val buildNumber6 = buildNumber.padStart(6, '0')
 val buildNumber4 = buildNumber6.dropLast(2)
