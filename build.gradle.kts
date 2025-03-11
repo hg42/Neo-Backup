@@ -142,13 +142,14 @@ val buildNumber: String by extra { minutes.toString() }
 //var buildMinSec by extra(java.text.SimpleDateFormat("mmss").format(startTime))
 val buildLabel by extra {
     currentBranch
-        .replace(Regex("^feature-"), "🍩")
+        .replace(Regex("\\bfeature-"), "🍩")
         .replace(Regex("\\bfix-"), "💊")
         .replace(Regex("\\btry-"), "🚑")
-        .replace(Regex("^PR-"), "📤")
-        .replace(Regex("^wip$"), "🚧")
-        .replace(Regex("^temp$"), "🦘")
-        .replace(Regex("^experimental$"), "⚡")
+        .replace(Regex("\\bPR-"), "📤")
+        .replace(Regex("^WIP$"), "🚧")
+        .replace(Regex("\\bwip-"), "🚧")
+        .replace(Regex("\\btemp\\b"), "🦘")
+        .replace(Regex("\\bexperimental\\b"), "⚡")
 }
 val buildNumber6 = buildNumber.padStart(6, '0')
 val buildNumber4 = buildNumber6.dropLast(2)
