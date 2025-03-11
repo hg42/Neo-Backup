@@ -30,8 +30,6 @@ import com.machiav3lli.backup.pref_autoLogExceptions
 import com.machiav3lli.backup.pref_maxLogCount
 import com.machiav3lli.backup.preferences.onErrorInfo
 import com.machiav3lli.backup.preferences.textLog
-import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
-import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -60,7 +58,7 @@ class LogsHandler {
 
         @Throws(IOException::class)
         fun writeToLogFile(logText: String): StorageFile? {
-            runCatching {
+            runCatching { // do not log... it would be recursive
                 val date = LocalDateTime.now()
                 val logItem = Log(logText, date)
                 val logFileName = String.format(
@@ -95,11 +93,10 @@ class LogsHandler {
                             logs.add(Log(it))
                         } catch (e: Throwable) {
                             // avoid recursion! never use: logErrors(message) or throw
-                            val message =
-                                "incomplete log or wrong structure found in $it."
-                            logException(e, it)
                             // create dummy log entry, that is deletable and shareable
                             runCatching {
+                                val title =
+                                    "incomplete log or wrong structure found in $it."
                                 val logDate =
                                     LocalDateTime.parse(
                                         it.name!!
@@ -115,7 +112,7 @@ class LogsHandler {
                                                 }"
                                             }
                                     )
-                                logs.add(Log(message(e), logDate))
+                                logs.add(Log("$title\n\n${message(e)}", logDate))
                             }
                         }
                     }
@@ -126,7 +123,7 @@ class LogsHandler {
 
         @Throws(IOException::class)
         fun housekeepingLogs() {
-            try {
+            runCatching { // do not log... it would be recursive
                 logsDirectory?.let { logsDir ->
                     invalidateCache(logsDir)
                     if (logsDir.isDirectory) {
@@ -136,26 +133,17 @@ class LogsHandler {
                         if (logs.size > pref_maxLogCount.value)
                             logs.subList(pref_maxLogCount.value, logs.size)
                                 .forEach {
-                                    try {
-                                        //traceDebug { "delete ${it.path}" }
+                                    runCatching { // do not log... it would be recursive
                                         it.delete()
-                                    } catch (e: Throwable) {
-                                        val message =
-                                            "cannot delete log '${it.path}'"
-                                        logException(e, message)    // only log -> no recursion!
                                     }
                                 }
                     }
                 }
-            } catch (e: Throwable) {
-                val message =
-                    "housekeepingLogs failed"
-                logException(e, message)    // only log -> no recursion!
             }
         }
 
         fun getLogFile(date: LocalDateTime): StorageFile? {
-            try {
+            runCatching { // do not log... it would be recursive
                 logsDirectory?.let { logsDir ->
                     invalidateCache(logsDir)
                     val timeStr = BACKUP_DATE_TIME_FORMATTER.format(date)
@@ -171,22 +159,14 @@ class LogsHandler {
                             return file
                     }
                 }
-            } catch (e: Throwable) {
-                unexpectedException(e)
             }
             return null
         }
 
         fun logErrors(errors: String) {
-            try {
+            runCatching { // do not log... it would be recursive
                 val logText = errors + "\n\n" + onErrorInfo().joinToString("\n")
                 writeToLogFile(logText)
-            } catch (e: IOException) {
-                logException(e, backTrace = true)
-            } catch (e: StorageLocationNotConfiguredException) {
-                logException(e, backTrace = true)
-            } catch (e: BackupLocationInAccessibleException) {
-                logException(e, backTrace = true)
             }
         }
 
