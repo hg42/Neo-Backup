@@ -75,6 +75,7 @@ import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.backupDirConfigured
 import com.machiav3lli.backup.utils.isDynamicTheme
 import com.machiav3lli.backup.utils.restartApp
+import com.machiav3lli.backup.utils.scheduleAlarm
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
@@ -92,6 +93,8 @@ import java.io.ByteArrayInputStream
 import java.lang.ref.WeakReference
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.exitProcess
@@ -528,6 +531,75 @@ class OABX : Application() {
                 trace { "******************** startup end" }
             } else
                 trace { "******************** startup was already finished" }
+        }
+
+        fun command(cmd: String?, params: Map<String, String> = emptyMap()) {
+            Timber.i("*** command $cmd $params")
+            when (cmd) {
+                ACTION_CANCEL     -> {
+                    val batchName = params["name"] ?: ""
+                    Timber.d("################################################### command cancel -------------> name=$batchName")
+                    OABX.addInfoLogText("$cmd $batchName")
+                    OABX.workHandler?.cancel(batchName)
+                }
+                ACTION_SCHEDULE        -> {
+                    params["name"]?.let { name ->
+                        OABX.addInfoLogText("$cmd $name")
+                        Timber.d("################################################### command schedule -------------> name=$name")
+                        Thread {
+                            val now = SystemUtils.now
+                            val serviceIntent = Intent(context, ScheduleService::class.java)
+                            val scheduleDao = OABX.db.getScheduleDao()
+                            scheduleDao.getSchedule(name)?.let { schedule ->
+                                serviceIntent.putExtra("scheduleId", schedule.id)
+                                serviceIntent.putExtra("name", schedule.getBatchName(now))
+                                context.startService(serviceIntent)
+                            }
+                        }.start()
+                    }
+                }
+                ACTION_SCHEDULE_CONFIG -> {
+                    params["name"]?.let { name ->
+                        val now = SystemUtils.now
+                        val time = params["time"]
+                        val setTime = time ?: SimpleDateFormat("HH:mm", Locale.getDefault())
+                            .format(now + 120)
+                        OABX.addInfoLogText("$cmd $name $time -> $setTime")
+                        Timber.d("################################################### command schedule_config -------------> name=$name time=$time -> $setTime")
+                        Thread {
+                            val scheduleDao = OABX.db.getScheduleDao()
+                            scheduleDao.getSchedule(name)?.let { schedule ->
+                                val (hour, minute) = setTime.split(":").map { it.toInt() }
+                                traceSchedule { "[${schedule.id}] command receiver -> scheduleNext to hour=$hour minute=$minute" }
+                                val newSched = schedule.copy(
+                                    timeHour = hour,
+                                    timeMinute = minute,
+                                )
+                                scheduleDao.update(newSched)
+                                scheduleAlarm(newSched.id, true)
+                            }
+                        }.start()
+                    }
+                }
+                ACTION_CRASH      -> {
+                    throw Exception("this is a crash via command intent")
+                }
+                null              -> {}
+                else              -> {
+                    OABX.addInfoLogText("command ignored $cmd $params")
+                }
+            }
+        }
+
+        fun command(intent: Intent) {
+            val cmd = intent.action
+            val data = intent.data
+            val extras = intent.extras?.let {
+                    extras ->  (extras.keySet()).map {
+                Pair(it, extras.getString(it, ""))
+            }.toMap()
+            } ?: mapOf()
+            command(cmd, extras)
         }
 
         init {

@@ -347,7 +347,12 @@ class MainActivityX : BaseActivity() {
         if (intent == null) return false
         val command = intent.action
         val data = intent.data
-        Timber.i("Main: command $command -> $data")
+        val extras = intent.extras?.let {
+            extras ->  (extras.keySet()).map {
+                Pair(it, extras.getString(it, ""))
+            }.toMap()
+        } ?: mapOf()
+        Timber.i("*** main: command $command -> $data $extras")
         when (at) {
 
             "beforeContent"             -> {
@@ -390,7 +395,8 @@ class MainActivityX : BaseActivity() {
                     }
 
                     else                         -> {
-                        addInfoLogText("Main: command '$command'")
+                        //addInfoLogText("*** command ignored: '$command'")
+                        OABX.command(command, extras)
                     }
                 }
             }

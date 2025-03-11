@@ -125,7 +125,7 @@ const val PACKAGES_LIST_GLOBAL_ID = -1L
 
 const val ACTION_CANCEL = "cancel"
 const val ACTION_SCHEDULE = "schedule"
-const val ACTION_SCHEDULECONFIG = "scheduleconfig"
+const val ACTION_SCHEDULE_CONFIG = "schedule_config"
 const val ACTION_CRASH = "crash"
 
 const val NAV_MAIN = 0
