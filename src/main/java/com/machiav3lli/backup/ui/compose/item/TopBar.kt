@@ -253,7 +253,7 @@ fun TopBar(
                         onDismissRequest = { showDevTools.value = false },
                         properties = DialogProperties(
                             usePlatformDefaultWidth = false,
-                            dismissOnBackPress = false,
+                            dismissOnBackPress = true,
                             dismissOnClickOutside = false
                         )
                     ) {

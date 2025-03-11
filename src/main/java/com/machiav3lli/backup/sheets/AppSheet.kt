@@ -140,7 +140,7 @@ fun AppSheet(
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))
     }
 
-    val pkgs by activity.viewModel.allPackagesByNames.collectAsState()
+    val pkgs by OABX.data.allPackagesByNames.collectAsState()
     val pkgFound = pkgs[packageName]
     //
     //val pkgs = activity.viewModel.allPackages.state.collectAsState()
@@ -321,7 +321,7 @@ fun AppSheet(
                     icon = Phosphor.Prohibit,
                     description = stringResource(id = R.string.global_blocklist_add)
                 ) {
-                    activity.viewModel.addToBlocklist(
+                    OABX.data.addToBlocklist(
                         pkg.packageName
                     )
                 }

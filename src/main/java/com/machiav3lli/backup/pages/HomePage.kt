@@ -84,18 +84,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomePage() {
     // TODO include tags in search
-    val mActivity = OABX.main!!
     val scope = rememberCoroutineScope()
-    val viewModel = mActivity.viewModel
 
-    val filteredList by viewModel.filteredPackages.collectAsState(emptyList())
-    val updatedPackages by viewModel.updatedPackages.collectAsState(emptyList())
+    val filteredList by OABX.data.filteredPackages.collectAsState(emptyList())
+    val updatedPackages by OABX.data.updatedPackages.collectAsState(emptyList())
     val updaterVisible = updatedPackages.isNotEmpty()  // recompose is already triggered above
     var updaterExpanded by remember { mutableStateOf(false) }
-    val selection = viewModel.selection
+    val selection = OABX.data.selection
     val nSelected = selection.filter { it.value }.keys.size
     var menuPackage by remember { mutableStateOf<Package?>(null) }
-    val menuExpanded = viewModel.menuExpanded
+    val menuExpanded = OABX.data.menuExpanded
     val menuButtonAlwaysVisible = pref_menuButtonAlwaysVisible.value
     val openBatchDialog = remember { mutableStateOf(false) }
     val appSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -330,7 +328,7 @@ fun HomePage() {
                 selectedData = selectedData,
                 openDialogCustom = openBatchDialog,
             ) {
-                mActivity.startBatchAction(
+                OABX.main?.startBatchAction(
                     true,
                     selectedPackageNames = selectedList.map { it.packageName },
                     selectedModes = selectedListModes,

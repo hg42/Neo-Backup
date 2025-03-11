@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,7 +38,6 @@ import coil.ImageLoader
 import com.machiav3lli.backup.MODE_ALL
 import com.machiav3lli.backup.MODE_UNSET
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.OABX.Companion.addInfoLogText
 import com.machiav3lli.backup.OABX.Companion.beginBusy
 import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.OABX.Companion.isDebug
@@ -181,7 +181,7 @@ fun Selections(
 
     if (action in listOf("get", "put")) {
         val scheduleDao = OABX.db.getScheduleDao()
-        val schedules = OABX.main?.viewModel?.schedulesDb?.value ?: emptyList()
+        val schedules by OABX.data.schedulesDb.collectAsState()
         if (schedules.isEmpty())
             DropdownMenuItem(
                 text = { Text("--- no schedules ---") },
@@ -255,13 +255,12 @@ fun Selections(
                 when (action) {
                     "get" -> {
                         val newSelection =
-                            OABX.main?.viewModel?.getBlocklist()
-                                ?: emptyList()
+                            OABX.data.getBlocklist()
                         onAction(newSelection)
                     }
 
                     "put" -> {
-                        OABX.main?.viewModel?.setBlocklist(selection.toSet())
+                        OABX.data.setBlocklist(selection.toSet())
                         onAction(selection)
                     }
                 }
@@ -365,8 +364,7 @@ fun launchEachPackage(
         forEachPackage(
             packages = packages,
             action = action,
-            selection = OABX.main?.viewModel?.selection
-                ?: throw Exception("cannot access selection"),
+            selection = OABX.data.selection,
             select = select,
             parallel = parallel,
             todo = todo

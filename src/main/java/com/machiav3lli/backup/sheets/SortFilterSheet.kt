@@ -82,10 +82,8 @@ import com.machiav3lli.backup.utils.specialBackupsEnabled
 
 @Composable
 fun SortFilterSheet(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val mActivity = OABX.main!!
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
-    val packageList by mActivity.viewModel.packages.collectAsState()
+    val packageList by OABX.data.packages.collectAsState()
     var model by rememberSaveable { mutableStateOf(sortFilterModel) }
     fun currentStats() = getStats(
         packageList.applyFilter(

@@ -273,10 +273,10 @@ class MainActivityX : BaseActivity() {
 
                         if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
                             GlobalBlockListDialogUI(
-                                currentBlocklist = viewModel.getBlocklist().toSet(),
+                                currentBlocklist = OABX.data.getBlocklist().toSet(),
                                 openDialogCustom = openBlocklist,
                             ) { newSet ->
-                                viewModel.setBlocklist(newSet)
+                                OABX.data.setBlocklist(newSet)
                             }
                         }
                     }
@@ -417,7 +417,7 @@ class MainActivityX : BaseActivity() {
     }
 
     fun updatePackage(packageName: String) {
-        viewModel.updatePackage(packageName)
+        OABX.data.updatePackage(packageName)
     }
 
     fun refreshPackagesAndBackups() {

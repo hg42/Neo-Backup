@@ -215,7 +215,7 @@ var sortFilterModel: SortFilterModel
         val modelString = value.toString().split(",")
         persist_sortFilter.value = modelString.first()
         persist_specialFilters.value = modelString.last()
-        OABX.main?.viewModel?.modelSortFilter?.value = value   //setSortFilter(value)
+        OABX.data.modelSortFilter.value = value   //setSortFilter(value)
     }
 
 class StorageLocationNotConfiguredException : Exception("Storage Location has not been configured")

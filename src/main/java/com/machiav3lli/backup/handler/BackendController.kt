@@ -24,7 +24,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Process
-import androidx.lifecycle.viewModelScope
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.BACKUP_PACKAGE_FOLDER_REGEX_PATTERN
@@ -914,18 +913,16 @@ fun Context.updateAppTables() {
                 endNanoTimer("updateAppTables.appInfoList", log = true)
             }
 
-        OABX.main?.viewModel?.apply {
-            viewModelScope.launch {
-                try {
-                    beginNanoTimer("updateAppTables.appInfosChanged")
+        OABX.scope.launch {
+            try {
+                beginNanoTimer("updateAppTables.appInfosChanged")
 
-                    appInfosChanged.update.emit(appInfoList)
+                OABX.data.appInfosChanged.update.emit(appInfoList)
 
-                } catch (e: Throwable) {
-                    logException(e, backTrace = true)
-                } finally {
-                    endNanoTimer("updateAppTables.appInfosChanged", log = true)
-                }
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
+            } finally {
+                endNanoTimer("updateAppTables.appInfosChanged", log = true)
             }
         }
 

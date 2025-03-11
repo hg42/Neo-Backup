@@ -86,7 +86,7 @@ fun MainPage(
 
     var query by rememberSaveable {
         mutableStateOf(
-            OABX.main?.viewModel?.searchQuery?.value ?: ""
+            OABX.data.searchQuery.value
         )
     }
 
@@ -159,11 +159,11 @@ fun MainPage(
                                         onQueryChanged = { newQuery ->
                                             //if (newQuery != query)  // empty string doesn't work...
                                             query = newQuery
-                                            OABX.main?.viewModel?.searchQuery?.value = query
+                                            OABX.data.searchQuery.value = query
                                         },
                                         onClose = {
                                             query = ""
-                                            OABX.main?.viewModel?.searchQuery?.value = ""
+                                            OABX.data.searchQuery.value = ""
                                         }
                                     )
                                     ShowIf(!searchExpanded.value) {
@@ -223,11 +223,11 @@ fun MainPage(
 
             if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
                 GlobalBlockListDialogUI(
-                    currentBlocklist = OABX.main?.viewModel?.getBlocklist()?.toSet()
+                    currentBlocklist = OABX.data.getBlocklist().toSet()
                         ?: emptySet(),
                     openDialogCustom = openBlocklist,
                 ) { newSet ->
-                    OABX.main?.viewModel?.setBlocklist(newSet)
+                    OABX.data.setBlocklist(newSet)
                 }
             }
         }

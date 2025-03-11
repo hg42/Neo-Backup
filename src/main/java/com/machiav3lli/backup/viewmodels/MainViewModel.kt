@@ -18,50 +18,11 @@
 package com.machiav3lli.backup.viewmodels
 
 import android.app.Application
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
-import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.PACKAGES_LIST_GLOBAL_ID
 import com.machiav3lli.backup.dbs.ODatabase
-import com.machiav3lli.backup.dbs.entity.AppExtras
-import com.machiav3lli.backup.dbs.entity.AppInfo
-import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.dbs.entity.Blocklist
-import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
-import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
-import com.machiav3lli.backup.handler.toPackageList
-import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.items.Package.Companion.invalidateCacheForPackage
-import com.machiav3lli.backup.preferences.pref_newAndUpdatedNotification
-import com.machiav3lli.backup.traceFlows
-import com.machiav3lli.backup.ui.compose.MutableComposableFlow
-import com.machiav3lli.backup.ui.compose.item.IconCache
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
-import com.machiav3lli.backup.utils.TraceUtils.formatBackups
-import com.machiav3lli.backup.utils.TraceUtils.trace
-import com.machiav3lli.backup.utils.applyFilter
-import com.machiav3lli.backup.utils.sortFilterModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.retry
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class MainViewModel(
@@ -73,6 +34,7 @@ class MainViewModel(
         Timber.w("==================== ${classAndId(this)}")
     }
 
+    //TODO hg42 it seems these flows should belong to app, because the resources are global
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - FLOWS
 
     // most flows transport complete states, so skipping intermediate states is allowed
@@ -92,6 +54,7 @@ class MainViewModel(
     // buffer(UNLIMITED)
     //      use in case the flow isn't collected, yet, e.g. if using Lazily
 
+    /*
     fun scope() = viewModelScope + Dispatchers.IO
 
     data class FlowJob<TFlow, TJob>(
@@ -495,6 +458,8 @@ class MainViewModel(
         withContext(Dispatchers.IO) {
             db.getBlocklistDao().updateList(PACKAGES_LIST_GLOBAL_ID, newList)
         }
+
+    */
 
     class Factory(
         private val database: ODatabase,
