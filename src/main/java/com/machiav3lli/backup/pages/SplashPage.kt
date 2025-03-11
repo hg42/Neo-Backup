@@ -3,7 +3,6 @@ package com.machiav3lli.backup.pages
 import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
@@ -40,40 +39,61 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.LockOpen
 import com.machiav3lli.backup.ui.compose.icons.phosphor.Warning
 import com.machiav3lli.backup.ui.compose.item.DevTools
 import com.machiav3lli.backup.ui.compose.item.ElevatedActionButton
-import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.utils.restartApp
 import kotlin.system.exitProcess
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+//@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SplashPage() {
-    Scaffold(
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        Column(
+    FullScreenBackground {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.weight(2f))
-            Image(
+            containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) { paddingValues ->
+            Box(
                 modifier = Modifier
-                    .fillMaxSize(0.7f),
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = stringResource(id = R.string.app_name)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = listOf(
-                    OABX.packageName,
-                    OABX.versionName,
-                    OABX.applicationIssuer?.let { "signed by $it" } ?: "",
-                ).joinToString("\n"),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.weight(1f))
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "🎃",
+                        fontSize = 150.sp
+                    )
+                    //Image(
+                    //    modifier = Modifier
+                    //        .fillMaxSize(0.7f),
+                    //    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    //    //contentDescription = stringResource(id = R.string.app_name)
+                    //)
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.weight(10f))
+                    Text(
+                        text = listOf(
+                            OABX.packageName,
+                            OABX.versionName.replace("--", "\n"),
+                            OABX.applicationIssuer.let { if (it != "?") "signed by $it" else "" },
+                        ).joinToString("\n"),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -82,7 +102,9 @@ fun SplashPage() {
 @Composable
 fun RootMissing(activity: Activity? = null) {
     Scaffold(
-        containerColor = Color.Transparent,
+        modifier = Modifier
+            .fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         val showDevTools = remember { mutableStateOf(false) }

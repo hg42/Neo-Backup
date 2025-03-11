@@ -170,9 +170,6 @@ val buildVersionCode by extra {
     buildVersionCodeFromTime.toInt()
 }
 val build = "$major.$minor.$revision.$buildNumber6"
-val buildVersion by extra {
-    "$build-hg42-${headHash}-${buildTime}--${buildLabel}"
-}
 
 fun buildName(variant: String) = (
         "$build-${headHash}--${buildLabel}".replace(
@@ -195,6 +192,11 @@ fun buildName(variant: String) = (
             .replace("----", "--")
             .replace("--", "-")
         )
+
+val buildVersion by extra {
+    //"$build-hg42-${headHash}-${buildTime}--${buildLabel}"
+    "$build-${headHash}--${buildLabel}"
+}
 
 println(
     """

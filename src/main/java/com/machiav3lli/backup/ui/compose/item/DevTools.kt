@@ -1195,10 +1195,12 @@ fun DevTools(
                     }
                     //Text(text = tab, modifier = Modifier)
                     RefreshButton(hideIfNotBusy = true)
-                    SimpleButton(
-                        "%"
-                    ) {
-                        halfHeight = !halfHeight
+                    if (false) {
+                        SimpleButton(
+                            "%"
+                        ) {
+                            halfHeight = !halfHeight
+                        }
                     }
                     SimpleButton(
                         "        close        "

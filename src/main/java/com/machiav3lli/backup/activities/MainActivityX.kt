@@ -178,14 +178,6 @@ class MainActivityX : BaseActivity() {
         //TODO here or in MainPage? MainPage seems to be weird at least for each recomposition
         OABX.appsSuspendedChecked = false
 
-
-        setContent {
-            AppTheme {
-                SplashPage()
-            }
-            navController = rememberNavController()
-        }
-
         if (doIntent(intent, "beforeContent"))
             return
 
@@ -202,7 +194,41 @@ class MainActivityX : BaseActivity() {
 
         setContent {
 
-            navController = rememberNavController()
+            LaunchedEffect(true) {
+                //navController.addOnDestinationChangedListener { _, destination, _ ->
+                //    if (destination.route == NavItem.Main.destination && freshStart) {
+                    if (freshStart) {
+                        freshStart = false
+                        traceBold { "******************** freshStart && Main ********************" }
+                        mScope.launch(Dispatchers.IO) {
+                            addInfoLogText("--> click title to keep infobox open")
+                            addInfoLogText("--> long press title for dev tools")
+
+                            runOrLog {
+                                val backupsMap = OABX.getBackups()
+                                traceInfo {
+                                    "before activity: findBackups: packages: ${backupsMap.keys.size} backups: ${
+                                        backupsMap.values.map { it.size }.sum()
+                                    } root: ${OABX.backupRoot}"
+                                }
+                                ensureBackups()
+                            }
+                            runOrLog { updateAppTables() }
+                            //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
+                            //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
+
+                            endStartup()
+
+                            OABX.workHandler?.start()
+                        }
+
+                        devToolsSearch.value =
+                            TextFieldValue("")   //TODO hg42 hide implementation details
+
+                        //runOnUiThread { showEncryptionDialog() }
+                    }
+                //}
+            }
 
             DisposableEffect(pref_appTheme.value) {
                 enableEdgeToEdge(
@@ -218,110 +244,88 @@ class MainActivityX : BaseActivity() {
                 onDispose {}
             }
 
-            AppTheme {
-                openDialog = remember { mutableStateOf(false) }
-                dialogKey = remember { mutableStateOf(null) }
-                val openBlocklist = remember { mutableStateOf(false) }
+            if (!OABX.ready && OABX.busy.value) {
 
-                LaunchedEffect(viewModel) {
-                    navController.addOnDestinationChangedListener { _, destination, _ ->
-                        if (destination.route == NavItem.Main.destination && freshStart) {
-                            freshStart = false
-                            traceBold { "******************** freshStart && Main ********************" }
-                            mScope.launch(Dispatchers.IO) {
-                                addInfoLogText("--> click title to keep infobox open")
-                                addInfoLogText("--> long press title for dev tools")
+                AppTheme {
 
-                                runOrLog {
-                                    val backupsMap = OABX.getBackups()
-                                    traceInfo {
-                                        "before activity: findBackups: packages: ${backupsMap.keys.size} backups: ${
-                                            backupsMap.values.map { it.size }.sum()
-                                        } root: ${OABX.backupRoot}"
-                                    }
-                                    ensureBackups()
+                    SplashPage()
+
+                }
+
+            } else {
+
+                navController = rememberNavController()
+
+                AppTheme {
+                    openDialog = remember { mutableStateOf(false) }
+                    dialogKey = remember { mutableStateOf(null) }
+                    val openBlocklist = remember { mutableStateOf(false) }
+
+                    Scaffold(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
+                    ) {
+                        ObservedEffect {
+                            resumeMain()
+                        }
+
+                        Box {
+                            MainNavHost(
+                                navController = navController,
+                            )
+
+                            if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
+                                GlobalBlockListDialogUI(
+                                    currentBlocklist = OABX.data.getBlocklist().toSet(),
+                                    openDialogCustom = openBlocklist,
+                                ) { newSet ->
+                                    OABX.data.setBlocklist(newSet)
                                 }
-                                runOrLog { updateAppTables() }
-                                //TODO hg42 val time = OABX.endBusy(OABX.startupMsg)
-                                //TODO hg42 addInfoLogText("startup: ${"%.3f".format(time / 1E9)} sec")
-
-                                endStartup()
-
-                                OABX.workHandler?.start()
                             }
+                        }
+                    }
 
-                            devToolsSearch.value =
-                                TextFieldValue("")   //TODO hg42 hide implementation details
+                    if (openDialog.value) {
+                        BaseDialog(openDialogCustom = openDialog) {
+                            when (dialogKey.value) {
+                                is DialogKey.Encryption -> {
+                                    ActionsDialogUI(
+                                        titleText = stringResource(id = R.string.enable_encryption_title),
+                                        messageText = stringResource(id = R.string.enable_encryption_message),
+                                        openDialogCustom = openDialog,
+                                        primaryText = stringResource(id = R.string.dialog_approve),
+                                        primaryAction = {
+                                            openDialog.value = false
+                                            moveTo("${NavItem.Prefs.destination}?page=1")
+                                        }
+                                    )
+                                }
 
-                            runOnUiThread { showEncryptionDialog() }
+                                is DialogKey.Error      -> {
+                                    val message = (dialogKey.value as DialogKey.Error).message
+                                    ActionsDialogUI(
+                                        titleText = stringResource(id = R.string.errorDialogTitle),
+                                        messageText = message,
+                                        openDialogCustom = openDialog,
+                                        primaryText = stringResource(id = R.string.dialogSave),
+                                        primaryAction = { LogsHandler.logErrors(message) },
+                                        secondaryText = stringResource(id = R.string.dialogOK)
+                                    )
+                                }
+
+                                else                    -> {}
+                            }
                         }
                     }
                 }
 
-                Scaffold(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = MaterialTheme.colorScheme.onBackground,
-                ) {
-                    ObservedEffect {
-                        resumeMain()
+                LaunchedEffect(true) {
+                    withTimeoutOrNull(5000) {
+                        while (runCatching { navController.graph.nodes.size() }.getOrDefault(0) < 2)
+                            delay(100)
                     }
-
-                    Box {
-                        MainNavHost(
-                            navController = navController,
-                        )
-
-                        if (openBlocklist.value) BaseDialog(openDialogCustom = openBlocklist) {
-                            GlobalBlockListDialogUI(
-                                currentBlocklist = OABX.data.getBlocklist().toSet(),
-                                openDialogCustom = openBlocklist,
-                            ) { newSet ->
-                                OABX.data.setBlocklist(newSet)
-                            }
-                        }
-                    }
+                    doIntent(intent, "afterContent")
                 }
-
-                if (openDialog.value) {
-                    BaseDialog(openDialogCustom = openDialog) {
-                        when (dialogKey.value) {
-                            is DialogKey.Encryption -> {
-                                ActionsDialogUI(
-                                    titleText = stringResource(id = R.string.enable_encryption_title),
-                                    messageText = stringResource(id = R.string.enable_encryption_message),
-                                    openDialogCustom = openDialog,
-                                    primaryText = stringResource(id = R.string.dialog_approve),
-                                    primaryAction = {
-                                        openDialog.value = false
-                                        moveTo("${NavItem.Prefs.destination}?page=1")
-                                    }
-                                )
-                            }
-
-                            is DialogKey.Error      -> {
-                                val message = (dialogKey.value as DialogKey.Error).message
-                                ActionsDialogUI(
-                                    titleText = stringResource(id = R.string.errorDialogTitle),
-                                    messageText = message,
-                                    openDialogCustom = openDialog,
-                                    primaryText = stringResource(id = R.string.dialogSave),
-                                    primaryAction = { LogsHandler.logErrors(message) },
-                                    secondaryText = stringResource(id = R.string.dialogOK)
-                                )
-                            }
-
-                            else                    -> {}
-                        }
-                    }
-                }
-            }
-
-            LaunchedEffect(true) {
-                withTimeoutOrNull(5000) {
-                    while (runCatching { navController.graph.nodes.size() }.getOrDefault(0) < 2)
-                        delay(100)
-                }
-                doIntent(intent, "afterContent")
             }
         }
     }
@@ -347,8 +351,8 @@ class MainActivityX : BaseActivity() {
         if (intent == null) return false
         val command = intent.action
         val data = intent.data
-        val extras = intent.extras?.let {
-            extras ->  (extras.keySet()).map {
+        val extras = intent.extras?.let { extras ->
+            (extras.keySet()).map {
                 Pair(it, extras.getString(it, ""))
             }.toMap()
         } ?: mapOf()
@@ -509,7 +513,9 @@ class MainActivityX : BaseActivity() {
                             WorkInfo.State.SUCCEEDED -> {
                                 counter += 1
 
-                                val (succeeded, packageLabel, error) = AppActionWork.getOutput(value)
+                                val (succeeded, packageLabel, error) = AppActionWork.getOutput(
+                                    value
+                                )
                                 if (error.isNotEmpty()) errors =
                                     "$errors$packageLabel: ${      //TODO hg42 add to WorkHandler
                                         LogsHandler.handleErrorMessages(
@@ -592,7 +598,9 @@ class MainActivityX : BaseActivity() {
                             WorkInfo.State.SUCCEEDED -> {
                                 counter += 1
 
-                                val (succeeded, packageLabel, error) = AppActionWork.getOutput(value)
+                                val (succeeded, packageLabel, error) = AppActionWork.getOutput(
+                                    value
+                                )
                                 if (error.isNotEmpty()) errors =
                                     "$errors$packageLabel: ${
                                         LogsHandler.handleErrorMessages(
@@ -641,7 +649,8 @@ class MainActivityX : BaseActivity() {
             shouldShowLock()   -> {
                 val currentDestination =
                     navController.currentDestination?.route ?: NavItem.Main.destination
-                if (!isOnLockScreen()) lockNavigationState.intendedDestination = currentDestination
+                if (!isOnLockScreen()) lockNavigationState.intendedDestination =
+                    currentDestination
                 navController.safeNavigate(NavItem.Lock.destination)
                 launchBiometricPrompt()
             }
