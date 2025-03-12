@@ -142,6 +142,8 @@ open class ScheduleService : Service() {
             }
         }
 
+        OABX.workHandler?.start()
+
         if (scheduleId >= 0) {
 
             traceSchedule { "[$scheduleId] check: $name -> ${runningSchedules[scheduleId]}" }
