@@ -90,7 +90,6 @@ import com.machiav3lli.backup.utils.restartApp
 import com.machiav3lli.backup.utils.scheduleAlarm
 import com.machiav3lli.backup.utils.scheduleAlarmsOnce
 import com.machiav3lli.backup.utils.sortFilterModel
-import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -1118,7 +1117,7 @@ class OABX : Application() {
 
         fun getBackups(): Map<String, List<Backup>> {
             synchronized(theBackupsMap) {
-                return theBackupsMap.toPersistentMap()
+                return theBackupsMap.toMap()
             }
         }
 
