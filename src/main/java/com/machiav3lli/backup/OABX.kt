@@ -1349,10 +1349,11 @@ class OABX : Application() {
                         var timeout = 30000L
                         val timeStep = 250L
                         while (
-                            OABX.startup
-                            || !OABX.validBackups
-                            || pkgs.isEmpty()
-                        //|| pkgs.all { it.isSpecial }   // specials no more added to empty list
+                            OABX.ready && (
+                                    OABX.startup
+                                            || !OABX.validBackups
+                                            || pkgs.isEmpty()
+                                    )
                         ) {
                             trace {
                                 "allPackages: waiting: startup=${
