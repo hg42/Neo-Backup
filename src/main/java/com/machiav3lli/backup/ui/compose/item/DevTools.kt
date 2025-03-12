@@ -304,8 +304,8 @@ fun TextInput(
             }
         ),
         keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done,
-            autoCorrect = false
+            autoCorrectEnabled = false,
+            imeAction = ImeAction.Done
         ),
         onValueChange = {
             input.value = it

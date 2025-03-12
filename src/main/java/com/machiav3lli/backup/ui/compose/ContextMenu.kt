@@ -109,7 +109,7 @@ fun TextInputMenuItem(
                     }
                 ),
                 keyboardOptions = KeyboardOptions(
-                    autoCorrect = false
+                    autoCorrectEnabled = false
                 ),
                 onValueChange = {
                     if (it.contains("\n")) {

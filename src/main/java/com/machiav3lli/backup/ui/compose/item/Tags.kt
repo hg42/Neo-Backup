@@ -212,7 +212,10 @@ fun AddTagView(
             shape = MaterialTheme.shapes.medium,
             singleLine = true,
             label = { Text(text = stringResource(id = R.string.add_tag)) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                imeAction = ImeAction.Done
+            ),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         )
         IconButton(onClick = {

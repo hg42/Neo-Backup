@@ -153,7 +153,10 @@ fun TextEditBlock(
             shape = MaterialTheme.shapes.large,
             singleLine = false,
             label = { Text(text = stringResource(id = R.string.edit_note)) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                imeAction = ImeAction.Done
+            ),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         )
         IconButton(onClick = {

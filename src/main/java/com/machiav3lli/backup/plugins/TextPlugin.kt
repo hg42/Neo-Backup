@@ -51,7 +51,7 @@ fun TextEditor(
         placeholder = { Text(text = placeholder, color = Color.Gray) },
         singleLine = false,
         keyboardOptions = KeyboardOptions(
-            autoCorrect = false
+            autoCorrectEnabled = false
         ),
         onValueChange = {
             input = it

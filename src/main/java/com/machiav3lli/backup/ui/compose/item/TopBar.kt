@@ -360,7 +360,10 @@ fun ExpandedSearchView(
             }
         },
         label = { Text(text = stringResource(id = R.string.searchHint)) },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardOptions = KeyboardOptions(
+            autoCorrectEnabled = false,
+            imeAction = ImeAction.Done
+        ),
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
     )
 }
