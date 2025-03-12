@@ -36,8 +36,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Entity(primaryKeys = ["packageName", "backupDate"])
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 @Serializable
-data class Backup @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class) constructor(
+data class Backup(
     var backupVersionCode: Int = 0,
     var packageName: String,
     var packageLabel: String,

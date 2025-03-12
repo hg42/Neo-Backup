@@ -137,12 +137,7 @@ fun Selections(
         ?: backupRoot?.createDirectory(SELECTIONS_FOLDER_NAME)
     val files = selectionsDir?.listFiles() ?: emptyList()
 
-    if (files == null)
-        DropdownMenuItem(
-            text = { Text("--- no selections dir ---") },
-            onClick = {}
-        )
-    else if (files.isEmpty())
+    if (files.isEmpty())
         DropdownMenuItem(
             text = { Text("--- no saved selections ---") },
             onClick = {}

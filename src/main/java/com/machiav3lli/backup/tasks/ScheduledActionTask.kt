@@ -71,10 +71,6 @@ open class ScheduledActionTask(val context: Context, private val scheduleId: Lon
             endStartup()
             OABX.ready = true
 
-            //OABX.context.updateAppTables()
-            //var packages = emptyList<Package>()
-            //runBlocking { OABX.data.packages.collectLatest { packages = it } }
-
             packages
 
         } catch (e: FileUtils.BackupLocationInAccessibleException) {
