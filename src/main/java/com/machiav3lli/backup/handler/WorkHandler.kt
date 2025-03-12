@@ -296,6 +296,7 @@ class WorkHandler {
                 var data = info.progress
                 if (data.getString("batchName").isNullOrEmpty())
                     data = info.outputData
+                var name = data.getString("name")
                 var batchName = data.getString("batchName")
                 val packageName = data.getString("packageName")
                 val packageLabel = data.getString("packageLabel")
