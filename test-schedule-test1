@@ -2,4 +2,6 @@
 
 ./gradlew :assembleDebug
 
-adb shell am broadcast -a schedule -e "test1" -n com.machiav3lli.backup.hg42.debug/com.machiav3lli.backup.services.CommandReceiver
+adb install /z/src/android/Neo-Backup/build/outputs/apk/debug/*.apk
+
+adb shell am broadcast -a schedule -e name test1 -n com.machiav3lli.backup.hg42.debug/com.machiav3lli.backup.services.CommandReceiver com.machiav3lli.backup.hg42.debug
