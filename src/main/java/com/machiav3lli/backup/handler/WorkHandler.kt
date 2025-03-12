@@ -24,6 +24,7 @@ import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.trace
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -66,7 +67,7 @@ class WorkHandler {
         val self = this
 
         // observe AppActionWork
-        MainScope().launch {
+        MainScope().launch(Dispatchers.Main) {
             manager?.getWorkInfosByTagLiveData(
                 AppActionWork::class.qualifiedName!!
             )?.observeForever {
