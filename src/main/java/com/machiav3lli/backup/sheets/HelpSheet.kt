@@ -21,27 +21,22 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -55,11 +50,9 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.legendList
 import com.machiav3lli.backup.linksList
-import com.machiav3lli.backup.ui.compose.ShowIf
 import com.machiav3lli.backup.ui.compose.blockBorder
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.CaretDown
-import com.machiav3lli.backup.ui.compose.icons.phosphor.CaretUp
 import com.machiav3lli.backup.ui.compose.item.LegendItem
 import com.machiav3lli.backup.ui.compose.item.LinkItem
 import com.machiav3lli.backup.ui.compose.item.RoundButton
@@ -83,9 +76,8 @@ fun HelpSheet(onDismiss: () -> Unit) {
                     containerColor = Color.Transparent,
                 ),
                 headlineContent = {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = stringResource(id = R.string.app_name),
@@ -96,7 +88,7 @@ fun HelpSheet(onDismiss: () -> Unit) {
                             text = OABX.versionName,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
+                            maxLines = 4,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -153,6 +145,7 @@ fun HelpSheet(onDismiss: () -> Unit) {
                     }
                 }
             }
+            item { Spacer(modifier = Modifier.padding(32.dp)) }
             item { TitleText(R.string.help_legend) }
             gridItems(
                 items = legendList,
@@ -166,45 +159,15 @@ fun HelpSheet(onDismiss: () -> Unit) {
                     text = stringResource(id = R.string.help_appTypeHint),
                 )
             }
+            item { Spacer(modifier = Modifier.padding(32.dp)) }
+            item { TitleText(R.string.usage_notes_title) }
             item {
-                val (showNotes, extendNotes) = remember { mutableStateOf(false) }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface),
-                    shape = MaterialTheme.shapes.large,
-                ) {
-                    ListItem(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { extendNotes(!showNotes) },
-                        headlineContent = {
-                            TitleText(R.string.usage_notes_title)
-                        },
-                        colors = ListItemDefaults.colors(
-                            containerColor = Color.Transparent
-                        ),
-                        trailingContent = {
-                            Icon(
-                                imageVector = if (showNotes) Phosphor.CaretUp
-                                else Phosphor.CaretDown,
-                                contentDescription = null
-                            )
-                        }
-                    )
-                    ShowIf(showNotes) {
-                        Text(
-                            text = context.getUsageNotes(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = context.getUsageNotes(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
             }
         }
     }
