@@ -1,7 +1,7 @@
 [versions]
 
 activity = "1.9.1"      # keep for sdk34
-agp = "8.8.2"
+agp = "8.9.0"
 biometric = "1.2.0-alpha05"
 coil = "2.7.0"
 commons-compress = "1.26.2"
