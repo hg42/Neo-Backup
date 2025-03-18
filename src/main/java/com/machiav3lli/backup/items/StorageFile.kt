@@ -27,9 +27,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URLDecoder
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 
 fun getCursorString(cursor: Cursor, columnName: String): String? {
@@ -616,6 +613,7 @@ open class StorageFile {
             logException(e, path, backTrace = false)
             ok = false
         }
+        if (ok) name = displayName
         // adds this, so need to change parent
         parent?.path?.let { cacheFilesAdd(it, this) }
 
