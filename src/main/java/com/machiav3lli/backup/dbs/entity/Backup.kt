@@ -287,10 +287,13 @@ data class Backup(
 
             } catch (e: FileNotFoundException) {
                 logException(e, "Cannot open ${propertiesFile.path}", backTrace = false)
+                return createInvalidFrom(propertiesFile, why = "no-props")
             } catch (e: IOException) {
                 logException(e, "Cannot read ${propertiesFile.path}", backTrace = false)
+                return createInvalidFrom(propertiesFile, why = "unreadable-props")
             } catch (e: Throwable) {
                 logException(e, "file: ${propertiesFile.path} =\n$serialized", backTrace = false)
+                return createInvalidFrom(propertiesFile, why = "broken-props")
             }
             return null
         }
@@ -298,7 +301,7 @@ data class Backup(
         var invalidBackupId = 1L   // a runnning count
 
         fun createInvalidFrom(
-            directory: StorageFile,
+            directory: StorageFile? = null,
             propertiesFile: StorageFile? = null,
             packageName: String? = null,
             why: String? = null,
@@ -307,17 +310,19 @@ data class Backup(
             try {
 
                 val packageNameFixed = packageName ?: run {
-                    listOf(directory, directory.parent)
-                        .mapNotNull { it?.name }
-                        .firstNotNullOfOrNull { name ->
-                            if (regexPackageFolder.matches(name)) {
-                                name
-                            } else {
-                                regexPackageFolder.find(name)?.let { match ->
-                                    match.groups[0]?.value
+                    directory?.let {
+                        listOf(directory, directory.parent)
+                            .mapNotNull { it?.name }
+                            .firstNotNullOfOrNull { name ->
+                                if (regexPackageFolder.matches(name)) {
+                                    name
+                                } else {
+                                    regexPackageFolder.find(name)?.let { match ->
+                                        match.groups[0]?.value
+                                    }
                                 }
                             }
-                        }
+                    }
                 } ?: ""
 
                 // backups are identified by packageName and backupDate,
@@ -359,13 +364,10 @@ data class Backup(
             } catch (e: Throwable) {
                 logException(
                     e,
-                    "creating invalid backup item also failed, for directory ${
-                        directory.path
+                    "creating invalid backup item also failed${
+                        directory?.path?.let { ", for directory $it"} ?: ""
                     }${
-                        if (propertiesFile != null)
-                            " and file ${propertiesFile.path}"
-                        else
-                            ""
+                        propertiesFile?.path?.let { ", for file $it" } ?: ""
                     }",
                     backTrace = false
                 )

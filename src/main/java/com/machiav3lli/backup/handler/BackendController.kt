@@ -132,7 +132,7 @@ suspend fun scanBackups(
     forceTrace: Boolean = false,
     damagedOp: String? = null,
     onValidBackup: suspend (StorageFile) -> Unit,
-    onInvalidBackup: suspend (StorageFile, StorageFile?, String?, String?) -> Unit,
+    onInvalidBackup: suspend (StorageFile?, StorageFile?, String?, String?) -> Unit,
 ) {
     val files = ConcurrentLinkedDeque<StorageFile>()
     val suspicious = AtomicInteger(0)
@@ -230,7 +230,7 @@ suspend fun scanBackups(
         packageName: String? = null,
     ) {
         if (damagedOp != null)
-            renameDamagedToERROR(dir, "empty-backup")
+            renameDamagedToERROR(dir, "empty")
         else
             onInvalidBackup(dir, file, null, "empty")
     }
@@ -259,14 +259,21 @@ suspend fun scanBackups(
                 onPropsFile(file)
                 endNanoTimer("scanBackups.${if (packageName.isEmpty()) "" else "package."}onPropsFile")
             } else
-                renameDamagedToERROR(file, "no-dir")
+                if (damagedOp != null)
+                    renameDamagedToERROR(file, "no-dir")
+                else
+                    onInvalidBackup(null, file, null, "no-dir")
         } catch (_: Throwable) {
             if (renamer != null)
                 renamer()
             else {
                 name?.let {
-                    if (!it.contains(regexSpecialFile))
-                        renameDamagedToERROR(file, "damaged")
+                    if (!it.contains(regexSpecialFile)) {
+                        if (damagedOp != null)
+                            renameDamagedToERROR(file, "damaged")
+                        else
+                            onInvalidBackup(null, file, null, "damaged")
+                    }
                 }
             }
         }
@@ -606,7 +613,7 @@ fun Context.findBackups(
                                         }
                                     }
                             },
-                            onInvalidBackup = { dir: StorageFile, props: StorageFile?, packageName: String?, why: String? ->
+                            onInvalidBackup = { dir: StorageFile?, props: StorageFile?, packageName: String?, why: String? ->
                                 count.getAndIncrement()
                                 Backup.createInvalidFrom(dir, props, packageName, why)
                                     ?.let { backup ->
