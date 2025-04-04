@@ -51,16 +51,19 @@ import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
-fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
+fun calculateTimeToRunNext(schedule: Schedule, now: Long): Long {
     val c = Calendar.getInstance()
     c.timeInMillis = schedule.timePlaced
 
     val limitIncrements = 366 / schedule.interval
-    val smallestIncrement = 0 //TimeUnit.MINUTES.toMillis(1)
-    val minTime = now + smallestIncrement // ensure it's not now
 
     val fakeMin = pref_fakeScheduleMin.value
+
+    var minTime = now
+
     if (fakeMin > 0) {
+
+        minTime += TimeUnit.SECONDS.toMillis(60) // ensure it's not now
         //c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = (c[Calendar.MINUTE] / fakeMin + 1) * fakeMin % 60
         c[Calendar.SECOND] = schedule.timeHour
@@ -76,7 +79,10 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
                 )
             }"
         }
+
     } else {
+
+        minTime += TimeUnit.MINUTES.toMillis(60) // ensure it's not now
         c[Calendar.HOUR_OF_DAY] = schedule.timeHour
         c[Calendar.MINUTE] = schedule.timeMinute
         c[Calendar.SECOND] = 0
@@ -92,6 +98,7 @@ fun calculateTimeToRun(schedule: Schedule, now: Long): Long {
                 )
             }"
         }
+
     }
 
     traceSchedule {
@@ -117,7 +124,7 @@ fun calcTimeLeft(schedule: Schedule): Pair<String, String> {
     var absTime = ""
     var relTime = ""
     val now = SystemUtils.now
-    val at = calculateTimeToRun(schedule, now)
+    val at = calculateTimeToRunNext(schedule, now)
     absTime = ISO_DATE_TIME_FORMAT_MIN.format(at)
     val timeDiff = max(at - now, 0)
     val remainingMinutes = TimeUnit.MILLISECONDS.toMinutes(timeDiff).toInt()
@@ -220,7 +227,7 @@ fun scheduleAlarm(scheduleId: Long, scheduleNext: Boolean) {
                 if (scheduleNext) {
                     val now = SystemUtils.now
                     val timePlaced = now + TimeUnit.SECONDS.toMillis(60 + 59)
-                    val timeToRunNext = calculateTimeToRun(schedule, timePlaced)
+                    val timeToRunNext = calculateTimeToRunNext(schedule, timePlaced)
                     schedule = schedule.copy(
                         timePlaced = timePlaced,
                         timeToRun = timeToRunNext
