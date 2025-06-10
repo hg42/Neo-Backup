@@ -435,7 +435,7 @@ fun ScheduleSheet(
                             ) { hour, minute ->
                                 refresh(
                                     schedule.copy(timeHour = hour, timeMinute = minute),
-                                    scheduleNext = true,
+                                    scheduleNext = false,
                                 )
                             }
                         }
@@ -449,7 +449,7 @@ fun ScheduleSheet(
                             ) {
                                 refresh(
                                     schedule.copy(interval = it),
-                                    scheduleNext = true,
+                                    scheduleNext = false,
                                 )
                             }
                         }

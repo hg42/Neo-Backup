@@ -94,7 +94,10 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
                 throw RestoreFailedException(errorMessage, null)
             }
             val commands = mutableListOf<String?>()
+
             for (restoreFile in expectedFiles) {
+
+                // remember permissions
                 val (uid, gid, con) = try {
                     shell.suGetOwnerGroupContext(restoreFile.absolutePath)
                 } catch (e: Throwable) {
@@ -104,6 +107,8 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
                             ?: restoreFile.toPath().parent.toString()
                     )
                 }
+
+                // replace the file
                 commands.add(
                     "$utilBoxQ mv -f ${
                         quote(
@@ -114,6 +119,8 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
                         )
                     } ${quote(restoreFile)}"
                 )
+
+                // set previous permissions
                 commands.add(
                     "$utilBoxQ chown $uid:$gid ${quote(restoreFile)}"
                 )
@@ -123,6 +130,7 @@ class RestoreSpecialAction(context: Context, work: AppActionWork?, shell: ShellH
                     else
                         "chcon -R -h -v '$con' ${quote(restoreFile)}"
                 )
+
             }
 
             val command = commands.filterNotNull().joinToString(" ; ")  // no dependency

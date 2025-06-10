@@ -604,7 +604,7 @@ class OABX : Application() {
                                     timeMinute = minute,
                                 )
                                 scheduleDao.update(newSched)
-                                scheduleAlarm(newSched.id, true)
+                                scheduleAlarm(newSched.id, false)
                             }
                         }.start()
                     }

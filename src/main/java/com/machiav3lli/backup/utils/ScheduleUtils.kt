@@ -51,7 +51,7 @@ import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
-fun calculateTimeToRunNext(schedule: Schedule, now: Long): Long {
+fun calculateTimeToRunNext(schedule: Schedule, now: Long, next: Boolean = false): Long {
     val c = Calendar.getInstance()
     c.timeInMillis = schedule.timePlaced
 
@@ -227,7 +227,7 @@ fun scheduleAlarm(scheduleId: Long, scheduleNext: Boolean) {
                 if (scheduleNext) {
                     val now = SystemUtils.now
                     val timePlaced = now + TimeUnit.SECONDS.toMillis(60 + 59)
-                    val timeToRunNext = calculateTimeToRunNext(schedule, timePlaced)
+                    val timeToRunNext = calculateTimeToRunNext(schedule, timePlaced, true)
                     schedule = schedule.copy(
                         timePlaced = timePlaced,
                         timeToRun = timeToRunNext

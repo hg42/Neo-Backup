@@ -8,7 +8,7 @@ import com.machiav3lli.backup.OABX.Companion.isNeo
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.pages.BatchPage
 import com.machiav3lli.backup.pages.HomePage
-import com.machiav3lli.backup.pages.SchedulerPage
+import com.machiav3lli.backup.pages.SchedulesPage
 import com.machiav3lli.backup.preferences.AdvancedPrefsPage
 import com.machiav3lli.backup.preferences.ServicePrefsPage
 import com.machiav3lli.backup.preferences.ToolsPrefsPage
@@ -75,8 +75,8 @@ sealed class NavItem(
 
     data object Scheduler :
         NavItem(R.string.sched_title, Phosphor.CalendarX, "scheduler", {
-            OABX.main?.schedulerViewModel?.let { viewModel ->
-                SchedulerPage(viewModel)
+            OABX.main?.schedulesViewModel?.let { viewModel ->
+                SchedulesPage(viewModel)
             }
         })
 

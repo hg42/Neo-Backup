@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SchedulerViewModel(val database: ScheduleDao, appContext: Application) :
+class SchedulesViewModel(val database: ScheduleDao, appContext: Application) :
     AndroidViewModel(appContext) {
 
     var schedules = database.getAllFlow()
@@ -65,13 +65,13 @@ class SchedulerViewModel(val database: ScheduleDao, appContext: Application) :
         withContext(Dispatchers.IO) {
             database.update(schedule)
             if (schedule.enabled) {
-                traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> ${if (scheduleNext) "re-" else ""}schedule"}
+                traceSchedule { "[${schedule.id}] SchedulesViewModel.updateS -> ${if (scheduleNext) "re-" else ""}schedule"}
                 scheduleAlarm(
                     schedule.id,
                     scheduleNext
                 )
             } else {
-                traceSchedule { "[${schedule.id}] SchedulerViewModel.updateS -> cancelAlarm"}
+                traceSchedule { "[${schedule.id}] SchedulesViewModel.updateS -> cancelAlarm"}
                 cancelAlarm(getApplication<Application>().baseContext, schedule.id)
             }
         }
@@ -81,8 +81,8 @@ class SchedulerViewModel(val database: ScheduleDao, appContext: Application) :
         ViewModelProvider.Factory {
         @Suppress("unchecked_cast")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(SchedulerViewModel::class.java)) {
-                return SchedulerViewModel(dataSource, application) as T
+            if (modelClass.isAssignableFrom(SchedulesViewModel::class.java)) {
+                return SchedulesViewModel(dataSource, application) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

@@ -93,7 +93,7 @@ import com.machiav3lli.backup.viewmodels.BatchViewModel
 import com.machiav3lli.backup.viewmodels.ExportsViewModel
 import com.machiav3lli.backup.viewmodels.LogViewModel
 import com.machiav3lli.backup.viewmodels.MainViewModel
-import com.machiav3lli.backup.viewmodels.SchedulerViewModel
+import com.machiav3lli.backup.viewmodels.SchedulesViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -129,8 +129,8 @@ class MainActivityX : BaseActivity() {
     val restoreViewModel: BatchViewModel by viewModels {
         BatchViewModel.Factory(application)
     }
-    val schedulerViewModel: SchedulerViewModel by viewModels {
-        SchedulerViewModel.Factory(OABX.db.getScheduleDao(), application)
+    val schedulesViewModel: SchedulesViewModel by viewModels {
+        SchedulesViewModel.Factory(OABX.db.getScheduleDao(), application)
     }
     val exportsViewModel: ExportsViewModel by viewModels {
         ExportsViewModel.Factory(OABX.db.getScheduleDao(), application)

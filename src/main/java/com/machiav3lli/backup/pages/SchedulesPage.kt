@@ -59,12 +59,12 @@ import com.machiav3lli.backup.ui.compose.recycler.ScheduleRecycler
 import com.machiav3lli.backup.ui.navigation.NavItem
 import com.machiav3lli.backup.utils.specialBackupsEnabled
 import com.machiav3lli.backup.viewmodels.ScheduleViewModel
-import com.machiav3lli.backup.viewmodels.SchedulerViewModel
+import com.machiav3lli.backup.viewmodels.SchedulesViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SchedulerPage(viewModel: SchedulerViewModel) {
+fun SchedulesPage(viewModel: SchedulesViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val schedules by viewModel.schedules.collectAsState(emptyList())
@@ -164,7 +164,7 @@ fun SchedulerPage(viewModel: SchedulerViewModel) {
                 onCheckChanged = { item: Schedule, b: Boolean ->
                     viewModel.updateSchedule(
                         item.copy(enabled = b),
-                        true,
+                        false,
                     )
                 }
             )
