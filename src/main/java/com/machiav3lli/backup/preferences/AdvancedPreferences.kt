@@ -246,7 +246,7 @@ fun SuCommandPreference(
 
 class SuCommandPref(
     key: String,
-    private: Boolean = true,
+    private: Boolean = false,
     defaultValue: String,
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
@@ -781,10 +781,13 @@ fun publicPreferences(persist: Boolean = false) =
     Pref.prefGroups.flatMap {
         val (group, prefs) = it
         prefs.mapNotNull { pref ->
+            if (pref.key == "pathBackupFolder") {
+                traceDebug { "$pref" }
+            }
             if (pref.private ||
                 pref is LaunchPref ||
                 pref.group == "kill" ||
-                (persist && pref.group == "persist")
+                (pref.group == "persist" && !persist)
             )
                 null
             else

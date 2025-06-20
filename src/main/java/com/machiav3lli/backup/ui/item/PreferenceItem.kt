@@ -434,7 +434,7 @@ open class StringPref(
 
 class StringEditPref(
     key: String,
-    private: Boolean = true,
+    private: Boolean = false,
     defaultValue: String,
     @StringRes titleId: Int = -1,
     @StringRes summaryId: Int = -1,
