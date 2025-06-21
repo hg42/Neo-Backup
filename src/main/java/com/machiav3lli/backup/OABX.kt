@@ -899,7 +899,24 @@ class OABX : Application() {
                         pref_pathBackupFolder.value = ""
                         throw StorageLocationNotConfiguredException()
                     }
-                    val storageDir = StorageFile.fromUri(storagePath)
+                    var storageDir = StorageFile.fromUri(storagePath)
+                    if (!storageDir.exists()) {
+                        val maxWaitSec =
+                            if (SystemUtils.msSinceBoot < 10 * 60 * 1000)
+                                10 * 60
+                            else
+                                30
+                        val startTime = SystemUtils.msSinceBoot
+                        do {
+                            val now = SystemUtils.msSinceBoot
+                            val seconds = (now - startTime) / 1000.0
+                            storageDir = StorageFile.fromUri(storagePath)
+                            if (!storageDir.exists()) {
+                                Timber.w("waiting for backup folder becoming ready")
+                                Thread.sleep(1000)
+                            }
+                        } while (seconds < maxWaitSec)
+                    }
                     if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
                         Timber.e("backup storage location not accessible: $storagePath")
                         pref_pathBackupFolder.value = ""

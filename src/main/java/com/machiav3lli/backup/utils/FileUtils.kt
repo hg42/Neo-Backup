@@ -29,7 +29,7 @@ import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.updateAppTables
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.traceDebug
+import com.machiav3lli.backup.traceBackups
 import java.io.File
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
@@ -75,10 +75,10 @@ object FileUtils {
 
     fun ensureBackups(): Map<String, List<Backup>> {
 
-        traceDebug { "ensureBackups" }
+        traceBackups { "ensureBackups" }
 
         // be sure we have the backups, loop is not really necessary, but doesn't hurt, either
-        repeat(10) { count ->
+        repeat(3) { count ->
             try {
                 if (!OABX.validBackups) {
                     beginBusy("ensureBackups")
@@ -88,8 +88,8 @@ object FileUtils {
                 return@repeat
             } catch (e: Throwable) {
                 logException(e)
-                traceDebug { "ensureBackups.$count" }
-                Thread.sleep(1000)
+                traceBackups { "ensureBackups.$count" }
+                Thread.sleep(5000)
             }
         }
 
