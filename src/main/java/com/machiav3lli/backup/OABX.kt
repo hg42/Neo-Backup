@@ -62,7 +62,6 @@ import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.plugins.Plugin
 import com.machiav3lli.backup.preferences.pref_busyHitTime
 import com.machiav3lli.backup.preferences.pref_newAndUpdatedNotification
-import com.machiav3lli.backup.preferences.pref_pathBackupFolder
 import com.machiav3lli.backup.preferences.pref_prettyJson
 import com.machiav3lli.backup.preferences.pref_useYamlPreferences
 import com.machiav3lli.backup.preferences.pref_useYamlProperties
@@ -896,13 +895,11 @@ class OABX : Application() {
                     val storagePath = backupDirConfigured
                     if (storagePath.isEmpty()) {
                         Timber.e("backup storage location not configured")
-                        pref_pathBackupFolder.value = ""
                         throw StorageLocationNotConfiguredException()
                     }
                     var storageDir = StorageFile.fromUri(storagePath)
                     if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
                         Timber.e("backup storage location not accessible: $storagePath")
-                        pref_pathBackupFolder.value = ""
                         throw FileUtils.BackupLocationInAccessibleException("Cannot access the root location '$storagePath'")
                     }
                     Timber.e("backup storage location found at ${storageDir.path}")
