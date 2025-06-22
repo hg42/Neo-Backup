@@ -1109,7 +1109,7 @@ class OABX : Application() {
 
         fun updateUI() {
             scope.launch {
-                data.backupsChanged.update.emit(getBackups())
+                data.backupsChanged.update.emit(true)
             }
         }
 
@@ -1306,9 +1306,9 @@ class OABX : Application() {
             @OptIn(ExperimentalCoroutinesApi::class)
             val backupsChanged =
                 //--------------------------------------------------------------------------------------
-                updateFlow(emptyMap<String, List<Backup>>()) {
+                updateFlow(false) {
                     it
-                        .trace { "??? backupsChanged <-- ${formatBackups(it)}" }
+                        .trace { "??? backupsChanged <<- true" }
                         .mapLatest {
                             delay(250)
                             it
@@ -1317,7 +1317,7 @@ class OABX : Application() {
                             traceFlows { "backupsChanged: ***----------------- retriggerFlowsForUI" }
                             retriggerFlowsForUI()  //TODO hg42 workaround
                         }
-                        .trace { "*** backupsChanged ->> ${formatBackups(it)}" }
+                        .trace { "*** backupsChanged ->> true" }
                 }
 
             val allPackagesRetrigger =
@@ -1331,11 +1331,13 @@ class OABX : Application() {
                     appInfosChanged.state,
                     backupsChanged.state,
                     allPackagesRetrigger.flow
-                ) { appInfos, backups, retrigger ->
+                ) { appInfos, _, _ ->
 
                     if (OABX.startup)
                         listOf()
                     else {
+
+                        val backups = getBackups()
 
                         traceFlows {
                             "***< allPackages <-- appInfos: ${appInfos.size} ${formatBackups(backups)}"
