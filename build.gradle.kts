@@ -234,12 +234,12 @@ android {
         }
     }
 
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 34
 
         versionCode = buildVersionCode
         versionName = buildVersion
