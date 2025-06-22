@@ -38,7 +38,6 @@ import com.machiav3lli.backup.preferences.pref_paranoidHousekeeping
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
-import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.TraceUtils.canonicalName
 import com.machiav3lli.backup.utils.copyRootFileToDocument
 import timber.log.Timber
@@ -110,7 +109,7 @@ object BackupRestoreHelper {
             try {
                 val myInfo = context.packageManager.getPackageInfo(OABX.packageName, 0) // TODO 'getPackageInfo(String, Int): PackageInfo!' is deprecated
                 val fileInfos =
-                    shell.suGetDetailedDirectoryContents(myInfo.applicationInfo.sourceDir, false)
+                    myInfo.applicationInfo?.let { shell.suGetDetailedDirectoryContents(it.sourceDir, false) } ?: listOf()
                 if (fileInfos.size != 1) {
                     throw FileNotFoundException("Could not find Neo Backup's own apk file")
                 }

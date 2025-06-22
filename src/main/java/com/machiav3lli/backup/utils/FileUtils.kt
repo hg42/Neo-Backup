@@ -77,8 +77,8 @@ object FileUtils {
 
         traceBackups { "ensureBackups" }
 
-        // be sure we have the backups, loop is not really necessary, but doesn't hurt, either
-        repeat(3) { count ->
+        // on boot or other occasions the backup folder may not be accessible, so we wait seom time
+        repeat(6) { count ->
             try {
                 if (!OABX.validBackups) {
                     beginBusy("ensureBackups")

@@ -55,10 +55,10 @@ open class AppInfo : com.machiav3lli.backup.dbs.entity.PackageInfo {
 
     constructor(context: Context, pi: android.content.pm.PackageInfo) : super(context, pi) {
         this.installed = true
-        this.enabled = pi.applicationInfo.enabled
-        this.apkDir = pi.applicationInfo.sourceDir
-        this.dataDir = pi.applicationInfo.dataDir
-        this.deDataDir = pi.applicationInfo.deviceProtectedDataDir
+        this.enabled = pi.applicationInfo?.enabled ?: true
+        this.apkDir = pi.applicationInfo?.sourceDir
+        this.dataDir = pi.applicationInfo?.dataDir
+        this.deDataDir = pi.applicationInfo?.deviceProtectedDataDir
         permissions = pi.grantedPermissions
     }
 }

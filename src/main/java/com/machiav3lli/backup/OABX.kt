@@ -900,23 +900,6 @@ class OABX : Application() {
                         throw StorageLocationNotConfiguredException()
                     }
                     var storageDir = StorageFile.fromUri(storagePath)
-                    if (!storageDir.exists()) {
-                        val maxWaitSec =
-                            if (SystemUtils.msSinceBoot < 10 * 60 * 1000)
-                                10 * 60
-                            else
-                                30
-                        val startTime = SystemUtils.msSinceBoot
-                        do {
-                            val now = SystemUtils.msSinceBoot
-                            val seconds = (now - startTime) / 1000.0
-                            storageDir = StorageFile.fromUri(storagePath)
-                            if (!storageDir.exists()) {
-                                Timber.w("waiting for backup folder becoming ready")
-                                Thread.sleep(1000)
-                            }
-                        } while (seconds < maxWaitSec)
-                    }
                     if (!storageDir.exists()) { //TODO hg42 for now only existing directories allowed
                         Timber.e("backup storage location not accessible: $storagePath")
                         pref_pathBackupFolder.value = ""
@@ -1353,48 +1336,58 @@ class OABX : Application() {
                     allPackagesRetrigger.flow
                 ) { appInfos, backups, retrigger ->
 
-                    traceFlows {
-                        "***< allPackages <-- appInfos: ${appInfos.size} ${formatBackups(backups)}"
-                    }
+                    if (OABX.startup)
+                        listOf()
+                    else {
 
-                    val pkgs = runOrLog(emptyList()) {
-                        appInfos.toPackageList(OABX.context, emptyList(), backups)
-                    }
+                        traceFlows {
+                            "***< allPackages <-- appInfos: ${appInfos.size} ${formatBackups(backups)}"
+                        }
 
-                    traceFlows { "***<< allPackages <<- ${pkgs.size}" }
-                    pkgs
+                        val pkgs = runOrLog(emptyList()) {
+                            appInfos.toPackageList(OABX.context, emptyList(), backups)
+                        }
+
+                        traceFlows { "***<< allPackages <<- ${pkgs.size}" }
+                        pkgs
+                    }
                 }
                     .mapLatest { pkgs ->
-                        var timeout = 30000L
-                        val timeStep = 250L
-                        while (
-                            OABX.ready && (
-                                    OABX.startup
-                                            || !OABX.validBackups
-                                            || pkgs.isEmpty()
-                                    )
-                        ) {
-                            trace {
-                                "allPackages: waiting: startup=${
-                                    OABX.startup
-                                } backups=${
-                                    OABX.validBackups
-                                } pkgs=${
-                                    pkgs.size
-                                }"
+                        if (OABX.startup) {
+                            delay(1000)
+                            listOf()
+                        } else {
+                            var timeout = 1 * 60 * 1000L
+                            val timeStep = 1000L
+                            while (
+                                OABX.ready && (
+                                        OABX.startup
+                                                || !OABX.validBackups
+                                                || pkgs.isEmpty()
+                                        )
+                            ) {
+                                trace {
+                                    "allPackages: waiting: startup=${
+                                        OABX.startup
+                                    } backups=${
+                                        OABX.validBackups
+                                    } pkgs=${
+                                        pkgs.size
+                                    }"
+                                }
+                                hitBusy()
+                                delay(timeStep)
+                                timeout -= timeStep
+                                if (!OABX.startup && timeout < 0)
+                                    break
                             }
+                            delay(500)
+                            OABX.ready = true
 
-                            delay(timeStep)
-                            timeout -= timeStep
-                            if (!OABX.startup && timeout < 0)
-                                break
+                            IconCache.dropAllButUsed(pkgs.drop(0))
+
+                            pkgs
                         }
-                        delay(500)
-                        OABX.ready = true
-
-                        IconCache.dropAllButUsed(pkgs.drop(0))
-
-                        pkgs
                     }
                     .retry { cause ->
                         logException(cause)

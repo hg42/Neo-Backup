@@ -234,12 +234,12 @@ android {
         }
     }
 
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.machiav3lli.backup"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
 
         versionCode = buildVersionCode
         versionName = buildVersion
@@ -409,25 +409,25 @@ androidComponents {
     // // Field from default config.
     // public static final int MINOR = 3;
     onVariants {
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "DEBUG", BuildConfigField("boolean", "Boolean.parseBoolean(\"${it.debuggable}\")", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "APPLICATION_ID", BuildConfigField("String", "\"${it.applicationId.get()}\"", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "BUILD_TYPE", BuildConfigField("String", "\"${it.buildType}\"", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "VERSION_CODE", BuildConfigField("String", "\"$buildVersionCode\"", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "VERSION_NAME", BuildConfigField("String", "\"${buildName(it.buildType!!)}\"", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "MAJOR", BuildConfigField("int", "$major", "")
         )
-        it.buildConfigFields.put(
+        it.buildConfigFields?.put(
             "MINOR", BuildConfigField("int", "$minor", "")
         )
     }

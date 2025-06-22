@@ -3,6 +3,11 @@ package com.machiav3lli.backup.pages
 import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +21,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -31,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
 import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
 import com.machiav3lli.backup.ui.compose.icons.phosphor.ArrowsClockwise
@@ -46,6 +54,12 @@ import kotlin.system.exitProcess
 //@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SplashPage() {
+    val infotext = listOf(
+        OABX.packageName,
+        OABX.versionName.replace("--", "\n"),
+        OABX.applicationIssuer.let { if (it != "?") "signed by $it" else "" },
+    ).joinToString("\n")
+
     FullScreenBackground {
         Scaffold(
             modifier = Modifier
@@ -58,6 +72,27 @@ fun SplashPage() {
                     .padding(paddingValues)
                     .fillMaxSize(),
             ) {
+                val showDevTools = remember { mutableStateOf(false) }
+
+                val angle = if (OABX.busy.value) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransition")
+                    // Animate from 0f to 1f
+                    val animationProgress by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = pref_busyIconTurnTime.value * 5,
+                                easing = LinearEasing
+                            )
+                        ), label = "animationProgress"
+                    )
+                    360f * animationProgress
+                } else {
+                    0f
+                }
+
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -66,32 +101,34 @@ fun SplashPage() {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = "🎃",
-                        fontSize = 150.sp
+                        fontSize = 200.sp,
+                        modifier = Modifier
+                            .rotate(+angle)
+                            .padding(bottom = 50.dp),
                     )
-                    //Image(
-                    //    modifier = Modifier
-                    //        .fillMaxSize(0.7f),
-                    //    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    //    //contentDescription = stringResource(id = R.string.app_name)
-                    //)
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.weight(10f))
+                    Spacer(modifier = Modifier.weight(0.6f))
                     Text(
-                        text = listOf(
-                            OABX.packageName,
-                            OABX.versionName.replace("--", "\n"),
-                            OABX.applicationIssuer.let { if (it != "?") "signed by $it" else "" },
-                        ).joinToString("\n"),
+                        text = infotext,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.weight(1f))
+                    ElevatedActionButton(
+                        text = stringResource(id = R.string.prefs_title),
+                        icon = Phosphor.GearSix,
+                        fullWidth = true,
+                        modifier = Modifier
+                    ) {
+                        showDevTools.value = true
+                    }
+                    Spacer(modifier = Modifier.weight(0.1f))
+                }
+                if (showDevTools.value) {
+                    BaseDialog(openDialogCustom = showDevTools) {
+                        DevTools(
+                            expanded = showDevTools,
+                            goto = "log",
+                        )
+                    }
                 }
             }
         }
@@ -146,21 +183,21 @@ fun RootMissing(activity: Activity? = null) {
             }
             Spacer(modifier = Modifier.weight(1f))
             ElevatedActionButton(
-                text = stringResource(id = R.string.prefs_title),
-                icon = Phosphor.GearSix,
-                fullWidth = true,
-                modifier = Modifier
-            ) {
-                showDevTools.value = true
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            ElevatedActionButton(
                 text = "Retry",
                 icon = Phosphor.ArrowsClockwise,
                 fullWidth = true,
                 modifier = Modifier
             ) {
                 OABX.context.restartApp()
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            ElevatedActionButton(
+                text = stringResource(id = R.string.prefs_title),
+                icon = Phosphor.GearSix,
+                fullWidth = true,
+                modifier = Modifier
+            ) {
+                showDevTools.value = true
             }
             if (showDevTools.value) {
                 BaseDialog(openDialogCustom = showDevTools) {
