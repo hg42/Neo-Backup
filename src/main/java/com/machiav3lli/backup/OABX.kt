@@ -1180,8 +1180,8 @@ class OABX : Application() {
             synchronized(theBackupsMap) {
                 packageNames.forEach {
                     theBackupsMap.put(it, emptyList())
-                    updateUI()
                 }
+                updateUI()
             }
         }
 
