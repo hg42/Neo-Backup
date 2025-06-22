@@ -50,6 +50,7 @@ import com.machiav3lli.backup.ALT_MODE_BOTH
 import com.machiav3lli.backup.ALT_MODE_DATA
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.OABX.Companion.addInfoLogText
+import com.machiav3lli.backup.OABX.Companion.db
 import com.machiav3lli.backup.OABX.Companion.endStartup
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.RESCUE_NAV
@@ -211,6 +212,11 @@ class MainActivityX : BaseActivity() {
                                         backupsMap.values.map { it.size }.sum()
                                     } root: ${OABX.backupRoot}"
                                 }
+
+                                // we do not use these any more
+                                db.getAppInfoDao().emptyTable()
+                                db.getBackupDao().emptyTable()
+
                                 ensureBackups()
                             }
                             runOrLog { updateAppTables() }

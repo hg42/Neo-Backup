@@ -20,9 +20,7 @@ package com.machiav3lli.backup.services
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import com.machiav3lli.backup.OABX
-import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.pref_autoLogUnInstallBroadcast
@@ -37,7 +35,7 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         try {
-            val db = OABX.db
+            //val db = OABX.db
             val packageName =
                 intent.data?.let { if (it.scheme == "package") it.schemeSpecificPart else null }
             if (packageName != null) {
@@ -46,27 +44,33 @@ class PackageUnInstalledReceiver : BroadcastReceiver() {
                     Intent.ACTION_PACKAGE_ADDED,
                     Intent.ACTION_PACKAGE_REPLACED,
                     -> {
-                        context.packageManager.getPackageInfo(
-                            packageName,
-                            PackageManager.GET_PERMISSIONS
-                        )?.let { packageInfo ->
-                            val appInfo = AppInfo(context, packageInfo)
-                            GlobalScope.launch(Dispatchers.IO) {
-                                db.getAppInfoDao().replaceInsert(appInfo)
-                            }
+                        //context.packageManager.getPackageInfo(
+                        //    packageName,
+                        //    PackageManager.GET_PERMISSIONS
+                        //)?.let { packageInfo ->
+                        //    val appInfo = AppInfo(context, packageInfo)
+                        //    GlobalScope.launch(Dispatchers.IO) {
+                        //        db.getAppInfoDao().replaceInsert(appInfo)
+                        //    }
+                        //}
+                        GlobalScope.launch(Dispatchers.IO) {
+                            OABX.data.updatePackage(packageName)
                         }
                     }
 
                     Intent.ACTION_PACKAGE_REMOVED,
                     -> {
+                        //GlobalScope.launch(Dispatchers.IO) {
+                        //    val backups = db.getBackupDao().get(packageName)
+                        //    if (backups.isEmpty())
+                        //        db.getAppInfoDao().deleteAllOf(packageName)
+                        //    else {
+                        //        val appInfo = backups.maxBy { it.backupDate }.toAppInfo()
+                        //        db.getAppInfoDao().replaceInsert(appInfo)
+                        //    }
+                        //}
                         GlobalScope.launch(Dispatchers.IO) {
-                            val backups = db.getBackupDao().get(packageName)
-                            if (backups.isEmpty())
-                                db.getAppInfoDao().deleteAllOf(packageName)
-                            else {
-                                val appInfo = backups.maxBy { it.backupDate }.toAppInfo()
-                                db.getAppInfoDao().replaceInsert(appInfo)
-                            }
+                            OABX.data.updatePackage(packageName)
                         }
                     }
                 }

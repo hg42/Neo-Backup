@@ -1537,12 +1537,11 @@ class OABX : Application() {
                         invalidateCacheForPackage(packageName)
                         val appPackage = allPackagesByNames.value[packageName]
                         appPackage?.apply {
-                            val new = Package(OABX.context, packageName)
                             if (!isSpecial) {
-                                new.refreshFromPackageManager(OABX.context)
-                                //db.getAppInfoDao().update(new.packageInfo as AppInfo)
+                                refreshFromPackageManager(OABX.context)
                             }
-                            //new.refreshBackupList()     //TODO hg42 ??? who calls this? take it from backupsMap?
+                        } ?.run {
+                            retriggerFlowsForUI()
                         }
                     } catch (e: AssertionError) {
                         Timber.w(e.message ?: "")
