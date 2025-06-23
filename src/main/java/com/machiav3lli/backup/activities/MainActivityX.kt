@@ -250,7 +250,9 @@ class MainActivityX : BaseActivity() {
                 onDispose {}
             }
 
-            if (!OABX.ready && OABX.busy.value) {
+            navController = rememberNavController()
+
+            if (!OABX.ready) {
 
                 AppTheme {
 
@@ -259,8 +261,6 @@ class MainActivityX : BaseActivity() {
                 }
 
             } else {
-
-                navController = rememberNavController()
 
                 AppTheme {
                     openDialog = remember { mutableStateOf(false) }

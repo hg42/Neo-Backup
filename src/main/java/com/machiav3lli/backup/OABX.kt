@@ -69,7 +69,7 @@ import com.machiav3lli.backup.preferences.pref_useYamlSchedules
 import com.machiav3lli.backup.preferences.supportLog
 import com.machiav3lli.backup.services.PackageUnInstalledReceiver
 import com.machiav3lli.backup.services.ScheduleService
-import com.machiav3lli.backup.ui.compose.MutableComposableFlow
+import com.machiav3lli.backup.ui.compose.MutableComposableStateFlow
 import com.machiav3lli.backup.ui.compose.item.IconCache
 import com.machiav3lli.backup.ui.item.BooleanPref
 import com.machiav3lli.backup.ui.item.IntPref
@@ -123,6 +123,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.Int
 import kotlin.system.exitProcess
 
 
@@ -541,7 +542,7 @@ class OABX : Application() {
             .withDefault { 0 }     //TODO hg42 use AtomicInteger? but map is synchronized anyways
 
         var startup = true
-        var ready = false
+        var ready by mutableStateOf(false)
 
         fun beginStartup() {
             startup = true
@@ -1321,7 +1322,7 @@ class OABX : Application() {
                 }
 
             val allPackagesRetrigger =
-                MutableComposableFlow(false, scope, "allPackagesRetrigger")
+                MutableComposableStateFlow(false, scope, "allPackagesRetrigger")
 
 
             @OptIn(ExperimentalCoroutinesApi::class)
@@ -1353,35 +1354,38 @@ class OABX : Application() {
                 }
                     .mapLatest { pkgs ->
                         if (OABX.startup) {
-                            delay(1000)
+                            delay(500)
                             listOf()
                         } else {
-                            var timeout = 1 * 60 * 1000L
-                            val timeStep = 1000L
-                            while (
-                                OABX.ready && (
-                                        OABX.startup
-                                                || !OABX.validBackups
-                                                || pkgs.isEmpty()
-                                        )
-                            ) {
-                                trace {
-                                    "allPackages: waiting: startup=${
-                                        OABX.startup
-                                    } backups=${
-                                        OABX.validBackups
-                                    } pkgs=${
-                                        pkgs.size
-                                    }"
-                                }
-                                hitBusy()
-                                delay(timeStep)
-                                timeout -= timeStep
-                                if (!OABX.startup && timeout < 0)
-                                    break
+                            //var timeout = 1 * 60 * 1000L
+                            //val timeStep = 1000L
+                            //while (
+                            //    OABX.ready && (
+                            //            OABX.startup
+                            //                    || !OABX.validBackups
+                            //                    || pkgs.isEmpty()
+                            //            )
+                            //) {
+                            //    trace {
+                            //        "allPackages: waiting: startup=${
+                            //            OABX.startup
+                            //        } backups=${
+                            //            OABX.validBackups
+                            //        } pkgs=${
+                            //            pkgs.size
+                            //        }"
+                            //    }
+                            //    hitBusy()
+                            //    delay(timeStep)
+                            //    timeout -= timeStep
+                            //    if (!OABX.startup && timeout < 0)
+                            //        break
+                            //}
+
+                            if (pkgs.size > 0 && !OABX.ready) {
+                                traceFlows { "****** allPackages: ready" }
+                                OABX.ready = true
                             }
-                            delay(500)
-                            OABX.ready = true
 
                             IconCache.dropAllButUsed(pkgs.drop(0))
 
