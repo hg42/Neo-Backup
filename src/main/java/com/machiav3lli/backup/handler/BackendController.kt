@@ -24,6 +24,9 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Process
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.machiav3lli.backup.BACKUP_INSTANCE_PROPERTIES_INDIR
 import com.machiav3lli.backup.BACKUP_INSTANCE_REGEX_PATTERN
 import com.machiav3lli.backup.BACKUP_PACKAGE_FOLDER_REGEX_PATTERN
@@ -124,6 +127,8 @@ val scanPool = when (1) {
     // TODO hg42 it's still not 100% clear, if queue based scanning prevents hanging
 }
 
+var currentScan by mutableStateOf("")
+
 suspend fun scanBackups(
     directory: StorageFile,
     packageName: String = "",
@@ -141,6 +146,8 @@ suspend fun scanBackups(
         checkThreadStats()
         traceTiming { "threads max: ${maxThreads.get()} (before)" }
     }
+
+    currentScan = directory.path.toString()
 
     fun formatBackupFile(file: StorageFile) =
         file.path?.removePrefix(backupRoot.path ?: "")?.removePrefix("/") ?: ""
@@ -242,6 +249,8 @@ suspend fun scanBackups(
         onPropsFile: suspend (StorageFile) -> Unit,
         renamer: (suspend () -> Unit)? = null,
     ) {
+        currentScan = file.path.toString()
+
         hitBusy()
 
         try {
@@ -283,6 +292,8 @@ suspend fun scanBackups(
         file: StorageFile,
         collector: FlowCollector<StorageFile>? = null,
     ): Boolean {
+
+        currentScan = file.path.toString()
 
         hitBusy()
 
@@ -548,6 +559,8 @@ suspend fun scanBackups(
                 }: ${suspicious.get()}"
             )
     }
+
+    currentScan = ""
 }
 
 fun Context.findBackups(

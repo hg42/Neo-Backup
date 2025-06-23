@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dialogs.BaseDialog
+import com.machiav3lli.backup.handler.currentScan
 import com.machiav3lli.backup.preferences.pref_busyIconTurnTime
 import com.machiav3lli.backup.traceCompose
 import com.machiav3lli.backup.ui.compose.icons.Phosphor
@@ -92,37 +93,46 @@ fun SplashPage() {
                     0f
                 }
 
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "🎃",
-                        fontSize = 200.sp,
+                Box {
+                    Column(
                         modifier = Modifier
-                            .rotate(+angle)
-                            .padding(bottom = 50.dp),
-                    )
-                    Spacer(modifier = Modifier.weight(0.6f))
+                            .fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "🎃",
+                            fontSize = 200.sp,
+                            modifier = Modifier
+                                .rotate(+angle)
+                                .padding(bottom = 50.dp),
+                        )
+                        Spacer(modifier = Modifier.weight(0.6f))
+                        Text(
+                            text = infotext,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ElevatedActionButton(
+                            text = stringResource(id = R.string.prefs_title),
+                            icon = Phosphor.GearSix,
+                            fullWidth = true,
+                            modifier = Modifier
+                        ) {
+                            showDevTools.value = true
+                        }
+                        Spacer(modifier = Modifier.weight(0.1f))
+                    }
                     Text(
-                        text = infotext,
-                        textAlign = TextAlign.Center,
+                        text = currentScan
+                            .replaceBefore("/document/", "")
+                            .replace(":", "\n"),
+                        textAlign = TextAlign.Start,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    ElevatedActionButton(
-                        text = stringResource(id = R.string.prefs_title),
-                        icon = Phosphor.GearSix,
-                        fullWidth = true,
-                        modifier = Modifier
-                    ) {
-                        showDevTools.value = true
-                    }
-                    Spacer(modifier = Modifier.weight(0.1f))
                 }
-                if (showDevTools.value) {
+                    if (showDevTools.value) {
                     BaseDialog(openDialogCustom = showDevTools) {
                         DevTools(
                             expanded = showDevTools,
