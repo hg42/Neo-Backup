@@ -1438,7 +1438,7 @@ class OABX : Application() {
 
             val searchQuery =
                 //--------------------------------------------------------------------------------------
-                MutableComposableFlow(
+                MutableComposableStateFlow(
                     "",
                     scope,
                     "searchQuery"
@@ -1446,7 +1446,7 @@ class OABX : Application() {
 
             val modelSortFilter =
                 //--------------------------------------------------------------------------------------
-                MutableComposableFlow(
+                MutableComposableStateFlow(
                     sortFilterModel,
                     scope,
                     "modelSortFilter"

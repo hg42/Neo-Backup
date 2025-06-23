@@ -277,9 +277,6 @@ class MutableComposableStateFlow<T>(
     }
 }
 
-//typealias MutableComposableFlow<T> = MutableComposableSharedFlow<T>
-typealias MutableComposableFlow<T> = MutableComposableStateFlow<T>
-
 
 @Composable
 fun LazyListState.isAtTop() = remember {

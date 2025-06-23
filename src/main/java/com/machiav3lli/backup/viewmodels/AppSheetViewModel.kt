@@ -32,7 +32,7 @@ import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.showNotification
 import com.machiav3lli.backup.items.Package
-import com.machiav3lli.backup.ui.compose.MutableComposableFlow
+import com.machiav3lli.backup.ui.compose.MutableComposableStateFlow
 import com.machiav3lli.backup.utils.SystemUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,7 +65,7 @@ class AppSheetViewModel(
         AppExtras(app?.packageName ?: "")
     )
 
-    val snackbarText = MutableComposableFlow(
+    val snackbarText = MutableComposableStateFlow(
         "",
         viewModelScope,
         "snackBarText"
