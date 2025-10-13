@@ -1124,9 +1124,9 @@ class OABX : Application() {
 
         fun getBackups(packageName: String): List<Backup> {
             val backups = synchronized(theBackupsMap) {
-                theBackupsMap.get(packageName) ?: emptyList()
+                (theBackupsMap.get(packageName) ?: emptyList()).drop(0)  // copy
             }
-            return backups.drop(0)  // copy
+            return backups
             //return backups
         }
 
