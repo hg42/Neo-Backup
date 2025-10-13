@@ -1141,7 +1141,7 @@ class OABX : Application() {
         fun setBackups(backupsMap: Map<String, List<Backup>>) {
             synchronized(theBackupsMap) {
                 backupsMap.forEach { (packageName, backups) ->
-                    theBackupsMap.put(packageName, backups)
+                    theBackupsMap.put(packageName, backups.sortedByDescending { it.backupDate })
                 }
                 // clear no more existing packages
                 (theBackupsMap.keys - backupsMap.keys).forEach {
@@ -1163,7 +1163,7 @@ class OABX : Application() {
                         )
                     } ${formatBackups(theBackupsMap.get(packageName))}"
                 }
-                theBackupsMap.put(packageName, backups)
+                theBackupsMap.put(packageName, backups.sortedByDescending { it.backupDate })
                 traceBackups {
                     "putBackups: $packageName / = ${
                         classAndId(

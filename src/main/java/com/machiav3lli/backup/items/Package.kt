@@ -53,7 +53,7 @@ class Package {
         }
         set(backups) {
             // ensure it's always sorted
-            OABX.putBackups(packageName, backups.sortedByDescending { it.backupDate })
+            OABX.putBackups(packageName, backups)
         }
 
     // toPackageList
