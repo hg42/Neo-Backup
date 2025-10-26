@@ -52,6 +52,7 @@ import com.machiav3lli.backup.dbs.entity.Blocklist
 import com.machiav3lli.backup.handler.AssetHandler
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
+import com.machiav3lli.backup.handler.LogsHandler.Companion.runOr
 import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.WorkHandler
@@ -1100,19 +1101,13 @@ class OABX : Application() {
             return time
         }
 
-        //------------------------------------------------------------------------------------------ runningSchedules
+        //------------------------------------------------------------------------------------------
 
         val runningSchedules = mutableMapOf<Long, Long>()
 
         //------------------------------------------------------------------------------------------ backups
 
         private var theBackupsMap = mutableMapOf<String, List<Backup>>()
-
-        fun updateUI() {
-            scope.launch {
-                data.backupsChanged.update.emit(true)
-            }
-        }
 
         var validBackups = false
 
@@ -1134,7 +1129,7 @@ class OABX : Application() {
             synchronized(theBackupsMap) {
                 theBackupsMap.clear()
                 validBackups = false
-                updateUI()
+                updateBackupsUI()
             }
         }
 
@@ -1148,7 +1143,7 @@ class OABX : Application() {
                     theBackupsMap.remove(it)
                 }
                 validBackups = true
-                updateUI()
+                updateBackupsUI()
             }
         }
 
@@ -1173,7 +1168,7 @@ class OABX : Application() {
                         )
                     } ${formatBackups(theBackupsMap.get(packageName))}"
                 }
-                updateUI()
+                updateBackupsUI()
             }
         }
 
@@ -1182,7 +1177,7 @@ class OABX : Application() {
                 packageNames.forEach {
                     theBackupsMap.put(it, emptyList())
                 }
-                updateUI()
+                updateBackupsUI()
             }
         }
 
@@ -1248,6 +1243,18 @@ class OABX : Application() {
                         initialValue,
                     )
             return UpdateFlow(updated, flow, job)
+        }
+
+        fun updateBackupsUI() {
+            scope.launch {
+                data.backupsChanged.update.emit(true)
+            }
+        }
+
+        fun updateAppInfoUI() {
+            scope.launch {
+                data.appInfosChanged.update.emit(data.allPackages.value.mapNotNull { pkg -> runOr(null) { pkg.packageInfo as AppInfo } })
+            }
         }
 
         val scope = MainScope() + Dispatchers.IO
@@ -1539,13 +1546,12 @@ class OABX : Application() {
                 withContext(Dispatchers.IO) {
                     try {
                         invalidateCacheForPackage(packageName)
-                        val appPackage = allPackagesByNames.value[packageName]
-                        appPackage?.apply {
+                        val pkg = allPackagesByNames.value[packageName]
+                        pkg?.apply {
                             if (!isSpecial) {
-                                refreshFromPackageManager(OABX.context)
+                                refreshFromPackageManager(context)
                             }
-                        } ?.run {
-                            retriggerFlowsForUI()
+                            OABX.updateAppInfoUI()
                         }
                     } catch (e: AssertionError) {
                         Timber.w(e.message ?: "")

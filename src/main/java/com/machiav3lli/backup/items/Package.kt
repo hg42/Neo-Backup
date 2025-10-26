@@ -37,7 +37,7 @@ import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
-import com.machiav3lli.backup.utils.TraceUtils
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import timber.log.Timber
 import java.io.File
 
@@ -84,7 +84,7 @@ class Package {
         refreshStorageStats(context)
     }
 
-    // updateDataOf, NOLABEL (= packageName not found)
+    // doWork, NOLABEL (= packageName not found)
     constructor(
         context: Context,
         packageName: String,
@@ -130,14 +130,17 @@ class Package {
     }
 
     fun refreshFromPackageManager(context: Context): Boolean {
-        Timber.d("Trying to refresh package information for $packageName from PackageManager")
         try {
             val pi =
                 context.packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
             packageInfo = AppInfo(context, pi)
             refreshStorageStats(context)
+            OABX.updateAppInfoUI()
+            Timber.d("refreshFromPackageManager: ${packageInfo}")
         } catch (e: PackageManager.NameNotFoundException) {
-            LogsHandler.logException(e, "$packageName is not installed. Refresh failed")
+            (packageInfo as AppInfo).installed = false
+            OABX.updateAppInfoUI()
+            LogsHandler.logException(e, "$packageName is not installed")
             return false
         }
         return true
@@ -278,10 +281,10 @@ class Package {
             val deletableBackups = backups.filterNot { it.persistent }.drop(keep).toMutableList()
             traceBackups {
                 "<$packageName> deleteOldestBackups keep=$keep ${
-                    TraceUtils.formatBackups(
+                    formatBackups(
                         backups
                     )
-                } --> delete ${TraceUtils.formatBackups(deletableBackups)}"
+                } --> delete ${formatBackups(deletableBackups)}"
             }
             while (deletableBackups.size > 0) {
                 deletableBackups.removeLastOrNull()?.let { backup ->
@@ -293,10 +296,10 @@ class Package {
             val deletableBackups = backups.filterNot { it.persistent }.drop(1).toMutableList()
             traceBackups {
                 "<$packageName> deleteOldestBackups keep=$keep ${
-                    TraceUtils.formatBackups(
+                    formatBackups(
                         backups
                     )
-                } --> delete ${TraceUtils.formatBackups(deletableBackups)}"
+                } --> delete ${formatBackups(deletableBackups)}"
             }
             while (keep < backups.size && deletableBackups.size > 0) {
                 deletableBackups.removeLastOrNull()?.let { backup ->

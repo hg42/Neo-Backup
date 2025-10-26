@@ -108,7 +108,7 @@ import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TagsBlock
 import com.machiav3lli.backup.ui.compose.item.TitleText
 import com.machiav3lli.backup.ui.compose.recycler.InfoChipsBlock
-import com.machiav3lli.backup.utils.TraceUtils
+import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.infoChips
 import com.machiav3lli.backup.utils.show
 import com.machiav3lli.backup.viewmodels.AppSheetViewModel
@@ -135,36 +135,37 @@ fun AppSheet(
 ) {
     val context = LocalContext.current
     val activity = OABX.main!!
+    val refreshNow by viewModel.refreshNow
+    val dismissNow by viewModel.dismissNow
     val openDialog = remember { mutableStateOf(false) }
     val dialogProps: MutableState<Pair<Int, Any>> = remember {
         mutableStateOf(Pair(DIALOG_NONE, Schedule()))
     }
 
     val pkgs by OABX.data.allPackagesByNames.collectAsState()
-    val pkgFound = pkgs[packageName]
+    val retrigger by OABX.data.allPackagesRetrigger.state.collectAsState()
+
+    val pkgFound by remember(retrigger) { mutableStateOf(pkgs[packageName]) }
     //
     //val pkgs = activity.viewModel.allPackages.state.collectAsState()
     //val pkgFound = remember(pkgs) { mutableStateOf(pkgs.value.find { it.packageName == packageName }) }
     //
-    //val pkgFound = viewModel.thePackage.collectAsState()
+    //val pkgFound by viewModel.thePackage.collectAsState()
 
     if (pkgFound == null)
        return
 
-    //val pkg = pkgFound!!
-    val pkg = pkgFound
+    val pkg = pkgFound!!
 
     val backups = pkg.backupsNewestFirst
     val hasBackups = pkg.hasBackups
 
     SideEffect {
-        traceCompose { "AppSheet ${pkg.packageName} ${TraceUtils.formatBackups(backups)}" }
+        traceCompose { "AppSheet ${pkg.packageName} ${formatBackups(backups)}" }
     }
 
     val snackbarText by viewModel.snackbarText.flow.collectAsState("")
     val appExtras by viewModel.appExtras.collectAsState()
-    val refreshNow by viewModel.refreshNow
-    val dismissNow by viewModel.dismissNow
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarVisible = snackbarText.isNotEmpty()
     val nestedScrollConnection = rememberNestedScrollInteropConnection()
@@ -178,8 +179,8 @@ fun AppSheet(
         )
     }
     if (refreshNow) {
-        viewModel.refreshNow.value = false
         activity.updatePackage(pkg.packageName)
+        viewModel.refreshNow.value = false
     }
     if (dismissNow) {
         viewModel.dismissNow.value = false

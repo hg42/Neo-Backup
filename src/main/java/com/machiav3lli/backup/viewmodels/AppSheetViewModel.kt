@@ -79,7 +79,6 @@ class AppSheetViewModel(
         viewModelScope.launch {
             val users = listOf(currentProfile.toString())
             uninstall(users)
-            refreshNow.value = true
         }
     }
 
