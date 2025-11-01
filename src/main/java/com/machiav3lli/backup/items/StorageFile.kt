@@ -391,6 +391,9 @@ open class StorageFile {
         return path ?: "null"
     }
 
+    val isLocal: Boolean
+        get() = file != null
+
     val isFile: Boolean
         get() = !isDirectory
 

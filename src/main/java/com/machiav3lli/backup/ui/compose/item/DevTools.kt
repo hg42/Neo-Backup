@@ -2,8 +2,6 @@ package com.machiav3lli.backup.ui.compose.item
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
-import android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -73,6 +71,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import com.machiav3lli.backup.ERROR_PREFIX
 import com.machiav3lli.backup.ICON_SIZE_SMALL
 import com.machiav3lli.backup.OABX
@@ -917,13 +916,14 @@ val pref_loadPreferences = LaunchPref(
 
 fun testOnStart() {
     if (isDebug) {
-        if (1 == 0)
+        if (1 == 1)
             MainScope().launch(Dispatchers.Main) {
                 trace { "############################################################ testOnStart: waiting..." }
                 delay(3000)
                 trace { "############################################################ testOnStart: running..." }
 
-                //openFileManager(OABX.backupRoot)
+                OABX.backupRoot?.let { openFileManager(it) }
+                OABX.logsDirectory?.let { openFileManager(it) }
 
                 //pref_savePreferences.onClick()
                 trace { "############################################################ testOnStart: end." }
@@ -932,105 +932,79 @@ fun testOnStart() {
 }
 
 fun openFileManager(folder: StorageFile) {
-    folder.uri?.let { uri ->
-        MainScope().launch(Dispatchers.Default) {
-            try {
-                traceDebug { "uri = $uri" }
-                when (1) {
-                    0 -> {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_VIEW
-                                flags = FLAG_ACTIVITY_NEW_TASK or
-                                        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                setData(uri)
-                                //setDataAndType(uri, "*/*")
-                                //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                addCategory(Intent.CATEGORY_BROWSABLE)
+    var ok = false
+    if (!ok && folder.isLocal)
+            folder.path?.let { path ->
+                MainScope().launch(Dispatchers.Default) {
+                    try {
+                        traceDebug { "path = $path" }
+                        //val uri = Uri.parse("${file}#Intent;type=resource/folder;launchflags=0x13000000;end")
+                        val uri = path.toUri()
+                        when (1) {
+                            1    -> {
+                                val intent =
+                                    Intent().apply {
+                                        action = Intent.ACTION_VIEW
+                                        flags = FLAG_ACTIVITY_NEW_TASK
+                                        // split screen:
+                                        //flags = FLAG_ACTIVITY_NEW_TASK or
+                                        //        FLAG_ACTIVITY_MULTIPLE_TASK or
+                                        //        FLAG_ACTIVITY_LAUNCH_ADJACENT
+                                        //setData(uri)
+                                        setDataAndType(uri, "resource/folder")
+                                        //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                                        //addCategory(Intent.CATEGORY_BROWSABLE)
+                                    }
+                                OABX.activity?.startActivity(intent)
+                                ok = true
                             }
-                        OABX.activity?.startActivity(intent)
-                    }
 
-                    0 -> {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_GET_CONTENT
-                                flags = FLAG_ACTIVITY_NEW_TASK or
-                                        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                setData(uri)
-                                //setDataAndType(uri, "*/*")
-                                //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                addCategory(Intent.CATEGORY_BROWSABLE)
-                            }
-                        val chooser = Intent.createChooser(intent, "Browse")
-                        OABX.activity?.startActivity(chooser)
+                            else -> {}
+                        }
+                        traceDebug { "ok" }
+                    } catch (e: Throwable) {
+                        logException(e, backTrace = true)
                     }
-
-                    0 -> {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_GET_CONTENT
-                                flags = FLAG_ACTIVITY_NEW_TASK or
-                                        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                setDataAndType(uri, "*/*")
-                                //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                addCategory(Intent.CATEGORY_OPENABLE)
-                            }
-                        val chooser = Intent.createChooser(intent, "Browse")
-                        OABX.activity?.startActivity(chooser)
-                    }
-
-                    0 -> {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_OPEN_DOCUMENT_TREE
-                                //flags =
-                                //    FLAG_ACTIVITY_NEW_TASK or
-                                //            FLAG_ACTIVITY_MULTIPLE_TASK or
-                                //            FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                setData(uri)
-                                //setDataAndType(uri, "*/*")
-                                //setDataAndType(uri, "resource/folder")
-                                //setDataAndType(uri, "vnd.android.document/directory")
-                                //setDataAndType(uri, EXTRA_MIME_TYPES)
-                                //addCategory(CATEGORY_APP_FILES)
-                            }
-                        OABX.activity?.startActivity(intent)
-                    }
-
-                    1 -> {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_VIEW
-                                flags =
-                                    FLAG_ACTIVITY_NEW_TASK or
-                                            FLAG_ACTIVITY_MULTIPLE_TASK or
-                                            FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                //setData(uri)
-                                //setDataAndType(uri, "*/*")
-                                //setDataAndType(uri, "resource/folder")
-                                setDataAndType(uri, "vnd.android.document/directory")
-                                //putExtra(EXTRA_MIME_TYPES, arrayOf(
-                                //    "vnd.android.document/directory",
-                                //    "resource/folder",
-                                //))
-                                //addCategory(CATEGORY_APP_FILES)
-                                //addCategory(Intent.CATEGORY_BROWSABLE)
-                            }
-                        OABX.context.startActivity(intent)
-                    }
-
-                    else -> {}
                 }
-                traceDebug { "ok" }
-            } catch (e: Throwable) {
-                logException(e, backTrace = true)
+            }
+    if (!ok)
+        folder.uri?.let { uri ->
+            MainScope().launch(Dispatchers.Default) {
+                try {
+                    traceDebug { "uri = $uri" }
+                    when (1) {
+                        1 -> {
+                            val intent =
+                                Intent().apply {
+                                    action = Intent.ACTION_VIEW
+                                    flags = FLAG_ACTIVITY_NEW_TASK
+                                    // split screen:
+                                    //flags = FLAG_ACTIVITY_NEW_TASK or
+                                    //        FLAG_ACTIVITY_MULTIPLE_TASK or
+                                    //        FLAG_ACTIVITY_LAUNCH_ADJACENT
+                                    //setData(uri)
+                                    //setDataAndType(uri, "*/*")
+                                    //setDataAndType(uri, "resource/folder")
+                                    setDataAndType(uri, "vnd.android.document/directory")
+                                    //putExtra(EXTRA_MIME_TYPES, arrayOf(
+                                    //    "vnd.android.document/directory",
+                                    //    "resource/folder",
+                                    //))
+                                    //addCategory(CATEGORY_APP_FILES)
+                                    //addCategory(Intent.CATEGORY_BROWSABLE)
+                                }
+                            OABX.context.startActivity(intent)
+                            ok = true
+                        }
+
+                        else -> {}
+                    }
+                    traceDebug { "ok" }
+                } catch (e: Throwable) {
+                    logException(e, backTrace = true)
+                }
             }
         }
-    }
 }
 
 val pref_openBackupDir = LaunchPref(
@@ -1038,6 +1012,13 @@ val pref_openBackupDir = LaunchPref(
     summary = "open backup directory in associated app"
 ) {
     OABX.backupRoot?.let { openFileManager(it) }
+}
+
+val pref_openLogsDir = LaunchPref(
+    key = "dev-tool.openLogsDir",
+    summary = "open logs directory in associated app"
+) {
+    OABX.logsDirectory?.let { openFileManager(it) }
 }
 
 @Composable

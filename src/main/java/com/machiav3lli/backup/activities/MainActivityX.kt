@@ -73,6 +73,7 @@ import com.machiav3lli.backup.traceInfo
 import com.machiav3lli.backup.ui.compose.ObservedEffect
 import com.machiav3lli.backup.ui.compose.item.DevTools
 import com.machiav3lli.backup.ui.compose.item.devToolsSearch
+import com.machiav3lli.backup.ui.compose.item.testOnStart
 import com.machiav3lli.backup.ui.compose.theme.AppTheme
 import com.machiav3lli.backup.ui.navigation.MainNavHost
 import com.machiav3lli.backup.ui.navigation.NavItem
@@ -181,6 +182,8 @@ class MainActivityX : BaseActivity() {
 
         if (doIntent(intent, "beforeContent"))
             return
+
+        testOnStart()
 
         if (!isLikeRoot()) {
             setContent {
