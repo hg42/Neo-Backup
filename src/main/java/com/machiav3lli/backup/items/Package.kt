@@ -26,7 +26,6 @@ import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.runOrLog
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.findBackups
 import com.machiav3lli.backup.handler.getPackageStorageStats
 import com.machiav3lli.backup.preferences.pref_flatStructure
@@ -36,6 +35,7 @@ import com.machiav3lli.backup.traceBackups
 import com.machiav3lli.backup.utils.FileUtils
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import timber.log.Timber
@@ -362,7 +362,7 @@ class Package {
             "android.resource://${packageName}/${packageInfo.icon}"
 
     fun getExternalDataPath(): String {
-        val user = ShellCommands.currentProfile.toString()
+        val user = currentProfile.toString()
         return getAndroidFolder("data", user, SystemUtils::isWritablePath)
             ?.absolutePath
             ?.plus("${File.separator}$packageName")
@@ -370,7 +370,7 @@ class Package {
     }
 
     fun getObbFilesPath(): String {
-        val user = ShellCommands.currentProfile.toString()
+        val user = currentProfile.toString()
         return getAndroidFolder("obb", user, SystemUtils::isWritablePath)
             ?.absolutePath
             ?.plus("${File.separator}$packageName")
@@ -378,7 +378,7 @@ class Package {
     }
 
     fun getMediaFilesPath(): String {
-        val user = ShellCommands.currentProfile.toString()
+        val user = currentProfile.toString()
         return getAndroidFolder("media", user, SystemUtils::isWritablePath)
             ?.absolutePath
             ?.plus("${File.separator}$packageName")

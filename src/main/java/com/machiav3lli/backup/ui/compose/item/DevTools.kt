@@ -916,7 +916,7 @@ val pref_loadPreferences = LaunchPref(
 
 fun testOnStart() {
     if (isDebug) {
-        if (1 == 1)
+        if (1 == 0)
             MainScope().launch(Dispatchers.Main) {
                 trace { "############################################################ testOnStart: waiting..." }
                 delay(3000)

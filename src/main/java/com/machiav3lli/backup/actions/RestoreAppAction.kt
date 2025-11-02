@@ -30,7 +30,6 @@ import com.machiav3lli.backup.R
 import com.machiav3lli.backup.batchModes
 import com.machiav3lli.backup.batchOperations
 import com.machiav3lli.backup.dbs.entity.Backup
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.hasPmBypassLowTargetSDKBlock
 import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
@@ -58,6 +57,7 @@ import com.machiav3lli.backup.preferences.pref_restoreTarCmd
 import com.machiav3lli.backup.tasks.AppActionWork
 import com.machiav3lli.backup.utils.CryptoSetupException
 import com.machiav3lli.backup.utils.Dirty
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.copyDocumentToRootFile
 import com.machiav3lli.backup.utils.decryptStream
 import com.machiav3lli.backup.utils.getCryptoSalt
@@ -217,7 +217,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
     @Throws(RestoreFailedException::class)
     open fun restorePackage(backupDir: StorageFile, backup: Backup) {
         val packageName = backup.packageName
-        val profileId = ShellCommands.currentProfile
+        val profileId = currentProfile
 
         Timber.i("<$packageName> Restoring from $backupDir to profile $profileId")
 

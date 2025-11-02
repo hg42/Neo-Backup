@@ -69,6 +69,7 @@ import com.machiav3lli.backup.ui.compose.icons.phosphor.MagnifyingGlass
 import com.machiav3lli.backup.ui.compose.icons.phosphor.X
 import com.machiav3lli.backup.ui.compose.spToDp
 import com.machiav3lli.backup.ui.compose.verticalCCW
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import kotlinx.coroutines.delay
 import java.lang.Float.max
 
@@ -197,6 +198,19 @@ fun TitleOrInfoLog(
                     .height(height)
                     .fillMaxWidth()
             ) {
+                if (currentProfile != 0) {
+                    Text(
+                        text = "👤",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Blue
+                    )
+                    Text(
+                        text = "$currentProfile    ",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Red
+                    )
+                }
+
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineMedium,

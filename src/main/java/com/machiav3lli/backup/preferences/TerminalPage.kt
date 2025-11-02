@@ -83,7 +83,6 @@ import com.machiav3lli.backup.OABX.Companion.endBusy
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.share
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.handler.ShellHandler.Companion.needFreshShell
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRootPipeOutCollectErr
@@ -116,6 +115,7 @@ import com.machiav3lli.backup.ui.compose.item.SmallButton
 import com.machiav3lli.backup.ui.compose.item.TopBar
 import com.machiav3lli.backup.ui.compose.recycler.FullScreenBackground
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.SystemUtils.getAndroidFolder
 import com.machiav3lli.backup.utils.TraceUtils.listNanoTiming
 import com.topjohnwu.superuser.Shell
@@ -259,11 +259,11 @@ fun accessTest() =
             ) +
             accessTest1(
                 "data",
-                "\$ANDROID_DATA/user/${ShellCommands.currentProfile}", "packages (data)"
+                "\$ANDROID_DATA/user/${currentProfile}", "packages (data)"
             ) +
             accessTest1(
                 "dedata",
-                "\$ANDROID_DATA/user_de/${ShellCommands.currentProfile}", "packages (dedata)"
+                "\$ANDROID_DATA/user_de/${currentProfile}", "packages (dedata)"
             ) +
             accessTest1(
                 "external",

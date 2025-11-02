@@ -47,7 +47,6 @@ import com.machiav3lli.backup.dbs.entity.AppInfo
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.items.Package.Companion.invalidateBackupCacheForPackage
@@ -60,6 +59,7 @@ import com.machiav3lli.backup.traceBackupsScanAll
 import com.machiav3lli.backup.traceInfo
 import com.machiav3lli.backup.traceTiming
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.SystemUtils.numCores
 import com.machiav3lli.backup.utils.TraceUtils
 import com.machiav3lli.backup.utils.TraceUtils.beginNanoTimer

@@ -30,6 +30,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -81,6 +82,7 @@ import com.machiav3lli.backup.ui.navigation.safeNavigate
 import com.machiav3lli.backup.utils.FileUtils.ensureBackups
 import com.machiav3lli.backup.utils.FileUtils.invalidateBackupLocation
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.TraceUtils.classAndId
 import com.machiav3lli.backup.utils.TraceUtils.traceBold
 import com.machiav3lli.backup.utils.allPermissionsGranted

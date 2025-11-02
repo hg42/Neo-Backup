@@ -29,11 +29,11 @@ import com.machiav3lli.backup.dbs.entity.AppExtras
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.handler.LogsHandler
 import com.machiav3lli.backup.handler.ShellCommands
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.showNotification
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.ui.compose.MutableComposableStateFlow
 import com.machiav3lli.backup.utils.SystemUtils
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted

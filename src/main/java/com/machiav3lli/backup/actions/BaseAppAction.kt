@@ -21,7 +21,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ

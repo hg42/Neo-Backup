@@ -47,7 +47,7 @@ import com.machiav3lli.backup.dbs.entity.SpecialInfo
 import com.machiav3lli.backup.handler.BackupRestoreHelper
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
 import com.machiav3lli.backup.handler.ShellCommands
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.traceContextMenu
 import com.machiav3lli.backup.traceTiming

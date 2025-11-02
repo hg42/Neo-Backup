@@ -2,12 +2,12 @@ package com.machiav3lli.backup.utils
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Binder
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.os.FileUriExposedException
 import android.os.SystemClock
 import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.handler.LogsHandler
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.items.RootFile
 import com.machiav3lli.backup.items.StorageFile
 import kotlinx.coroutines.CoroutineDispatcher
@@ -26,6 +26,25 @@ import java.net.URLDecoder
 
 
 object SystemUtils {
+
+    // using reflection to get id of calling user since method getCallingUserId of UserHandle is hidden
+    // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/os/UserHandle.java#L123
+    val currentProfile: Int
+        get() {
+            //TODO hg42 another possibility RootFile.cmd("echo \$USER_ID").toInt()
+            try {
+                // using reflection to get id of calling user since method getCallingUserId of UserHandle is hidden
+                // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/os/UserHandle.java#L123
+                val userHandle = Class.forName("android.os.UserHandle")
+                val muEnabled = userHandle.getField("MU_ENABLED").getBoolean(null)
+                val range = userHandle.getField("PER_USER_RANGE").getInt(null)
+                if (muEnabled) return Binder.getCallingUid() / range
+            } catch (ignored: ClassNotFoundException) {
+            } catch (ignored: NoSuchFieldException) {
+            } catch (ignored: IllegalAccessException) {
+            }
+            return 0
+        }
 
     val numCores get() = Runtime.getRuntime().availableProcessors()
 
@@ -191,13 +210,13 @@ object SystemUtils {
                     URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
                 Timber.i("StorageFile: last=$last uri=$uri")
                 var (storage, subPath) = last.split(":", limit = 2)
-                //val user = ShellCommands.currentProfile
+                //val user = currentProfile
                 val user_provider = (uri.authority ?: "").split("@", limit = 2)
                 val user =
                     if (user_provider.size > 1)
                         user_provider[0]
                     else
-                        ShellCommands.currentProfile.toString()
+                        currentProfile.toString()
                 if (storage == "primary")
                     storage = "emulated/$user"
                 file = getLocalFile(
@@ -218,7 +237,7 @@ object SystemUtils {
 
     fun getAndroidFolder(
         subPath: String,
-        user: String = ShellCommands.currentProfile.toString(),
+        user: String = currentProfile.toString(),
         isUseablePath: (file: RootFile?) -> Boolean = ::isWritablePath
     ): RootFile? {
         // only check access to Android folder and add subFolder even if it does not exist

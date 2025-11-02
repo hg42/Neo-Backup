@@ -37,6 +37,7 @@ import com.machiav3lli.backup.preferences.pref_suCommand
 import com.machiav3lli.backup.traceDebug
 import com.machiav3lli.backup.utils.BUFFER_SIZE
 import com.machiav3lli.backup.utils.FileUtils.translatePosixPermissionToMode
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.io.SuRandomAccessFile
@@ -693,7 +694,7 @@ class ShellHandler {
 
         var suCommand by mutableStateOf("")
 
-        val profileId: String get() = ShellCommands.currentProfile.toString()
+        val profileId: String get() = currentProfile.toString()
 
         fun splitCommand(command: String): List<String> {
             val result = mutableListOf<String>()

@@ -76,7 +76,6 @@ import com.machiav3lli.backup.dialogs.StringInputDialogUI
 import com.machiav3lli.backup.exodusUrl
 import com.machiav3lli.backup.handler.BackupRestoreHelper
 import com.machiav3lli.backup.handler.ShellCommands
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
 import com.machiav3lli.backup.handler.ShellHandler
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.items.Package
@@ -108,6 +107,7 @@ import com.machiav3lli.backup.ui.compose.item.RoundButton
 import com.machiav3lli.backup.ui.compose.item.TagsBlock
 import com.machiav3lli.backup.ui.compose.item.TitleText
 import com.machiav3lli.backup.ui.compose.recycler.InfoChipsBlock
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.utils.TraceUtils.formatBackups
 import com.machiav3lli.backup.utils.infoChips
 import com.machiav3lli.backup.utils.show

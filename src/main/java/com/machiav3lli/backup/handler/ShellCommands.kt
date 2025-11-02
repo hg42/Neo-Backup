@@ -18,13 +18,13 @@
 package com.machiav3lli.backup.handler
 
 import android.content.Context
-import android.os.Binder
 import com.machiav3lli.backup.handler.ShellHandler.Companion.quote
 import com.machiav3lli.backup.handler.ShellHandler.Companion.runAsRoot
 import com.machiav3lli.backup.handler.ShellHandler.Companion.utilBoxQ
 import com.machiav3lli.backup.handler.ShellHandler.ShellCommandFailedException
 import com.machiav3lli.backup.items.Package
 import com.machiav3lli.backup.utils.FileUtils
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import timber.log.Timber
 import java.io.File
 
@@ -34,25 +34,6 @@ class ShellCommands {
         Exception(message, cause)
 
     companion object {
-
-        // using reflection to get id of calling user since method getCallingUserId of UserHandle is hidden
-        // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/os/UserHandle.java#L123
-        val currentProfile: Int
-            get() {
-                //TODO hg42 another possibility RootFile.cmd("echo \$USER_ID").toInt()
-                try {
-                    // using reflection to get id of calling user since method getCallingUserId of UserHandle is hidden
-                    // https://github.com/android/platform_frameworks_base/blob/master/core/java/android/os/UserHandle.java#L123
-                    val userHandle = Class.forName("android.os.UserHandle")
-                    val muEnabled = userHandle.getField("MU_ENABLED").getBoolean(null)
-                    val range = userHandle.getField("PER_USER_RANGE").getInt(null)
-                    if (muEnabled) return Binder.getCallingUid() / range
-                } catch (ignored: ClassNotFoundException) {
-                } catch (ignored: NoSuchFieldException) {
-                } catch (ignored: IllegalAccessException) {
-                }
-                return 0
-            }
 
         @Throws(ShellActionFailedException::class)
         fun uninstall(users: List<String?>?, packageName: String?, sourceDir: String?, dataDir: String?, isSystem: Boolean) {

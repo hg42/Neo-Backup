@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.room.Entity
 import com.machiav3lli.backup.R
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.plugins.SpecialFilesPlugin
 import com.machiav3lli.backup.utils.FileUtils.BackupLocationInAccessibleException
 import com.machiav3lli.backup.utils.StorageLocationNotConfiguredException
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -130,7 +130,7 @@ open class SpecialInfo : PackageInfo {
                             )
                     }
 
-                    specialInfos += SpecialFilesPlugin.specialInfos(ShellCommands.currentProfile.toString())
+                    specialInfos += SpecialFilesPlugin.specialInfos(currentProfile.toString())
                 }
                 locked = false
             }

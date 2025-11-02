@@ -39,7 +39,7 @@ import com.machiav3lli.backup.OABX.Companion.backupRoot
 import com.machiav3lli.backup.R
 import com.machiav3lli.backup.dbs.entity.Backup
 import com.machiav3lli.backup.dbs.entity.PackageInfo
-import com.machiav3lli.backup.handler.ShellCommands.Companion.currentProfile
+import com.machiav3lli.backup.utils.SystemUtils.currentProfile
 import com.machiav3lli.backup.items.StorageFile
 import com.machiav3lli.backup.preferences.pref_altBackupDate
 import com.machiav3lli.backup.ui.compose.ShowIf
