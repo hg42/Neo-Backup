@@ -923,7 +923,7 @@ fun testOnStart() {
                 trace { "############################################################ testOnStart: running..." }
 
                 OABX.backupRoot?.let { openFileManager(it) }
-                OABX.logsDirectory?.let { openFileManager(it) }
+                //OABX.logsDirectory?.let { openFileManager(it) }
 
                 //pref_savePreferences.onClick()
                 trace { "############################################################ testOnStart: end." }
@@ -933,40 +933,39 @@ fun testOnStart() {
 
 fun openFileManager(folder: StorageFile) {
     var ok = false
-    if (!ok && folder.isLocal)
-            folder.path?.let { path ->
-                MainScope().launch(Dispatchers.Default) {
-                    try {
-                        traceDebug { "path = $path" }
-                        //val uri = Uri.parse("${file}#Intent;type=resource/folder;launchflags=0x13000000;end")
-                        val uri = path.toUri()
-                        when (1) {
-                            1    -> {
-                                val intent =
-                                    Intent().apply {
-                                        action = Intent.ACTION_VIEW
-                                        flags = FLAG_ACTIVITY_NEW_TASK
-                                        // split screen:
-                                        //flags = FLAG_ACTIVITY_NEW_TASK or
-                                        //        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                        //        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                        //setData(uri)
-                                        setDataAndType(uri, "resource/folder")
-                                        //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                        //addCategory(Intent.CATEGORY_BROWSABLE)
-                                    }
-                                OABX.activity?.startActivity(intent)
-                                ok = true
-                            }
-
-                            else -> {}
+    if (!ok)
+        folder.localFile?.path?.let { path ->
+            MainScope().launch(Dispatchers.Default) {
+                try {
+                    traceDebug { "path = $path" }
+                    val uri = path.toUri()
+                    when (1) {
+                        1    -> {
+                            val intent =
+                                Intent().apply {
+                                    action = Intent.ACTION_VIEW
+                                    flags = FLAG_ACTIVITY_NEW_TASK
+                                    // split screen:
+                                    //flags = FLAG_ACTIVITY_NEW_TASK or
+                                    //        FLAG_ACTIVITY_MULTIPLE_TASK or
+                                    //        FLAG_ACTIVITY_LAUNCH_ADJACENT
+                                    //setData(uri)
+                                    setDataAndType(uri, "resource/folder")
+                                    //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                                    //addCategory(Intent.CATEGORY_BROWSABLE)
+                                }
+                            OABX.context.startActivity(intent)
+                            ok = true
                         }
-                        traceDebug { "ok" }
-                    } catch (e: Throwable) {
-                        logException(e, backTrace = true)
+
+                        else -> {}
                     }
+                    traceDebug { "ok" }
+                } catch (e: Throwable) {
+                    logException(e, backTrace = true)
                 }
             }
+        }
     if (!ok)
         folder.uri?.let { uri ->
             MainScope().launch(Dispatchers.Default) {
@@ -986,6 +985,7 @@ fun openFileManager(folder: StorageFile) {
                                     //setDataAndType(uri, "*/*")
                                     //setDataAndType(uri, "resource/folder")
                                     setDataAndType(uri, "vnd.android.document/directory")
+                                    //setDataAndType(uri, "resource/folder")
                                     //putExtra(EXTRA_MIME_TYPES, arrayOf(
                                     //    "vnd.android.document/directory",
                                     //    "resource/folder",

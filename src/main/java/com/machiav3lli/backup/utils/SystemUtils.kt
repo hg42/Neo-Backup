@@ -1,6 +1,7 @@
 package com.machiav3lli.backup.utils
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.os.FileUriExposedException
 import android.os.SystemClock
@@ -21,6 +22,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
+import java.net.URLDecoder
 
 
 object SystemUtils {
@@ -128,7 +130,7 @@ object SystemUtils {
 
     val storagePath = mutableMapOf<String, RootFile?>()
 
-    fun getShadowPath(
+    fun getLocalFile(
         user: String,
         storage: String,
         subPath: String,
@@ -164,6 +166,54 @@ object SystemUtils {
             }
             return null
         }
+    }
+
+    fun getLocalFile(
+        uri: Uri,
+        isUseablePath: (file: RootFile?) -> Boolean = ::isWritablePath
+    ): RootFile? {
+        var file : RootFile? = null
+        try {
+            if (uri.scheme == "file" || uri.scheme == null) {
+                val checkFile = RootFile(
+                    uri.path // should normally be there, even for file paths
+                        ?: Uri.decode(uri.toString())  // paranoid fallback in case it is not
+                )
+                if (isUseablePath(checkFile)) {
+                    Timber.i("found direct RootFile shadow at '$checkFile'")
+                    file = checkFile
+                } else
+                    throw Exception("cannot use RootFile '$checkFile'")
+            } else {
+                val last =
+                //uri.lastPathSegment // docs say: last segment of the decoded(!) path, not the encoded one
+                    // because this is not correct = not reliable, we make it explicit:
+                    URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
+                Timber.i("StorageFile: last=$last uri=$uri")
+                var (storage, subPath) = last.split(":", limit = 2)
+                //val user = ShellCommands.currentProfile
+                val user_provider = (uri.authority ?: "").split("@", limit = 2)
+                val user =
+                    if (user_provider.size > 1)
+                        user_provider[0]
+                    else
+                        ShellCommands.currentProfile.toString()
+                if (storage == "primary")
+                    storage = "emulated/$user"
+                file = getLocalFile(
+                    user,
+                    storage,
+                    subPath,
+                    isUseablePath
+                )
+                if (file == null)
+                    throw Exception("cannot find RootFile shadow at $last")
+            }
+        } catch (e: Throwable) {
+            file = null
+            Timber.i("using access via SAF")
+        }
+        return file
     }
 
     fun getAndroidFolder(

@@ -13,20 +13,17 @@ import com.machiav3lli.backup.OABX
 import com.machiav3lli.backup.PROP_NAME
 import com.machiav3lli.backup.handler.LogsHandler.Companion.logException
 import com.machiav3lli.backup.handler.LogsHandler.Companion.unexpectedException
-import com.machiav3lli.backup.handler.ShellCommands
 import com.machiav3lli.backup.preferences.pref_cacheFileLists
 import com.machiav3lli.backup.preferences.pref_cacheUris
 import com.machiav3lli.backup.preferences.pref_shadowRootFile
 import com.machiav3lli.backup.traceDebug
-import com.machiav3lli.backup.utils.SystemUtils.getShadowPath
+import com.machiav3lli.backup.utils.SystemUtils.getLocalFile
 import com.machiav3lli.backup.utils.SystemUtils.isWritablePath
-import timber.log.Timber
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.URLDecoder
 
 
 fun getCursorString(cursor: Cursor, columnName: String): String? {
@@ -285,46 +282,7 @@ open class StorageFile {
         name?.let { this.name = it }
         if (parent == null && uri != null) {
             if (pref_shadowRootFile.value && allowShadowing) {
-                try {
-                    if (uri.scheme == "file" || uri.scheme == null) {
-                        val checkFile = RootFile(
-                            uri.path // should normally be there, even for file paths
-                                ?: Uri.decode(uri.toString())  // paranoid fallback in case it is not
-                        )
-                        if (isWritablePath(checkFile)) {
-                            Timber.i("found direct RootFile shadow at '$checkFile'")
-                            file = checkFile
-                        } else
-                            throw Exception("cannot use RootFile '$checkFile'")
-                    } else {
-                        val last =
-                        //uri.lastPathSegment // docs say: last segment of the decoded(!) path, not the encoded one
-                            // because this is not correct = not reliable, we make it explicit:
-                            URLDecoder.decode(uri.encodedPath?.split("/")?.last() ?: "", "UTF-8")
-                        Timber.i("StorageFile: last=$last uri=$uri")
-                        var (storage, subPath) = last.split(":", limit = 2)
-                        //val user = ShellCommands.currentProfile
-                        val user_provider = (uri.authority ?: "").split("@", limit = 2)
-                        val user =
-                            if (user_provider.size > 1)
-                                user_provider[0]
-                            else
-                                ShellCommands.currentProfile.toString()
-                        if (storage == "primary")
-                            storage = "emulated/$user"
-                        file = getShadowPath(
-                            user,
-                            storage,
-                            subPath,
-                            ::isWritablePath
-                        )
-                        if (file == null)
-                            throw Exception("cannot find RootFile shadow at $last")
-                    }
-                } catch (e: Throwable) {
-                    file = null
-                    Timber.i("using access via SAF")
-                }
+                file = getLocalFile(uri, ::isWritablePath)
             }
         }
         cacheSetUri(uri.toString(), this)
@@ -390,6 +348,9 @@ open class StorageFile {
     override fun toString(): String {
         return path ?: "null"
     }
+
+    val localFile: RootFile?
+        get() = file ?: uri?.let { getLocalFile(it) }
 
     val isLocal: Boolean
         get() = file != null
