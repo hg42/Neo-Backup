@@ -45,23 +45,6 @@ data class InfoFromGit(
 )
 
 fun getInfoFromGit(): InfoFromGit {
-    val tagPattern = """tag: *(\d+)\.(\d+)\.(\d+)\)"""
-    val tagProcess = ProcessBuilder(
-        "git",
-        "log",
-        "--tags",
-        "--simplify-by-decoration",
-        "--pretty=format:%ai %d",
-        "--date=iso"
-    )
-        .redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .start()
-
-    val tagResult = tagProcess.inputStream.bufferedReader().use { it.readText() }
-    tagProcess.waitFor(10, TimeUnit.SECONDS)
-
-    val regex = Regex(tagPattern)
-    val matchResult = regex.find(tagResult)
 
     var lastTag: String? = null
     var lastTagDateTime: LocalDateTime? = null
@@ -69,15 +52,46 @@ fun getInfoFromGit(): InfoFromGit {
     var lastTagMinor: Int? = null
     var lastTagPatch: Int? = null
 
-    if (matchResult != null) {
-        val tagLine = tagResult.lines().first { it.contains(matchResult.value) }
-        val dateTime = tagLine.split(" ")[0] + "T" + tagLine.split(" ")[1]
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-        lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
-        val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
+    if (false) {
+        val tagPattern = """tag: *(\d+)\.(\d+)\.(\d+)"""
+        val tagProcess = ProcessBuilder(
+            "git",
+            "log",
+            "--tags",
+            "--simplify-by-decoration",
+            "--pretty=format:%ai %d",
+            "--date=iso"
+        )
+            .redirectOutput(ProcessBuilder.Redirect.PIPE)
+            .start()
+
+        val tagResult = tagProcess.inputStream.bufferedReader().use { it.readText() }
+        tagProcess.waitFor(10, TimeUnit.SECONDS)
+
+        val regex = Regex(tagPattern)
+        val matchResult = regex.find(tagResult)
+
+        if (matchResult != null) {
+            val tagLine = tagResult.lines().first { it.contains(matchResult.value) }
+            val dateTime = tagLine.split(" ")[0] + "T" + tagLine.split(" ")[1]
+            lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
+
+            val (major, minor, patch) = matchResult.destructured.toList().map { it.toInt() }
+
+            lastTag = "$major.$minor.$patch"
+            lastTagMajor = major
+            lastTagMinor = minor
+            lastTagPatch = patch
+        }
+    } else {
+
+        val (major, minor, patch) = listOf(8, 3, 12)
+        val dateTime = "2025-03-22T12:38:27"
 
         lastTag = "$major.$minor.$patch"
+        lastTagDateTime = LocalDateTime.parse(dateTime, formatter)
         lastTagMajor = major
         lastTagMinor = minor
         lastTagPatch = patch
