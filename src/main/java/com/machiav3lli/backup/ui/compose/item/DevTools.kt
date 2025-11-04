@@ -932,79 +932,73 @@ fun testOnStart() {
 }
 
 fun openFileManager(folder: StorageFile) {
-    var ok = false
-    if (!ok)
-        folder.localFile?.path?.let { path ->
-            MainScope().launch(Dispatchers.Default) {
-                try {
-                    traceDebug { "path = $path" }
-                    val uri = path.toUri()
-                    when (1) {
-                        1    -> {
-                            val intent =
-                                Intent().apply {
-                                    action = Intent.ACTION_VIEW
-                                    flags = FLAG_ACTIVITY_NEW_TASK
-                                    // split screen:
-                                    //flags = FLAG_ACTIVITY_NEW_TASK or
-                                    //        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                    //        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                    //setData(uri)
-                                    setDataAndType(uri, "resource/folder")
-                                    //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                    //addCategory(Intent.CATEGORY_BROWSABLE)
-                                }
-                            OABX.context.startActivity(intent)
-                            ok = true
-                        }
-
-                        else -> {}
+    folder.localFile?.path?.let { path ->
+        MainScope().launch(Dispatchers.Default) {
+            try {
+                traceDebug { "path = $path" }
+                val uri = path.toUri()
+                when (1) {
+                    1    -> {
+                        val intent =
+                            Intent().apply {
+                                action = Intent.ACTION_VIEW
+                                flags = FLAG_ACTIVITY_NEW_TASK
+                                // split screen:
+                                //flags = FLAG_ACTIVITY_NEW_TASK or
+                                //        FLAG_ACTIVITY_MULTIPLE_TASK or
+                                //        FLAG_ACTIVITY_LAUNCH_ADJACENT
+                                //setData(uri)
+                                setDataAndType(uri, "resource/folder")
+                                //putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                                //addCategory(Intent.CATEGORY_BROWSABLE)
+                            }
+                        OABX.context.startActivity(intent)
+                        traceDebug { "open local directory ok" }
                     }
-                    traceDebug { "ok" }
-                } catch (e: Throwable) {
-                    logException(e, backTrace = true)
+
+                    else -> {}
                 }
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
             }
         }
-    if (!ok)
-        folder.uri?.let { uri ->
-            MainScope().launch(Dispatchers.Default) {
-                try {
-                    traceDebug { "uri = $uri" }
-                    when (1) {
-                        1 -> {
-                            val intent =
-                                Intent().apply {
-                                    action = Intent.ACTION_VIEW
-                                    flags = FLAG_ACTIVITY_NEW_TASK
-                                    // split screen:
-                                    //flags = FLAG_ACTIVITY_NEW_TASK or
-                                    //        FLAG_ACTIVITY_MULTIPLE_TASK or
-                                    //        FLAG_ACTIVITY_LAUNCH_ADJACENT
-                                    //setData(uri)
-                                    //setDataAndType(uri, "*/*")
-                                    //setDataAndType(uri, "resource/folder")
-                                    setDataAndType(uri, "vnd.android.document/directory")
-                                    //setDataAndType(uri, "resource/folder")
-                                    //putExtra(EXTRA_MIME_TYPES, arrayOf(
-                                    //    "vnd.android.document/directory",
-                                    //    "resource/folder",
-                                    //))
-                                    //addCategory(CATEGORY_APP_FILES)
-                                    //addCategory(Intent.CATEGORY_BROWSABLE)
-                                }
-                            OABX.context.startActivity(intent)
-                            ok = true
-                        }
-
-                        else -> {}
+    } ?: folder.uri?.let { uri ->
+        MainScope().launch(Dispatchers.Default) {
+            try {
+                traceDebug { "uri = $uri" }
+                when (1) {
+                    1 -> {
+                        val intent =
+                            Intent().apply {
+                                action = Intent.ACTION_VIEW
+                                flags = FLAG_ACTIVITY_NEW_TASK
+                                // split screen:
+                                //flags = FLAG_ACTIVITY_NEW_TASK or
+                                //        FLAG_ACTIVITY_MULTIPLE_TASK or
+                                //        FLAG_ACTIVITY_LAUNCH_ADJACENT
+                                //setData(uri)
+                                //setDataAndType(uri, "*/*")
+                                //setDataAndType(uri, "resource/folder")
+                                setDataAndType(uri, "vnd.android.document/directory")
+                                //setDataAndType(uri, "resource/folder")
+                                //putExtra(EXTRA_MIME_TYPES, arrayOf(
+                                //    "vnd.android.document/directory",
+                                //    "resource/folder",
+                                //))
+                                //addCategory(CATEGORY_APP_FILES)
+                                //addCategory(Intent.CATEGORY_BROWSABLE)
+                            }
+                        OABX.context.startActivity(intent)
+                        traceDebug { "open SAF directory ok" }
                     }
-                    traceDebug { "ok" }
-                } catch (e: Throwable) {
-                    logException(e, backTrace = true)
+
+                    else -> {}
                 }
+            } catch (e: Throwable) {
+                logException(e, backTrace = true)
             }
         }
+    }
 }
 
 val pref_openBackupDir = LaunchPref(
