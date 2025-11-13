@@ -230,9 +230,9 @@ version build:
 
 //System.exit(0)
 
-val neobackup_keystore: String by rootProject.extra
-val neobackup_keystorepass: String by rootProject.extra
-val neobackup_keypass: String by rootProject.extra
+val keystore: String by rootProject.extra
+val keystorepass: String by rootProject.extra
+val keypass: String by rootProject.extra
 
 val jvmVersion = JavaVersion.VERSION_17
 
@@ -241,9 +241,9 @@ android {
 
     signingConfigs {
         create("hg42test") {
-            storeFile = file(neobackup_keystore)
-            storePassword = neobackup_keystorepass
-            keyPassword = neobackup_keypass
+            storeFile = file(keystore)
+            storePassword = keystorepass
+            keyPassword = keypass
             keyAlias = "cert"
         }
     }
