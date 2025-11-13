@@ -671,15 +671,26 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
         val uidgidcon = try {
             shell.suGetOwnerGroupContext(extractTo)
         } catch (e: Throwable) {
-            val fromParent = shell.suGetOwnerGroupContext(File(extractTo).parent!!)
-            val fromData = shell.suGetOwnerGroupContext(app.dataPath)
-            arrayOf(
-                fromData[0],    // user from app data
-                fromParent[1],  // group is independent of app
-                fromParent[2]   // context is independent of app //TODO hg42 really? some seem to be restricted to app? or may be they should...
-                // note: restorecon does not work, because it sets storage_file instead of media_rw_data_file
-                // (returning "?" here would choose restorecon)
-            )
+            if (extractTo.contains("Android/media/")) {
+                val fromMedia = shell.suGetOwnerGroupContext("${app.dataPath}/../com.android.providers.media.module")
+                arrayOf(
+                    fromMedia[0],
+                    "media_rw",
+                    fromMedia[2].replace("privapp_data_file", "media_rw_data_file")
+                    // note: restorecon does not work
+                    // (returning "?" here would choose restorecon)
+                )
+            } else {
+                val fromParent = shell.suGetOwnerGroupContext(File(extractTo).parent!!)
+                val fromData = shell.suGetOwnerGroupContext(app.dataPath)
+                arrayOf(
+                    fromData[0],    // user from app data
+                    fromParent[1],  // group is independent of app
+                    fromParent[2]   // context is independent of app //TODO hg42 really? some seem to be restricted to app? or may be they should...
+                    // note: restorecon does not work
+                    // (returning "?" here would choose restorecon)
+                )
+            }
         }
         return uidgidcon
     }
@@ -1130,10 +1141,7 @@ open class RestoreAppAction(context: Context, work: AppActionWork?, shell: Shell
     companion object {
         protected val PACKAGE_STAGING_DIRECTORY = RootFile("/data/local/tmp")
         const val BASE_APK_FILENAME = "base.apk"
-        const val LOG_DIR_IS_MISSING_CANNOT_RESTORE =
-            "Backup directory %s is missing. Cannot restore"
         const val LOG_EXTRACTING_S = "[%s] Extracting %s"
-        const val LOG_BACKUP_ARCHIVE_MISSING = "Backup archive %s is missing. Cannot restore"
 
         fun isOldVersion(backup: Backup) = backup.backupVersionCode < 8000
     }
