@@ -616,8 +616,8 @@ val pref_useForegroundInService = BooleanPref(
 
 val pref_useForegroundInJob = BooleanPref(
     key = "dev-alt.useForegroundInJob",
-    summary = "sue foreground notification in each job (per package)",
-    defaultValue = false
+    summary = "use foreground notification in each job (per package)",
+    defaultValue = true
 )
 
 val pref_useExpedited = BooleanPref(
