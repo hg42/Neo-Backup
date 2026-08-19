@@ -21,6 +21,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
 import androidx.biometric.BiometricManager
 import androidx.preference.PreferenceManager
@@ -78,14 +79,36 @@ fun Context.getDefaultSharedPreferences(): SharedPreferences =
     PreferenceManager.getDefaultSharedPreferences(this)
 
 fun Context.getPrivateSharedPrefs(): SharedPreferences {
-    val masterKey = MasterKey.Builder(this).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
-    return EncryptedSharedPreferences.create(
-        this,
-        PREFS_SHARED_PRIVATE,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    val masterKey =
+        MasterKey.Builder(this)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+    return try {
+        EncryptedSharedPreferences.create(
+            this,
+            PREFS_SHARED_PRIVATE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Throwable) {
+        logException(e, "EncryptedSharedPreferences invalid for $PREFS_SHARED_PRIVATE, wiping file to recover")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            this.deleteSharedPreferences(PREFS_SHARED_PRIVATE)
+        } else {
+            this.getSharedPreferences(PREFS_SHARED_PRIVATE, Context.MODE_PRIVATE).edit().clear().apply()
+        }
+
+        EncryptedSharedPreferences.create(
+            this,
+            PREFS_SHARED_PRIVATE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
 }
 
 fun getCryptoSalt(): ByteArray {
