@@ -299,6 +299,7 @@ android {
         named("debug") {
             applicationIdSuffix = ".hg42.debug"
             versionNameSuffix = "-debug"
+            isDebuggable = true
             isMinifyEnabled = false
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_vv"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round_vv"
