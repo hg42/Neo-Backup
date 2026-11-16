@@ -863,8 +863,9 @@ class ShellHandler {
                 if (command == "") null else command,
                 "su -c 'nsenter --mount=/proc/1/ns/mnt sh'",
                 "su --mount-master",
-                "sh -c \"exec \$(which su kp) -c 'nsenter --mount=/proc/1/ns/mnt sh'\"",  // APatch workaround
-                "sh -c \"(echo 'nsenter --mount=/proc/1/ns/mnt sh'; cat) | \$(which su kp)\"",  // APatch workaround
+                // APatch workarounds
+                //"sh -c \"exec \$(which su kp) -c 'nsenter --mount=/proc/1/ns/mnt sh'\"",
+                //"sh -c \"(echo 'nsenter --mount=/proc/1/ns/mnt sh'; cat) | \$(which su kp)\"",  // DON'T: cat is sometimes running like a noop
                 "su",
                 "/system/bin/su",
                 "sh"
